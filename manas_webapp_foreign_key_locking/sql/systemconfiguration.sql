@@ -1,0 +1,1 @@
+INSERT INTO api_systemconfiguration (uuid, slug, json_data) values ('default','default','{}');

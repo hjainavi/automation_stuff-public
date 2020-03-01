@@ -1,0 +1,1 @@
+INSERT INTO api_cloudproperties (uuid, slug, json_data) values ('global','global','{}');

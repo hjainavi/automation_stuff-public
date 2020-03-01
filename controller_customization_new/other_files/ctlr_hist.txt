@@ -1,0 +1,1055 @@
+vim /opt/avi/python/bin/portal/api/views_configuration.py
+ls -al
+ls -al /opt/avi/python/bin/portal/api/
+printenv
+tail -f /opt/avi/log/portal-webapp.log 
+reboot
+cd /opt/avi/
+cd python/
+find . -name "*.pyc" -exec rm -f {} \;
+cd lib/avi/rest/
+ls
+vim views.py 
+cd ..
+cd bin/portal/api/
+vim views_configuration.py
+cd ..
+cd lib/avi/
+ls
+ls -al
+cd config_migration/
+ls
+vim export_import.py
+cp -r /home/admin/controller_customization/ ./
+ls
+cd controller_customization/
+cd aviportal-pdb-django-full/
+ls
+./avipdbportal.sh change
+./avipdbportal.sh start
+vim avipdbportal.sh
+l
+s
+ls
+vim pdb-portal.ini 
+ps -ef | grep :portal
+./avipdbportal.sh start
+start aviportal
+tail -f /var/log/upstart/aviportal.log 
+stop aviportal;start aviportal
+tail -f /var/log/upstart/aviportal.log 
+stop aviportal
+cd /opt/avi
+python -m compileall .
+find . -name "*.pyc" -exec rm -f {} \;
+python -m compileall .
+start aviportal
+tail -f /var/log/upstart/aviportal.log 
+cd controller_customization/aviportal-pdb-django-full/
+./avipdbportal.sh start
+stop aviportal
+./avipdbportal.sh start
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+sync; echo 3 > /proc/sys/vm/drop_caches 
+./avipdbportal.sh start
+cd ..
+ls
+./controller_cust.sh 
+tail -f /opt/avi/log/portal-webapp.log 
+vim /opt/avi/python/bin/portal/api/views_configuration.py
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+stop aviportal
+ps -ef | grep :portal
+start aviportal
+ps -ef | grep :portal
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+nano /opt/avi/python/lib/avi/config_migration/export_import.py
+python -m compileall /opt/avi/python/lib/avi/config_migration/
+ls -al /opt/avi/python/lib/avi/config_migration/
+rm /opt/avi/python/lib/avi/config_migration/export_import.pyc
+ls -al /opt/avi/python/lib/avi/config_migration/
+python -m compileall /opt/avi/python/lib/avi/config_migration/
+ls -al /opt/avi/python/lib/avi/config_migration/
+rm /opt/avi/python/lib/avi/config_migration/export_import.pyc
+stop aviportal
+ls -al /opt/avi/python/lib/avi/config_migration/
+start aviportal
+ls -al /opt/avi/python/lib/avi/config_migration/
+stop aviportal
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+ls -al /opt/avi/python/lib/avi/config_migration/
+start aviportal
+ls -al /opt/avi/python/lib/avi/config_migration/
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+python -m compileall /usr/local/lib/python2.7/dist-packages/django/conf/urls/
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+python -m compileall /usr/local/lib/python2.7/dist-packages/django/conf/urls/
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+python -m compileall /usr/local/lib/python2.7/dist-packages/django/conf/urls/
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+python -m compileall /usr/local/lib/python2.7/dist-packages/django/conf/urls/
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+cd controller_customization/cd v
+cd controller_customization/
+cd aviportal-pdb-django-full/
+./avipdbportal.sh 
+cd /opt/avi/python/
+git status
+./avipdbportal.sh start
+vim /usr/local/lib/python2.7/dist-packages/django/conf/urls/__init__.py
+python -m compileall /usr/local/lib/python2.7/dist-packages/django/conf/urls/
+free && sync && echo 3 > /proc/sys/vm/drop_caches && free
+ranger
+cd ~/
+avishellpdb
+vim ~/.bashrc
+source ~/.bashrc 
+avishellpdb
+ps -ef | grep portal
+ps -ef | grep manage
+ps -ef | grep shell
+avishellpdb
+vsphere_ips
+vim import.py
+ranger
+aria2c -x10 http://188.138.69.42/Oceanofgames.com/Counter_Strike_Global_Offensive_MP+Sp.zip?md5=SiGokMMPlDB9b1YwJN8bfw&expires=1535634820
+ls
+ls -al
+clear
+tmux
+avishellpdb
+scp /root/import.py aviuser@10.140.16.175:~/controller_customization/other_files/
+tmux attach
+./avipdbportal.sh start
+vim views_configuration.py
+avishell
+avishellpdb
+avishellipdb
+avishell
+avishellipdb
+python
+grep -rn './' -e 'remote' --include "*.py"
+avishell
+shell
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+ranger
+grep -rnw './' -e 'PERMISSION_SSLKEYANDCERTIFICATE' --include "*.py"
+vim ./api/urls_hsm.py
+vim ./api/views_ssl_custom.py
+cd api
+./avipdbportal.sh start
+tmux attach
+clear
+./avipdbportal.sh start
+ranger
+ls -al
+tail -f portal.access.log 
+vim /etc/nginx/uwsgi_params 
+vim /opt/avi/python/bin/upgrade/config_migrator.py
+vim /opt/avi/python/bin/upgrade/migrator.py
+vim /opt/avi/python/bin/upgrade/config_migrator.py
+vim /opt/avi/python/bin/portal/manage.py
+vim /opt/avi/python/bin/upgrade/config_migrator.py
+vim /opt/avi/python/bin/portal/manage.py
+ranger
+vim /opt/avi/python/bin/portal/manage.py
+ranger
+vim /etc/nginx/sites-enabled/default 
+vim ./api/models_django_internal_legacy.py
+ranger
+grep -rnw './' -e 'openstack-get-tenant-networks' --include "*.py"
+vim ./urls_os_custom.py
+vim views_os_custom.py
+vim views_cloud_connector_custom.py
+vim /etc/nginx/sites-enabled/default 
+ranger
+vim import.py 
+avishell
+shell
+tmux attach
+shell
+tmux attach
+cd /opt/avi/log/
+vim cc_agent_openstack.log 
+tail -f  cc_agent_openstack.log  -n 100
+shell
+./avipdbportal.sh start
+tmux attach
+vim /etc/nginx/sites-enabled/default 
+shell
+ranger
+netstat -tulpn
+vim /etc/redis/redis.conf 
+cd .. 
+cd redis
+ls
+vim redis-server-5059.log
+ls -al
+tar -xvf redis-server-5059.log.1.gz ./abcd/
+gunzip redis-server-5059.log.1.gz
+ls
+ls -al
+netstat -tulpn | grep redis
+shell
+sudo su - postgres
+ranger
+grep -rnw './' -e 'create_default_objects_in_cloud_tenant' --include "*.py"
+shell
+tmux attach
+vim redis-server-5059.log.1 
+start aviportal
+ranger
+git status
+git diff
+shell
+ranger
+git diff
+git status
+vim ~/import.py 
+cp ~/import.py ~/pool.py
+vim ~/pool.py
+avishell
+vim ~/pool.py
+avishell
+vim ./bin/portal/api/views_common.py
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+tail -f /var/log/upstart/aviportal.log 
+aria2c -x5 http://10.140.16.175/controller_AV-22532_eng.pkg
+mv controller_AV-22532_eng.pkg /tmp/
+ls /tmp
+shell
+tail -f /opt/avi/log/portal-webapp.log 
+tmux attach
+tmux
+shell
+tail -f /opt/avi/log/ -n 100
+tail -f /var/log/upstart/upgrade-coordinator.log -n 100
+shell
+cd /host
+l
+cd root1
+l
+cd root/
+ls
+cp -r controller_customization/ ~/
+cp *.py ~/
+cd ~/
+ls
+cd controller_customization/
+ls
+cd /host/root1
+cd /root
+cd /host/root1
+cd root
+ls 
+ls -al
+cd .tmux/
+ls
+cd resurrect/
+ls
+ls -al
+cp tmux_resurrect_2018-08-20T11\:16\:35.txt ~/.tmux/resurrect/
+cd ~/
+./controller_cust.sh 
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+avishell
+l
+vim config_utils.py
+ls
+vim migration_routines.py
+tmux
+sudo su -
+vim ~/import.py 
+avishellpdb
+ranger
+sudo ranger
+vim ~/.rangerdir 
+vim ~/.config/ranger/scope.sh 
+vim /usr/bin/ranger 
+vim /usr/share/ranger/ranger/core/main.py
+ranger
+python -m compileall /usr/share/ranger
+ranger
+tmux attach
+ranger
+tmux attach
+vim ~/.tmux.conf
+vim ~/.vimrc
+vim
+source ~/.bashrc 
+tmux source ~/.tmux.conf 
+tmux attach
+vim ~/pool.py 
+tail -f /var/log/upstart/aviportal.log 
+tail -f /opt/avi/log/portal-webapp.log
+tmux kill-session -t 0
+tmux attach
+tmux show -g default-command
+vim ~/.tmux.conf
+tmux source ~/.tmux.conf 
+tmux
+vim /root/pool.py
+tail -f /opt/avi/log/portal-webapp.log
+tail -f /var/log/upstart/aviportal.log
+tmux kill-session -t 0
+tmux attach
+shell
+tmux -V
+tmux
+shell
+cd /tmp
+ls
+aria2c
+tmux attach
+cd ..
+grep -rnw './' -e 'Upgrade package is incompatible with currently running version' --include "*.py"
+ranger
+ranger
+vim ./bin/portal/api/views_clustering_custom.py
+ranger
+grep -rnw './' -e 'Verifying upgrade package' --include "*.py"
+vim ./bin/cli/avi_cli/custom_cmd/upgrade.py
+vim ./bin/portal/api/views_clustering_custom.py
+shell
+tmux attach
+clear
+tmux attach
+ranger
+cat /etc/passwd | grep avi
+vim /opt/avi/python/bin/avi_local_shell.sh
+shell
+vim /etc/ssh/sshd_config
+tail -f /var/log/upstart/aviportal.log
+tmux attach
+att
+stop aviportal
+ps -ef | grep :portal
+ls
+vim avipdbportal.sh 
+./avipdbportal.sh change
+vim /etc/nginx/sites-enabled/default 
+ranger
+ls ~/
+vim ~/pool.py 
+rm ~/.pool.py.swp 
+vim ~/pool.py 
+cp ~/pool.py ~/cluster.py
+./avipdbportal.sh start
+cd ~/
+ranger
+vim /root/pool.py
+clear
+python
+top
+./avipdbportal.sh start
+avishell
+vim ~/cluster.py 
+ps -ef | grep 1058
+ps -ef | grep 10582
+netstat -tulpn | grep 10582
+netstat -tulpn
+ps -ef
+ps -ef | grep :portal
+avishell
+vim views_clustering_custom.py
+cd ~/
+ls
+avishell
+git status
+git stash
+git stash list
+git stash pop
+git stash list
+ls
+ps -ef | grep portal
+vim /etc/nginx/sites-enabled/default 
+vim /opt/avi/scripts/proc_supervisor_callback.py 
+vim /etc/init/aviportal.conf 
+cd ~/
+ls
+cd controller_customization/
+cd aviportal-pdb-django-full/
+ls
+tail -f /opt/avi/log/portal-webapp.log
+ls
+cd controller_customization/
+ls
+cd aviportal-pdb-django-full/
+ls
+vim change-conf.py 
+./avipdbportal.sh start
+./avipdbportal.sh changeback
+vim /etc/init/aviportal.conf 
+vim avipdbportal.sh 
+./avipdbportal.sh change
+cp avipdbportal.sh maintenanceportal.sh
+stop maintenanceportal 
+ps -ef | grep maintenanace
+ps -ef | grep portal
+ps -ef | grep maint
+ls
+vim maintenance.ini
+ls
+./maintenanceportal.sh change
+ps -ef | grep maint
+vim /opt/avi/python/bin/aviportal.sh
+ps -ef | grep maint
+ps -ef | grep portal
+vim /etc/init/maintenanceportal.conf 
+./maintenanceportal.sh start
+./maintenanceportal.sh changeback
+ranger
+vim maintenanceportal.sh 
+cd -
+ls
+./avipdbportal.sh 
+./avipdbportal.sh change
+./maintenanceportal.sh change
+tail -f /opt/avi/log/portal-webapp.log
+ps -ef | grep portal
+ranger
+avishellpdb
+vim /etc/nginx/sites-enabled/default 
+cd controller_customization/
+cd aviportal-pdb-django-full/
+ls
+vim maintenance.ini 
+vim pdb-portal.ini 
+rm maintenance.ini 
+vim maintenanceportal.sh 
+./maintenanceportal.sh start
+ps -ef | grep portal
+ls
+avishell
+./maintenanceportal.sh changeback
+vim /etc/init/maintenanceportal.conf 
+tmux attach
+vim import.py 
+./avipdbportal.sh start
+avishell
+avishellpdb
+avishell
+avishellpdb
+ps -ef | grep cloudconn
+ls
+cd ~/controller_customization/aviportal-pdb-django-full/
+ls
+avishell
+vim ~/.bashrc
+ranger
+avishell
+tmux attach
+ranger
+avishellpdb
+vim ~/import.py 
+vim ~/pool.py 
+ranger
+vim urls_inventory.py
+avishellpdb
+ranger
+clear
+ranger
+vim urls_inventory.py
+ls
+cd ~/
+l
+scp *.py admin@10.140.7.123:~/
+tmux attach
+avishell
+python
+redis
+Redis
+avishell
+ps -ef | grep portal
+ranger
+ranger
+ranger
+vim avipdbportal.sh 
+avishellpdb
+tmux attach
+ranger
+stop aviportal
+start aviportal
+vim views_inventory.py
+stop aviportal
+start aviportal
+stop aviportal
+start aviportal
+shell
+stop aviportal
+start aviportal
+sudo su postgres
+shell
+shell ;admin;avi123
+shell --help
+shell --user admin --password avi123
+shell --user admin --password avi12
+shell --user admin --password avi123
+tmux attach
+mux attach
+tail -f /var/log/upstart/maintenanceportal.log 
+tail -f /var/log/upstart/maintenanceportal.log -n 100
+tail -f /var/log/upstart/aviportal.log
+stop aviportal
+start aviportal
+tmux attach
+tail -f /var/log/upstart/aviportal.log
+ls
+vim avipdbportal.sh 
+ls
+vim pdb-portal.ini 
+tail -f /var/log/upstart/maintenanceportal.log -n 100
+tail -f /var/log/upstart/maintenanceportal.log -n 10000
+vim /var/log/upstart/maintenanceportal.log
+cd controller_customization/
+ls
+cp -r /home/admin/aviportal-pdb-django-full-with-flag/ ./
+ls
+cd aviportal-pdb-django-full-with-flag/
+ls
+cd avipdb/
+ls
+vim avipdbportal.sh 
+cd avipdb/
+vim avipdb.py
+vim avipdb.py
+cd ..
+ls
+cd ..
+ls
+ranger
+python test.py 
+vim test.py 
+ls
+cd avipdb/
+vim avipdb.py
+python -m compileall ./
+cd ..
+ls
+python test.py 
+tail -f /opt/avi/log/portal-webapp.log
+vim change-conf.py 
+vim change-conf.py 
+ls
+ls
+vim avipdbportal.sh 
+vim avipdbportal.sh 
+cd ..
+cd aviportal-pdb-django-full
+ls
+vim maintenanceportal.sh 
+./maintenanceportal.sh change
+./maintenanceportal.sh start ipdb
+ls
+./avipdbportal.sh change
+./maintenanceportal.sh start ipdb import
+cd ~/
+ls
+cd controller_customization/
+ls
+rm -r aviportal-pdb-django-full-with-flag/
+scp -r aviportal-pdb-django-full/ aviuser@10.140.16.175:~/controller_customization/
+ranger
+cd ..
+ls
+vim pdb-portal.ini 
+avishell
+git status
+git diff
+git add -p
+git commit -m "AV-22532 and AV-40910"
+./maintenanceportal.sh start
+./maintenanceportal.sh start ipdb import
+./maintenanceportal.sh start
+./avipdbportal.sh start
+./maintenanceportal.sh start ipdb import
+avishell
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+vim ~/cluster.py 
+ranger
+ranger
+shell
+shell --user admin --password avi123
+avishell
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+./avipdbportal.sh start
+tail -f /opt/avi/log/portal-webapp.log
+./maintenanceportal.sh start
+./avipdbportal.sh start
+./maintenanceportal.sh start ipdb import1
+ranger
+./avipdbportal.sh start
+./maintenanceportal.sh start ipdb import1
+git status
+git diff
+./avipdbportal.sh start
+vim /opt/avi/python/lib/avi/util/must_check.py
+vim /opt/avi/python/lib/avi/config_migration/export_import.py 
+./maintenanceportal.sh start ipdb import1
+./maintenanceportal.sh start
+./avipdbportal.sh start
+./maintenanceportal.sh start
+./maintenanceportal.sh start ipdb import1
+tmux attach
+ranger
+snmpwalk -v2c -c <filtered> localhost system
+snmpcheck 
+snmpcget
+snmpget
+snmpget localhost
+snmpwalk --help
+snmpwalk -v2c
+snmpwalk -v2c localhost system
+snmpwalk -v2c -c public 127.0.0.1:16161
+snmpwalk -v2c -c public 127.0.0.1
+./maintenanceportal.sh start
+./avipdbportal.sh start
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+snmpwalk -v1 -cSecret .1.3.6.1.2
+snmpwalk -v1 -cSecret 127.0.0.1 .1.3.6.1.2
+snmpwalk -v1 -cSecret 127.0.0.1 .1.3.6.1.2.1.1.1.0
+snmpwalk -Os -c public zeus system
+snmpwalk -Os -c public avi
+snmpwalk -Os -c public 127.0.0.1
+snmpwalk -Os -c public 127.0.0.1 system
+snmpwalk -Os -c 127.0.0.1 system
+snmpget -c public -v 1 localhost sysUpTime.0
+snmpget -c public -v 1 127.0.0.1 sysUpTime.0
+snmpget -c public -v 1 127.0.0.1 sysUpTime
+snmpget -c public -v 1 127.0.0.1 SysDescr.o
+snmpget -c public -v 1 127.0.0.1 SysDescr.0
+sudo netstat -lnp|grep 16
+snmpwalk -v2c -c public 127.0.0.1:161 1.3.6.1.2.1.1.1
+snmpwalk -v2c -c public 127.0.0.1:161 1.3.6.1.2.1.1.2
+snmpwalk -v2c -c public 127.0.0.1:161
+snmpwalk -v2c -c public 127.0.0.1:161 1.3.6.1.2.1.1
+snmpwalk -v2c -c public 127.0.0.1:161 system
+snmpwalk -v2c -c public localhost
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1.1
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1.1.1
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1.1
+snmpwalk -v2c -c <filtered> localhost 1.3.6.1.2.1.1
+vim /etc/snmp/snmpd.conf
+apt-get install snmp-mibs-downloader
+net-snmp-config --default-mibdirs
+vim /etc/snmp/snmp.conf
+snmpwalk -v2c -c <filtered> localhost 1.3.6.1.2.1.1
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1.1
+vim /etc/snmp/snmp.conf
+cd /usr/bin/
+ls
+vim download-mibs 
+snmpget -c public -v 2c 127.0.0.1:16161 system.sysUpTime.0
+snmpget -c public -v 2c 127.0.0.1:161
+snmpget -c public -v 2c 127.0.0.1:161 system
+snmpget -c public -v 2c 127.0.0.1:161 root
+snmpget -c public -v 2c 127.0.0.1:161 UCD-SNMP-MIB
+cd ..
+cd share/snmp/mibs
+ls
+net-snmp-config --snmpconfpath
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmp.conf
+snmpwalk -v2c -c public 192.168.1.100
+snmpget -c public -v 2c 127.0.0.1:161 UCD-SNMP-MIB
+snmpget -c public -v 2c 127.0.0.1:161 GNOME-SMI
+cd /usr/share/mibs
+ls
+cd iana
+ls
+cd ..
+cd ietf
+ls
+snmpget -c public -v 2c 127.0.0.1:161 WWW-MIB
+vim WWW-MIB 
+snmpwalk -v2c -c public localhost 1.3.6.1.2.1.1
+snmpwalk -v2c -c public localhost system
+ls
+snmpwalk -v2c -c public localhost system
+cd ..
+grep -rnw './' -e 'NET-SNMP-TC'
+cd ..
+grep -rnw './' -e 'NET-SNMP-TC'
+cd snmp
+cd mibds
+cd mibs
+vim NET-SNMP-TC.txt 
+vim NET-SNMP-MIB.txt 
+snmptranslate -Ta | head 
+snmptranslate -Td -OS system.sysDescr 
+snmptranslate -Td -OS system.sysDescr snmptranslate -Onf -IR sysDescr 
+snmptranslate -Td -OS system.sysDescr 
+snmptranslate -Td -OS system.sysDescr
+snmptranslate -Td -OS sysDescr
+snmptranslate -Td -OS system.sysDescr snmptranslate -Onf -IR sysDescr 
+snmptranslate -Onf -IR sysDescr 
+snmptranslate -Onf -Td -IR sysDescr 
+snmptranslate -Td -IR sysDescr 
+snmptranslate -Onf -Td -IR sysDescr 
+snmptranslate -Onf -Td -IR sysObject
+snmptranslate -Onf -Td -IR sysObjectID
+snmptranslate -Tz -m ./SNMPv2-MIB.txt
+ls
+cd ..
+cd mibs
+ls
+cd iana
+ls
+cd ../ietf
+snmptranslate -Tz -m ./SNMPv2-MIB.txt
+ls
+snmptranslate -Tz -m ./SNMPv2-MIB
+snmptranslate -Tz -m ./NETWORK-SERVICES-MIB 
+cd ..
+cd snmp/mib
+cd snmp/mib2c-data/
+ls
+cd ../mibs
+snmptranslate -Tz -m ./NET-SNMP-MIB.txt 
+snmptranslate -Tz -m ./NET-SNMP-TC.txt 
+ls /root/.snmp/mibs
+ls /usr/share/snmp/mibs:
+ls /usr/share/snmp/mibs
+ls /usr/share/mibs/site
+ls /usr/share/snmp/mibs
+ls /usr/share/snmp/mibs/iana
+ls /usr/share/snmp/mibs/ietf
+ls /usr/share/snmp/mibs
+ls /usr/share/mibs/iana
+ls /usr/share/mibs/
+ls /usr/share/mibs/iana
+cd /usr/share/mibs/iana
+ranger
+snmptranslate -Tz -m ./IANA-ADDRESS-FAMILY-NUMBERS-MIB 
+snmptranslate -Tz -m ./IANA-CHARSET-MIB 
+ls
+snmptranslate -Tz -m ./IANA-FINISHER-MIB 
+snmptranslate -Tz -m ./IANA-GMPLS-TC-MIB 
+snmptranslate -Tz -m ./IANAifType-MIB 
+ls
+snmptranslate -Tz -m ./IANA-IPPM-METRICS-REGISTRY-MIB 
+snmpwalk -v2c -c public localhost system
+snmpwalk -v2c -c default localhost system
+vim NET-SNMP-TC.txt 
+snmpwalk -v2c -c rocommunity localhost system
+vim /etc/snmp/snmpd.conf
+snmpwalk -v2c -c public localhost system
+snmpwalk -v2c -c public localhost sysDescr
+snmpwalk -v2c -c public localhost sysDescr.0
+snmpwalk -v2c -c public localhost sysIOD
+snmpwalk -v2c -c public localhost sysObjectID
+snmptranslate -Onf -Td -IR system
+snmptranslate -Onf -IR system
+snmptranslate-Td -IR system
+snmptranslate -Td -IR system
+snmptranslate -To -IR system
+snmptranslate -To system
+sudo netstat -lnp|grep 16
+find . -name "SNMP-v2-MIB*"
+ls
+cd /usr/share
+find . -name "SNMP-v2-MIB*"
+find . -name "*SNMP-v2-MIB*"
+cd snmp
+ls
+ranger
+grep -rnw './' -e '8072'
+cd ../snmp
+grep -rnw './' -e '8072'
+cdmibs
+cd mibs
+vim NET-SNMP-MIB.txt 
+vim /etc/snmp/snmpd.conf
+/etc/init.d/snmpd restart
+snmpd restart
+snmpd
+ranger
+uname -a
+uname
+uname -a
+q
+vim /etc/snmp/snmpd.conf
+avishell
+ranger
+grep -rn './' -e 'dict2pr' --include "*.py"
+man snmpd
+man snmpd 5
+cd ../mibs
+ranger
+ls
+ranger
+vim NET-SNMP-MIB.txt 
+vim /etc/nginx/sites-enabled/default 
+./maintenanceportal.sh start
+./maintenanceportal.sh changeback
+./maintenanceportal.sh change
+cd ~/
+ls
+vim /usr/local/lib/python2.7/dist-packages/django/db/models/options.py
+ranger
+vim /etc/snmp/snmpd.conf.template 
+mux attach
+tmux attach
+bcde
+tmux attach
+cde
+tmux attach
+cd /tmp
+ls
+aria2c -x5 http://10.140.16.175/controller_40582.pkg
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+stop snmpd
+start snmpd
+./avipdbportal.sh start
+./maintenanceportal.sh start
+shell
+vim /var/log/upstart/upgrade-coordinator.log 
+cd /opt/avi/python/
+git status
+git diff
+git stash save import_default_refs
+./maintenanceportal.sh changeback
+./avipdbportal.sh changeback
+avishell
+git stash pop stash@{0} 
+git diff
+git status
+vim lib/avi/config_migration/export_import.py
+git status
+git diff
+stop maintenanceportal 
+stop aviportal
+shell --help
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+shell --user admin --password avi123
+git diff
+vim /var/log/upstart/maintenanceportal.log 
+df -h
+git diff
+git stash save import_default_refs
+stop maintenanceportal 
+stop aviportal
+stop aviportal;stop maintenanceportal 
+shell --user admin --password avi123
+tmux attach
+vim /var/log/upstart/upgrade-coordinator.log 
+ranger
+tmux kill-window -t 5
+ranger
+shell --user admin --password avi123
+abcde
+tmux attach
+abcde
+stop aviportal;stop maintenanceportal 
+vim /etc/snmp/snmpd.conf.template 
+cd ~/
+pwd
+ls
+vim /etc/snmp/snmpd.conf
+vim setup_snmpd.py
+stop aviportal;stop maintenanceportal 
+vim setup_snmpd.py
+vim /etc/snmp/snmpd.conf
+vim setup_snmpd.py
+stop aviportal;stop maintenanceportal 
+python -m compileall ./
+ls
+vim setup_snmpd.py
+python -m compileall ./
+stop aviportal
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+vim /etc/snmp/snmpd.conf
+ranger
+vim setup_snmpd.py
+vim /opt/avi/python/lib/avi/util/setup_snmpd.py
+ls -al /host
+vim /host/root1/etc/snmp/snmpd.conf
+vim /host/root2/etc/snmp/snmpd.conf
+vim /host/root2/var/log/upstart/upgrade-filecopy.log 
+vim /host/root1/var/log/upstart/upgrade-filecopy.log 
+ls /host/root1/var/log/upstart/
+ranger
+grep -rn './' -e 'SYSTEM_FILE_MIGRATIONS' --include "*.py"
+vim ./python/lib/avi/upgrade/migration/migrate_utils.py
+grep -rn './' -e 'system_files_migration' --include "*.py"
+vim ./python/lib/avi/upgrade/migration/migrate_utils.py
+grep -rn './' -e 'upgrade_system_files' --include "*.py"
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+vim /etc/snmp/snmpd.conf
+cp /etc/snmp/snmpd.conf ./
+cp /home/admin/snmp_migrate.py ~/
+cd ~/
+ls
+vim snmp_migrate.py 
+python snmp_migrate.py 
+cp /tmp/snmpd.conf
+vim /tmp/snmpd.conf
+vim /etc/snmp/snmpd.conf
+stop snmpd
+tmux attach
+bcde
+ls /home/admin
+rm /home/admin/ctlr_custom.tar.gz 
+ls /home/admin
+tmux attach
+de
+tmux attach
+abcde
+vim /var/log/upstart/upgrade-filecopy.log 
+cp /etc/snmp/snmpd.conf ./
+ls
+ranger
+cd ~/
+ls
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+stop snmpd
+vim /etc/snmp/snmpd.conf
+stop snmpd
+sudo netstat -lnp|grep 16
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+shell
+vim /etc/snmp/snmpd.conf
+cd /opt/
+ls
+cd avi/
+ls
+cd archive
+ls
+ls -al
+shell --user admin --password avi123
+vim snmp_migrate.py 
+cd /opt/avi/scripts/
+ls
+vim system_config.py 
+ranger
+vim /etc/snmp/snmpd.conf
+vim /etc/snmp/snmpd.conf.template 
+cd ~/
+vim /etc/snmp/snmpd.conf.template 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+vim snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+python snmp_migrate.py 
+vim /etc/snmp/snmpd.conf
+stop snmpd
+git diff
+git log
+git status
+git stash list
+ranger
+vim ./scripts/upgrade_filecopy.py 
+ranger
+git stash show -p stash@{0} 
+clear
+git stash show -p stash@{0} 
+ranger
+ranger
+tmux attach
+cde
+git stash show -p stash@{0} 
+git stash apply stash@{0} 
+avishellpdb
+/opt/avi/python/bin/portal/manage.py export_configuration --file /tmp/avi_config.json
+/opt/avi/python/bin/portal/manage.py export_configuration --object-type backup --file /tmp/avi_backup.json
+/opt/avi/python/bin/portal/manage.py shell
+tmux attach
+abcde
+shell --user admin --password avi123
+/opt/avi/python/bin/portal/manage.py export_configuration --file /tmp/avi_config.json
+/opt/avi/python/bin/portal/manage.py export_configuration --object-type backup --file /tmp/avi_backup.json
+snmpwalk -v2c -c public 10.140.16.180 sysObjectID
+vim /var/log/upstart/upgrade-coordinator.log 
+vim /var/log/upstart/upgrade-coordinator.log 
+ranger
+find . -name "*.yaml"
+vim ./bootstrap/supported_migrations.yaml 
+avishell
+ranger
+vim ~/import.py 
+vim /opt/avi/python/bin/portal/api/views_configuration.py
+cd controller_customization/
+cd aviportal-pdb-django-full/
+ls
+./maintenanceportal.sh change
+tmux attach
+bcde
+ranger
+shell --user admin --password avi123
+ls
+vim avipdbportal.sh 
+tmux attach
+abcde
+apt-cache showpkg git
+apt-cache showpkg git | grep pam
+./maintenanceportal.sh start ipdb import2
+./maintenanceportal.sh changeback
+python
+ranger
+vim pb_ordered.py
+tmux attach
+bcde
+tmux attach
+bcde
+ipython
+clear
+vim ~/.tmux.conf
+cd ~/
+ls
+cat abc.txt 
+cat snmp_migrate.py 
+scp cluster.py pool.py aviuser@10.140.16.175:~/other_files/
+scp cluster.py pool.py aviuser@10.140.16.175:~/
+ls -al
+tmux attach
+abcde
+tmux attach
+bcde
+tmux attach
+bcde
+tmux attach
+de
+tmux attach
+bcde
+tmux attach
+abcde
+tmux attach
+bcde
+vim /opt/avi/python/lib/avi/config_migration/export_import.py
+history > history_for_print.txt
+cat history_for_print.txt 
+vim ~/.bashrc
+history > history_for_print.txt
+scp history_for_print.txt aviuser@10.140.16.175:~/
+scp history_for_print.txt admin@10.140.16.182:~/

@@ -1,0 +1,1 @@
+INSERT INTO api_systemconfigurationruntime (uuid, slug, json_data) values ('default','default','{"network_sync_complete": false}');

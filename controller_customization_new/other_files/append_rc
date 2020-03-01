@@ -1,0 +1,233 @@
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+
+
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+
+
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+
+
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+
+
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+
+
+#### git customizations
+# Enable tab completion
+source ~/.config/git-completion.bash
+
+# colors!
+green="\[\033[0;32m\]"
+blue="\[\033[0;34m\]"
+purple="\[\033[0m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/.config/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+export GIT_PS1_SHOWSTASHSTATE=2
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$purple\u$green\$(__git_ps1)$blue:[\`pwd\`]\n $ $reset"
+
+export EDITOR='vim'
+export VISUAL='vim'
+
+# avoid duplicates..
+export HISTCONTROL=ignoreboth:erasedups
+
+# append history entries..
+shopt -s histappend
+
+# After each command, save and reload history
+export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=20000
+HISTFILESIZE=50000
+
+alias ranger='ranger --choosedir=$HOME/.rangerdir; LASTDIR=`cat $HOME/.rangerdir`; cd "$LASTDIR"'
+
+

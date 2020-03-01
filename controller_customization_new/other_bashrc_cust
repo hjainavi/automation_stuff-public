@@ -1,0 +1,4 @@
+alias avishell='python /opt/avi/python/bin/portal/manage.py shell'
+alias avishellpdb='python -m pdb /opt/avi/python/bin/portal/manage.py shell'
+alias avishellipdb='python -m ipdb /opt/avi/python/bin/portal/manage.py shell'
+alias avipdb='/root/controller_customization_new/aviportal-pdb-django-full/avipdbportal.sh'

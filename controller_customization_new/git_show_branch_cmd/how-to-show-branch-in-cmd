@@ -1,0 +1,10 @@
+
+go to .config folder in your home directory
+copy and paste git-completion.bash and git-prompt.sh in the .config folder
+open .bashrc in your home folder and copy the all text from bash_profile_course and paste it at end of .bashrc file
+
+in terminal: run these commands
+git config --global push.default simple
+git config --global merge.conflictstyle diff3
+
+close all terminals and open them again for the commands to take effect.

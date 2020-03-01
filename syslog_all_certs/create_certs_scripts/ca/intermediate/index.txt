@@ -1,0 +1,2 @@
+V	391128102344Z		1000	unknown	/C=IN/ST=England/O=Server Ltd/CN=avi.server
+V	391128122152Z		1001	unknown	/CN=www.foo.com
