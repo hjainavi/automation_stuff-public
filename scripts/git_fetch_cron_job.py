@@ -15,4 +15,4 @@ with open('/root/logfile_git_fetch_cron.txt','a') as ff:
     for log in logs:
         ff.write(log)
     ff.write('\n')
-# crontab -e has : 0 */8 * * * /usr/bin/python /root/scripts/git_fetch_cron_job.py
+# crontab -e has : 0 */8 * * * /usr/bin/python /root/automation_stuff/scripts/git_fetch_cron_job.py
