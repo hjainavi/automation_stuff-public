@@ -10,7 +10,7 @@ from socket import inet_aton, inet_ntoa
 import random,time,atexit
 from concurrent.futures import ThreadPoolExecutor
 import tarfile
-import xmltodict
+#import xmltodict
 import subprocess
 import shlex
 import argparse
@@ -395,39 +395,6 @@ def filter_question_based_on_specs(host_datastore_compatible_list):
 
 
 def filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB=False, ova_disk_spec_in_MB=False):
-    '''
-    try:
-        disk_total_in_MB = False
-        memory_total_in_MB = False
-        
-        tar_file = tarfile.open(path_to_ova)
-        ovffile_obj = tar_file.extractfile(tar_file.getmember('controller.ovf'))
-        xml_string = ovffile_obj.read()
-        xml_obj = xmltodict.parse(xml_string)
-        
-        disk_total_units = xml_obj.get('Envelope',{}).get('DiskSection',{}).get('Disk',{}).get('@ovf:capacity',False)
-        disk_unit = xml_obj.get('Envelope',{}).get('DiskSection',{}).get('Disk',{}).get('@ovf:capacityAllocationUnits',False)
-        if disk_total_units and disk_unit:
-            vals = disk_unit.split("*")[1].strip().split("^")
-            base_byte_unit = int(vals[0])**int(vals[1])
-            disk_total_in_MB = int(disk_total_units) * convert_units(base_byte_unit, base_unit='byte', return_unit='MB')
-        
-        memory_unit = False
-        memory_total_units = False
-        for item in xml_obj.get('Envelope',{}).get('VirtualSystem',{}).get('VirtualHardwareSection',{}).get('Item',[]):
-            if item.get('rasd:Description',False) == 'Memory Size':
-                memory_unit = item.get('rasd:AllocationUnits',False)
-                memory_total_units = item.get('rasd:VirtualQuantity',False)
-                break
-        if memory_unit and memory_total_units:
-            vals = memory_unit.split("*")[1].strip().split("^")
-            base_byte_unit = int(vals[0])**int(vals[1])
-            memory_total_in_MB = int(memory_total_units) * convert_units(base_byte_unit, base_unit='byte', return_unit='MB')
-
-    finally:
-        tar_file.close()
-    return memory_total_in_MB, disk_total_in_MB
-    '''
     if not ova_memory_spec_in_MB: ova_memory_spec_in_MB = 0
     if not ova_disk_spec_in_MB: ova_disk_spec_in_MB = 0
     print "\nMemory Specs from OVA",convert_units(ova_memory_spec_in_MB,base_unit='MB',return_unit='GB'),"GB"
@@ -466,7 +433,39 @@ def convert_units(units, base_unit='byte', return_unit='MB'):
 
 def get_memory_and_disk_spec_from_ova(path_to_ova):
     
-    
+    '''
+    try:
+        disk_total_in_MB = False
+        memory_total_in_MB = False
+        
+        tar_file = tarfile.open(path_to_ova)
+        ovffile_obj = tar_file.extractfile(tar_file.getmember('controller.ovf'))
+        xml_string = ovffile_obj.read()
+        xml_obj = xmltodict.parse(xml_string)
+        
+        disk_total_units = xml_obj.get('Envelope',{}).get('DiskSection',{}).get('Disk',{}).get('@ovf:capacity',False)
+        disk_unit = xml_obj.get('Envelope',{}).get('DiskSection',{}).get('Disk',{}).get('@ovf:capacityAllocationUnits',False)
+        if disk_total_units and disk_unit:
+            vals = disk_unit.split("*")[1].strip().split("^")
+            base_byte_unit = int(vals[0])**int(vals[1])
+            disk_total_in_MB = int(disk_total_units) * convert_units(base_byte_unit, base_unit='byte', return_unit='MB')
+        
+        memory_unit = False
+        memory_total_units = False
+        for item in xml_obj.get('Envelope',{}).get('VirtualSystem',{}).get('VirtualHardwareSection',{}).get('Item',[]):
+            if item.get('rasd:Description',False) == 'Memory Size':
+                memory_unit = item.get('rasd:AllocationUnits',False)
+                memory_total_units = item.get('rasd:VirtualQuantity',False)
+                break
+        if memory_unit and memory_total_units:
+            vals = memory_unit.split("*")[1].strip().split("^")
+            base_byte_unit = int(vals[0])**int(vals[1])
+            memory_total_in_MB = int(memory_total_units) * convert_units(base_byte_unit, base_unit='byte', return_unit='MB')
+
+    finally:
+        tar_file.close()
+    return memory_total_in_MB, disk_total_in_MB
+    '''
     
     disk_total_in_MB = False
     memory_total_in_MB = False
