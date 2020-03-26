@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 import argparse, os, simplejson, ipaddress
 
 home_folder = os.getenv("HOME")
-FILE_PATH = os.path.join(home_folder,".config","vsphere_config.txt")
+FILE_PATH = os.path.join(home_folder,".config","vsphere_profiles.txt")
 
 def is_valid_ip_address(ip):
     # Need to change if we need to detect an IPv6 address.
@@ -117,7 +117,7 @@ def display_all_vm_values():
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--reconfigure', help="Configure new vsphere ips and folder", action='store_true')
+parser.add_argument('--manage_profile', help="Configure new vsphere ips and folder", action='store_true')
 parser.add_argument('--display_config', help="Display the vsphere ips and folder configuration", action='store_true')
 parser.add_argument('-dip','--delete_ip', help="IP of the vm to be deleted")
 parser.add_argument('-dn','--delete_name', help="Name of the vm to be deleted")
