@@ -1,5 +1,5 @@
 from avi.sdk.avi_api import ApiSession
-import argparse
+import argparse, json
 
 
 if __name__ == '__main__':
@@ -18,9 +18,26 @@ if __name__ == '__main__':
     api = ApiSession.get_session(args.controller_ip, args.user, args.password,
                                  tenant=args.tenant,api_version=args.version)
     
-    obj = api.get('vrfcontext', None)
 
     import ipdb;ipdb.set_trace()
-    put_data = api.put_by_name('systemconfiguration',None, data = obj)
+    data = {'name':'abcd111'}
+    post_data = api.post('pool',data=data)
+    uuid_abcd111 = json.loads(post_data.text)['uuid']
+    #data = {'model_name':'virtualservice','data':{'uuid':uuid}}
+    data = {'data':[
+            {'model_name':'pool', 'data':{'name':'abc222'}, 'method':'post'}, 
+            {'model_name':'pool', 'data':{'uuid':uuid_abcd111}, 'method':'delete'},
+            {'model_name':'poolgroup', 'data':{'name':'poolgroup111','members':[{'ratio':1, 'pool_ref':'/api/pool?name=abc222'}]}, 'method':'post'}
+            ]}
+    try:
+        post_data = api.post('macrostack', data=data)
+        if post_data.status_code == 201:
+            uuid_poolgroup111 = api.get_object_by_name('poolgroup', 'poolgroup111', 'admin')['uuid']
+            uuid_poolabc222 = api.get_object_by_name('pool', 'abc222', 'admin')['uuid']
+            api.delete('poolgroup/%s'%(uuid_poolgroup111))
+            api.delete('pool/%s'%(uuid_poolabc222))
+    finally:
+        api.delete('pool/%s'%(uuid_abcd111))
+
 
     #api.delete('sslkeyandcertificate/%s'%(obj['uuid']))
