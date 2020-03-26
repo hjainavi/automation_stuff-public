@@ -2,26 +2,33 @@ from pexpect import pxssh
 import subprocess, shlex, time
 import socket
 
+print ""
+
+HOSTNAME_CONN_TO_VMWARE_VPN = "10.140.16.174"
+USER = "root"
+PASSWORD = "mad460nash"
+SOCKS_PORT = 9090
+
+
 def test_ping(hostname,count=3,timeout=300):
     cmd = "ping %s -n %s -w %s"%(hostname,count,timeout)
     subprocess.check_output(shlex.split(cmd))
 
+def check_if_connected_to_avi_vpn(hostname_to_check):
+    try:
+        test_ping(hostname_to_check)
+    except subprocess.CalledProcessError as e:
+        print ("\n*************  AVI VPN not connected *****************\n")
+        exit(1)
 
 def connect_to_vmware_vpn():
+    connected_to_vmware_vpn = False
+    check_if_connected_to_avi_vpn(HOSTNAME_CONN_TO_VMWARE_VPN)
     try:
-        test_ping('10.140.16.174')
-    except subprocess.CalledProcessError as e:
-        print "\n*************  AVI VPN not connected *****************\n"
-        exit(1)
-    try:
-        connected_to_vmware_vpn = False
         ss = pxssh.pxssh(options={
                         "StrictHostKeyChecking": "no",
                         "UserKnownHostsFile": "/dev/null"})
-        #hostname = raw_input('hostname: ')
-        #username = raw_input('username: ')
-        #password = getpass.getpass('password: ')
-        ss.login("10.140.16.174", "root", "mad460nash")
+        ss.login(HOSTNAME_CONN_TO_VMWARE_VPN , USER, PASSWORD)
         ss.sendline('uptime')   # run a command
         ss.prompt()             # match the prompt
         print ss.before        # print everything before the prompt.
@@ -32,7 +39,7 @@ def connect_to_vmware_vpn():
         if "GlobalProtect status: Connected" in ss.before:
             print "Already Connected"
             connected_to_vmware_vpn = True
-        elif "GlobalProtect status: Disconnected" in ss.before:
+        elif ("GlobalProtect status: Disconnected" in ss.before) or ("GlobalProtect status: OnDemand mode" in ss.before):
             cmd = "globalprotect connect -p gpu.vmware.com -u harshj -g gp-blr3-gw3.vmware.com"
             ss.sendline(cmd)
             ss.prompt(timeout=10)
@@ -41,11 +48,7 @@ def connect_to_vmware_vpn():
                 ss.sendline("harshj")
                 ss.prompt(timeout=10)
                 print ss.before
-            if "username(harshj)" in ss.before:
-                ss.sendline("")
-                ss.prompt(timeout=10)
-                print ss.before
-            if "password" in ss.before:
+            if ("password" in ss.before) or ("Enter your tokencode" in ss.before):
                 password = raw_input("Enter RSA passsword to connect to vmware vpn: ")
                 ss.sendline(password.strip())
                 ss.prompt(timeout=10)
@@ -61,18 +64,19 @@ def connect_to_vmware_vpn():
             print ss.before
             print "Sth wrong with vmware vpn connection from 10.140.16.174, figure it out"
 
-        #import ipdb;ipdb.set_trace()
         ss.logout()
     except pxssh.ExceptionPxssh as e:
         print("pxssh failed on login.")
         print(e)
+        ss.logout()
+        raise
     return connected_to_vmware_vpn
 
 def check_if_port_is_open(port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     result = False
     try:
-        sock.bind(("0.0.0.0", port))
+        sock.bind(("127.0.0.1", port))
         print "Port is open"
         result = True
     except:
@@ -84,21 +88,22 @@ def close_existing_conn(is_port_open):
     out = subprocess.check_output(shlex.split("ps -s | grep _ssh"))
     for line in out.split('\n'):
         if "_ssh" in line:
-            for pid in line.split(" "):
-                if pid:
-                    try:
-                        print "kill -9 %s"%(pid)
-                        subprocess.call(shlex.split('kill -9 %s'%(pid)))
-                    except subprocess.CalledProcessError as e:
-                        pass
-                    break
+            pid = line.strip().split(" ")[0]
+            if pid:
+                try:
+                    print "kill -9 %s"%(pid)
+                    subprocess.call(shlex.split('kill -9 %s'%(pid)))
+                except subprocess.CalledProcessError as e:
+                    pass
+                break
+
 
 def create_ssh_tunnel():
-    open_port = check_if_port_is_open(9090)
-    close_existing_conn(open_port)
-    open_port = check_if_port_is_open(9090)
-    
-    cmd = "sshpass -p 'mad460nash' ssh -f -N -D 9090 root@10.140.16.174"
+    open_port = check_if_port_is_open(SOCKS_PORT)
+    if not open_port:
+        close_existing_conn(SOCKS_PORT)
+        open_port = check_if_port_is_open(SOCKS_PORT)
+    cmd = "sshpass -p '%s' ssh -D %s -f -C -q -N %s@%s"%(PASSWORD, SOCKS_PORT, USER, HOSTNAME_CONN_TO_VMWARE_VPN)
     if open_port:
         proc = subprocess.Popen(shlex.split(cmd),stderr=subprocess.PIPE,stdout=subprocess.PIPE)
         print "SOCK5 Tunnel Created"
