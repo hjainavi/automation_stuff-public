@@ -39,7 +39,7 @@ def connect_to_vmware_vpn():
         if "GlobalProtect status: Connected" in ss.before:
             print "Already Connected"
             connected_to_vmware_vpn = True
-        elif ("GlobalProtect status: Disconnected" in ss.before) or ("GlobalProtect status: OnDemand mode" in ss.before):
+        elif ("GlobalProtect status: Disconnected" in ss.before) or ("GlobalProtect status: OnDemand mode" in ss.before) or    ("GlobalProtect status: Connecting..." in ss.before):
             cmd = "globalprotect connect -p gpu.vmware.com -u harshj -g gp-blr3-gw3.vmware.com"
             ss.sendline(cmd)
             ss.prompt(timeout=10)
@@ -57,7 +57,13 @@ def connect_to_vmware_vpn():
                 print "Connected to VPN"
                 connected_to_vmware_vpn = True
 
-        elif "Unable to establish a new GlobalProtect connection as a GlobalProtect connection is already established from this Linux system by the same user or another user":
+        elif "Unable to establish a new GlobalProtect connection as a GlobalProtect connection is already established from this Linux system by the same user or another user" in ss.before:
+            ss.sendline("ps -ef | grep globalprotect")
+            ss.prompt(timeout=10)
+            print ss.before
+            kill_cmd = raw_input("Enter Kill CMD :")
+            ss.sendline(kill_cmd.strip())
+            ss.prompt(timeout=10)
             print ss.before
 
         else:
