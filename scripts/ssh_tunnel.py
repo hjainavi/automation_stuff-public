@@ -39,7 +39,7 @@ def connect_to_vmware_vpn():
         if "GlobalProtect status: Connected" in ss.before:
             print "Already Connected"
             connected_to_vmware_vpn = True
-        elif ("GlobalProtect status: Disconnected" in ss.before) or ("GlobalProtect status: OnDemand mode" in ss.before) or    ("GlobalProtect status: Connecting..." in ss.before):
+        elif ("GlobalProtect status: Disconnected" in ss.before) or ("GlobalProtect status: OnDemand mode" in ss.before) or ("GlobalProtect status: Connecting..." in ss.before):
             cmd = "globalprotect connect -p gpu.vmware.com -u harshj -g gp-blr3-gw3.vmware.com"
             ss.sendline(cmd)
             ss.prompt(timeout=10)
@@ -48,7 +48,7 @@ def connect_to_vmware_vpn():
                 ss.sendline("harshj")
                 ss.prompt(timeout=10)
                 print ss.before
-            if ("password" in ss.before) or ("Enter your tokencode" in ss.before):
+            if ("Password" in ss.before) or ("Enter your tokencode" in ss.before):
                 password = raw_input("Enter RSA passsword to connect to vmware vpn: ")
                 ss.sendline(password.strip())
                 ss.prompt(timeout=10)
@@ -61,8 +61,9 @@ def connect_to_vmware_vpn():
             ss.sendline("ps -ef | grep globalprotect")
             ss.prompt(timeout=10)
             print ss.before
-            kill_cmd = raw_input("Enter Kill CMD :")
-            ss.sendline(kill_cmd.strip())
+            kill_pid = raw_input("Enter Kill PID :")
+            kill_cmd = "kill -9 %s"%(kill_pid.strip())
+            ss.sendline(kill_cmd)
             ss.prompt(timeout=10)
             print ss.before
 
