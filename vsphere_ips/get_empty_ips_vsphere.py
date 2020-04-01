@@ -588,3 +588,13 @@ if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
 
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--default_profile', help="Set default profile", action='store_true')
+parser.add_argument('--list_profiles', help="Display the Vsphere static ips and folder configuration", action='store_true')
+parser.add_argument('--create_profile', help="Create vsphere ips and folder configuration", action='store_true')
+args = parser.parse_args()
+
+
