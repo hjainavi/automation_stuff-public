@@ -49,8 +49,8 @@ def connect_to_vmware_vpn():
                 ss.prompt(timeout=10)
                 print ss.before
             if ("Password" in ss.before) or ("Enter your tokencode" in ss.before):
-                print "Authenticate via Biometric on Phone"
-                ss.sendline("1")
+                password = raw_input("Enter RSA passsword to connect to vmware vpn: ")
+                ss.sendline(password.strip())
                 ss.prompt(timeout=10)
                 print ss.before
             if "Connected" in ss.before:
