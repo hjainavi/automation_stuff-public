@@ -367,9 +367,10 @@ def assist_in_host_value(cluster_obj):
     else:
         return raw_input("Enter the name of the host :")
 
-def filter_question_based_on_specs(host_datastore_compatible_list):
+def filter_question_based_on_specs(host_datastore_compatible_list, display_all=False):
     compatible_list = []
     incompatible_list = []
+    final_list = []
     count = 0
     for rec in host_datastore_compatible_list:
         if rec[4] == 'COMPATIBLE':
@@ -384,17 +385,25 @@ def filter_question_based_on_specs(host_datastore_compatible_list):
 
     ljust_vals = [8,17,15,20,15,15] 
     pretty_print(['Index','Host Name','Free Memory','Datastore','Free Space','Compatiblity'], ljust_vals=ljust_vals,filler="-")
-    for rec in compatible_list:
+    if display_all:
+        final_list = compatible_list + incompatible_list
+    elif len(compatible_list) == 0:
+        final_list = incompatible_list
+        print "*** No compatible host, datastore options available. The ova may not get deployed succesfully on the below options ***"
+    else:
+        final_list = compatible_list
+
+    for rec in final_list:
         pretty_print(rec, ljust_vals=ljust_vals)
     #for rec in incompatible_list:
     #    pretty_print(rec, ljust_vals=ljust_vals)
     print ""
     index_input = int(raw_input("Enter the index value of the host datastore combination to use :"))
-    host_ip , datastore = compatible_list[index_input][1], compatible_list[index_input][3]
+    host_ip , datastore = final_list[index_input][1], compatible_list[index_input][3]
     return host_ip,datastore
 
 
-def filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB=False, ova_disk_spec_in_MB=False):
+def filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB=False, ova_disk_spec_in_MB=False, display_all=False):
     if not ova_memory_spec_in_MB: ova_memory_spec_in_MB = 0
     if not ova_disk_spec_in_MB: ova_disk_spec_in_MB = 0
     print "\nMemory Specs from OVA",convert_units(ova_memory_spec_in_MB,base_unit='MB',return_unit='GB'),"GB"
@@ -415,7 +424,7 @@ def filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB=
             else:
                 host_datastore_compatible.append([host.name,str(free_memory_in_host_in_GB)+'GB',datastore.name,str(free_disk_space_in_datastore_in_GB)+'GB','NOT COMPATIBLE'])
             #print host_datastore_compatible[-1]
-    return filter_question_based_on_specs(host_datastore_compatible)
+    return filter_question_based_on_specs(host_datastore_compatible, display_all=display_all)
     
 
 
@@ -534,10 +543,7 @@ def generate_controller_from_ova():
     if filter_options.lower() == 'y' and si:
         host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB)
     else:
-        host_ip = assist_in_host_value(cluster_obj)
-        if not host_ip:sys.exit(1)
-        datastore = assist_in_datastore_value(cluster_obj,host_ip)
-        if not datastore:sys.exit(1)
+        host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB, display_all=True)
     management_network = raw_input("Managament Network ? [Default: Mgmt_netgear_2] :") or "Mgmt_netgear_2"
     while True:
         mgmt_ip = raw_input("Management IP ? :")
