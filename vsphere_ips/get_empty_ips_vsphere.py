@@ -371,6 +371,7 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
     compatible_list = []
     incompatible_list = []
     final_list = []
+    incompatible_list_display = False
     count = 0
     for rec in host_datastore_compatible_list:
         if rec[4] == 'COMPATIBLE':
@@ -387,9 +388,10 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
     pretty_print(['Index','Host Name','Free Memory','Datastore','Free Space','Compatiblity'], ljust_vals=ljust_vals,filler="-")
     if display_all:
         final_list = compatible_list + incompatible_list
+        incompatible_list_display = True
     elif len(compatible_list) == 0:
         final_list = incompatible_list
-        print "*** No compatible host, datastore options available. The ova may not get deployed succesfully on the below options ***"
+        incompatible_list_display = True
     else:
         final_list = compatible_list
 
@@ -398,8 +400,9 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
     #for rec in incompatible_list:
     #    pretty_print(rec, ljust_vals=ljust_vals)
     print ""
+    print "*** No compatible host, datastore options available. The ova may not get deployed succesfully on the incompatible options ***"
     index_input = int(raw_input("Enter the index value of the host datastore combination to use :"))
-    host_ip , datastore = final_list[index_input][1], compatible_list[index_input][3]
+    host_ip , datastore = final_list[index_input][1], final_list[index_input][3]
     return host_ip,datastore
 
 
