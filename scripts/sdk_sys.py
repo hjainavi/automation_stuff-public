@@ -26,7 +26,7 @@ if __name__ == '__main__':
     data = {'data':[
         {'model_name':'pool', 'data':{'name':'pool-1', 'tenant_ref':'/api/tenant/?name=t1'}, 'method':'delete'}, 
             ]}
-    
-    post_data = api.post('macrostack', data=data)
+    import ipdb;ipdb.set_trace() 
+    get_data = api.get_object_by_name('virtualservice', name='IMPS-ISO')
 
 

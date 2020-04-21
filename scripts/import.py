@@ -15,8 +15,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--version', help='controller ip')
 
     args = parser.parse_args()
-    api = ApiSession.get_session(args.controller_ip, args.user, args.password,
-                                 tenant=args.tenant,api_version=args.version)
+    api = ApiSession.get_session(args.controller_ip, args.user, args.password, tenant=args.tenant,api_version=args.version)
     
     imp_data =  {'configuration' :{"Pool": [
         {
