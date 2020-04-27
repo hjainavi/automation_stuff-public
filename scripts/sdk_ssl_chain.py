@@ -33,7 +33,6 @@ if __name__ == '__main__':
     print config['name']
     print config['uuid']
 
-    import ipdb;ipdb.set_trace()
     ssl_data = {
         "name": "int1",
         "type": "SSL_CERTIFICATE_TYPE_CA",
@@ -44,7 +43,6 @@ if __name__ == '__main__':
     print config['name']
     print config['uuid']
 
-    '''
     ssl_data = {
         "name": "ca",
         "type": "SSL_CERTIFICATE_TYPE_CA",
@@ -58,7 +56,6 @@ if __name__ == '__main__':
     import pdb;pdb.set_trace()
     post_data_ca = json.loads(post_data_ca.text)
     api.delete('sslkeyandcertificate/%s/?force_delete=True'%(post_data_ca['uuid']))
-    '''
    
     import ipdb;ipdb.set_trace()
     post_data_int1 = json.loads(post_data_int1.text)
