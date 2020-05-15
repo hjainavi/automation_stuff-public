@@ -51,6 +51,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
 
 echo "==================apt-get done"
 
+sudo pip install wheel
 sudo pip install flake8
 echo "===============pip install flake8"
 git config --global --bool http.sslVerify false
