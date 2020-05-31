@@ -1,0 +1,4 @@
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+wget -qO- https://cfengine-package-repos.s3.amazonaws.com/pub/gpg.key | apt-key add -
+curl -O https://nginx.org/keys/nginx_signing.key && apt-key add ./nginx_signing.key
+sudo add-apt-repository ppa:nginx/stable
