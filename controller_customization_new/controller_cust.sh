@@ -42,17 +42,16 @@ cp -v ./git_show_branch_cmd/git-prompt.sh ~/.config/git-prompt.sh
 
 echo "==================git config and bashrc done"
 export DEBIAN_FRONTEND=noninteractive
-sudo apt-get install software-properties-common python-software-properties -y
-sudo add-apt-repository ppa:git-core/ppa -y;add-apt-repository ppa:keithw/mosh -y;add-apt-repository ppa:pi-rho/dev -y
+sudo add-apt-repository ppa:git-core/ppa -y;add-apt-repository ppa:pi-rho/dev -y
 echo "==================add-apt done"
 
-sudo apt-get update;apt-get install vim-gnome aria2 python-ipdb ranger git xauth xclip mosh -y
+sudo apt-get update;apt-get install aria2 ranger git -y
 sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
 
 echo "==================apt-get done"
 
-sudo pip install wheel
-sudo pip install flake8
+sudo pip3 install flake8
+sudo pip3 install ipdb
 echo "===============pip install flake8"
 git config --global --bool http.sslVerify false
 git config --global push.default current
@@ -86,9 +85,9 @@ echo "==================other_files done"
 vim +PluginInstall +qall
 echo "===================vim plugininstall done"
 
-sed -i 's/X11Forwarding no/X11Forwarding yes/g' /etc/ssh/sshd_config
-service ssh restart
-echo "==================X11 done"
+#sed -i 's/X11Forwarding no/X11Forwarding yes/g' /etc/ssh/sshd_config
+#service ssh restart
+#echo "==================X11 done"
 
 if [ -d "/opt/avi/python" ];
 then
@@ -103,6 +102,7 @@ EOL
     cd /opt/avi/python
     git config --global user.email "you@example.com"
     git config --global user.name "Your Name"
+    git config --global pull.rebase false
     git init
     git add -A
     git commit -m "first commit"
@@ -112,9 +112,10 @@ else
     echo "Not a controller VM setting up git config"
     # run python script to install hook to run flake8 --install-hook git in repo
     ./install-hook.py
-    git config --global user.email "harshjain@avinetworks.com"
+    git config --global user.email "harshj@vmware.com"
     git config --global user.name "harsh jain"
-    echo "setting git global config user.email harshjain@avinetworks.com"
+    git config --global pull.rebase false
+    echo "setting git global config user.email harshj@vmware.com"
 fi
 
 
