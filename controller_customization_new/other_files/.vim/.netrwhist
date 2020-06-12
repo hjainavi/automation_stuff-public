@@ -1,3 +1,8 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =1
-let g:netrw_dirhist_1='/home/aviuser/workspace/AV-36847_eng/test/robot/new/lib/deploymods'
+let g:netrw_dirhist_cnt =6
+let g:netrw_dirhist_1='/root/avi-dev/python/lib/avi/upgrade/migration'
+let g:netrw_dirhist_2='/root/avi-dev/python/lib/avi/upgrade/migration/18_1_3'
+let g:netrw_dirhist_3='/mnt/files/jenkins_topo'
+let g:netrw_dirhist_4='/root/workspace/dev-1/python/lib/avi/util'
+let g:netrw_dirhist_5='/root/workspace/avi-dev/test/avitest/functional/webapp/suite_2'
+let g:netrw_dirhist_6='/root/workspace/avi-dev/python/bin/portal/api'

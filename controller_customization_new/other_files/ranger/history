@@ -4,3 +4,16 @@ search url_pool
 search models_p
 search est
 search test
+search views_config
+search pre_ch
+search pre_check
+search ssl_lib
+search ssl
+search options
+open_with vim
+wq
+delete
+rename infra
+open_with 
+search views_d
+search pyth

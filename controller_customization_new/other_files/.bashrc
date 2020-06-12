@@ -104,10 +104,9 @@ source ~/.config/git-completion.bash
 
 # colors!
 green="\[\033[0;32m\]"
-blue="\[\033[0;34m\]"
-purple="\[\033[0m\]"
+blue="\[\033[0;35m\]"
+red="\[\033[0;96m\]"
 reset="\[\033[0m\]"
-
 # Change command prompt
 source ~/.config/git-prompt.sh
 export GIT_PS1_SHOWDIRTYSTATE=1
@@ -143,17 +142,12 @@ function ws {
     loc=`git rev-parse --show-toplevel`
     cd $loc
 }
-export -f ws
+ws=/root/workspace/avi-dev
+export PYTHONPATH=$ws/python/lib:$ws/python/bin:$ws/test/avitest:$ws/test/robot/new/lib:$ws/thirdparty/ftw:$ws/build/python
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ws/build/lib:/usr/local/lib
 
-function pythonpath {
-    ws=`git rev-parse --show-toplevel`
-    export PYTHONPATH=$ws/python/lib:$ws/python/bin:$ws/test/avitest:$ws/test/robot/new/lib:$ws/thirdparty/ftw:$ws/build/python
-    export LD_LIBRARY_PATH=$ws/build/lib
-}
-export -f pythonpath
-
-alias wsp=ws
 alias vimx='vim -X'
+alias r='ranger'
 #alias api='cd $ws/python/bin/portal/api'
 #alias migrate='cd $ws/python/lib/avi/config_migration'
 #alias prot='cd $ws/python/lib/avi/protobuf'
@@ -162,7 +156,7 @@ alias vimx='vim -X'
 #alias wbap='cd $ws/test/avitest/functional/webapp'
 
 
-alias vsphere_ips='python /root/vsphere_ips/get_empty_ips_vsphere.py'
+alias vsphere_ips='python /root/automation_stuff/vsphere_ips/get_empty_ips_vsphere.py'
 alias ssh='ssh -o StrictHostKeyChecking=no'
 alias scp='scp -o StrictHostKeyChecking=no'
 ###################################################################################################
