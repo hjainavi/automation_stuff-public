@@ -2,7 +2,7 @@ from avi.sdk.avi_api import ApiSession
 import argparse, json
 import urllib3
 urllib3.disable_warnings()
-import ipdb
+import pdb
 
 if __name__ == '__main__':
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         posting.raise_for_status()
     except:
         print (posting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
     
     
     #create network
@@ -46,7 +46,7 @@ if __name__ == '__main__':
         posting.raise_for_status()
     except:
         print (posting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
 
 
     #create ipam
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         posting.raise_for_status()
     except:
         print (posting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
     
     #put ipam in cloud
     cloud_obj = api.get('cloud?name=Default-Cloud')
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         cloud_put.raise_for_status()
     except:
         print (cloud_put.text)
-        ipdb.set_trace()
+        pdb.set_trace()
     
     #create vsvip
     vsvip_data = {
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         posting.raise_for_status()
     except:
         print (posting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
 
     ##############################################################
     '''
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         deleting.raise_for_status()
     except:
         print (deleting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
     '''
     
     # remove ipam in cloud
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         cloud_put.raise_for_status()
     except:
         print (deleting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
     
     
     # delete ipam
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         deleting.raise_for_status()
     except:
         print (deleting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
 
     # delete network
     network_obj = api.get('network?name=shared_vip_network')
@@ -160,7 +160,7 @@ if __name__ == '__main__':
         deleting.raise_for_status()
     except:
         print (deleting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
 
 
     # delete network
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         deleting.raise_for_status()
     except:
         print (deleting.text)
-        ipdb.set_trace()
+        pdb.set_trace()
 
     print ("doing a force_delete of the network")
     deleting = api.delete('network/%s?force_delete'%(network_uuid))
