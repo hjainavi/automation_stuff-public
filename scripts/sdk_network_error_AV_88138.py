@@ -20,15 +20,6 @@ if __name__ == '__main__':
     api = ApiSession.get_session(args.controller_ip, args.user, args.password,
                                  tenant=args.tenant,api_version=args.version)
     
-    #create vrfcontext
-    vrf_json = {'name':'shared-vip-vrf','uuid':'shared-vip-vrf'}
-    posting = api.post('vrfcontext',data=vrf_json)
-    try:
-        posting.raise_for_status()
-    except:
-        print (posting.text)
-        pdb.set_trace()
-    
     
     #create network
     network_json =  {'configured_subnets': [
@@ -83,7 +74,6 @@ if __name__ == '__main__':
             "name": "vsvip_auto_allocation-1", 
             "uuid": "vsvip_auto_allocation-1", 
             "dns_info": [{"fqdn": "autoallocate1.avi.local", "type": "DNS_RECORD_A"}], 
-            "vrf_context_ref": "/api/vrfcontext/?name=shared-vip-vrf", 
             "vip": [{"auto_allocate_ip": True, "avi_allocated_vip": True}], 
             "ipam_network_subnet": {
                 "network_ref": "/api/network/?name=shared_vip_network", 
@@ -174,17 +164,6 @@ if __name__ == '__main__':
     except:
         print (deleting.text)
     
-    # delete vrf
-    vrf_obj = api.get('vrfcontext?name=shared-vip-vrf')
-    vrf_data = json.loads(vrf_obj.text)['results'][0]
-    vrf_uuid = vrf_data['uuid']
-    deleting = api.delete('vrfcontext/%s'%(vrf_uuid))
-    try:
-        deleting.raise_for_status()
-    except:
-        print (deleting.text)
-        pdb.set_trace()
-
     print ("doing a force_delete of the network")
     deleting = api.delete('network/%s?force_delete'%(network_uuid))
 
