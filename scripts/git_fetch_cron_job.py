@@ -8,6 +8,7 @@ try:
     c.expect(pexpect.EOF, timeout=120)
     logs.append(c.before)
 except Exception as e:
+    logs.append("ERROR !!!")
     logs.append(str(e))
 
 with open('/root/logfile_git_fetch_cron.txt','a') as ff:
