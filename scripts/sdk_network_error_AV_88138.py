@@ -114,7 +114,7 @@ if __name__ == '__main__':
     try:
         cloud_put.raise_for_status()
     except:
-        print (deleting.text)
+        print (cloud_put.text)
         pdb.set_trace()
     
     
