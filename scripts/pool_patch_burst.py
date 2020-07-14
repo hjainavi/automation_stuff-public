@@ -22,13 +22,8 @@ class server_addtion_pool:
         self.total_servers_to_add = kwargs.get('total_servers_to_add',100) # total servers to add
         self.time_sleep = kwargs.get('time_sleep',0)
         self.wait_until_prev_burst_req_completes = kwargs.get('wait_until_prev_burst_req_completes',False) # Flag to wait until all the req from prev burst completes, then only proceed.
-        if not kwargs.get('log_file_path',False):
-            tmpfile_name = tempfile.NamedTemporaryFile(prefix=self.poolid,delete=False)
-            self.log_file_path = tmpfile.name
-            tmpfile.close()
-        else:
-            self.log_file_path = kwargs['log_file_path']
-
+        self.log_file_path = kwargs['log_file_path']
+        self.final_server_list_json = kwargs['final_server_list_json']
         self.aysnc_list = self.generate_server_ip_port()
         self.cookies , self.headers , _ = login('https://%s'%self.ctrl, user=self.ctrluser, password= self.ctrlpasswd)
         self.headers['X-Avi-Cloud'] = self.cloud
@@ -39,7 +34,7 @@ class server_addtion_pool:
         self.delete_ratio = self.burst_size*self.delete_percent/100.0
         self.total_added = 0
         self.threads = []
-        self.thread_safe_print("============================================")
+        self.thread_safe_print("================= STARTING =========================")
         self.thread_safe_print(str(datetime.datetime.now()))
         self.thread_safe_print(self.headers)
     
@@ -196,8 +191,14 @@ class server_addtion_pool:
                 self.thread_safe_print("Found one thread. %s."%t_name)
                 single_req_threads.join()
         self.thread_safe_print("All single thread jobs completed.")
-        self.thread_safe_print("=====================================")
+        self.thread_safe_print("=============== ENDING ==========================")
         self.thread_safe_print()
+
+        with open(self.final_server_list_json,"w") as f:
+            final_dict = {self.poolid:[]}
+            for i in self.net_servers_added:
+                final_dict[self.poolid].append({'ip':i[0],'port':int(i[1])})    
+            json.dump(final_dict,f,indent=4)
 
 def initiate_server_addtion_pool(**kwargs):
     obj = server_addtion_pool(**kwargs)
@@ -217,7 +218,8 @@ configurations = [
             "cool_down_interval_secs":1,
             "total_servers_to_add":30,
             "wait_until_prev_burst_req_completes":False,
-            "log_file_path":"/root/test123.log"
+            "log_file_path":"/root/test123.log",
+            "final_server_list_json":"/root/test123_1.json"
         },
         {
             "ctrl":"10.79.169.176",
@@ -231,7 +233,8 @@ configurations = [
             "cool_down_interval_secs":1,
             "total_servers_to_add":30,
             "wait_until_prev_burst_req_completes":False,
-            "log_file_path":"/root/test345.log"
+            "log_file_path":"/root/test345.log",
+            "final_server_list_json":"/root/test345_1.json"
         }
     ]
 
