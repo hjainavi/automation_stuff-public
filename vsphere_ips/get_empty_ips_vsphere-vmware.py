@@ -187,7 +187,7 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
     vm_name = sys.argv[2]
     folder_name = "harshjain"
-    datacenter_name = "Bangalore"
+    datacenter_name = "wdc-02-vc20"
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
@@ -244,7 +244,7 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
         vm_name = ''
     all_reserved_ips = [("10.140.16."+str(num)) for num in range(171,190)]
     folder_name = "harshjain"
-    datacenter_name = "Bangalore"
+    datacenter_name = "wdc-02-vc20"
     vmware_host = "wdc-02-vc20.oc.vmware.com"
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
     print "powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name)
