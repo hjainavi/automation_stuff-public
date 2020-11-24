@@ -7,6 +7,9 @@ try:
     c.sendline('maddy')
     c.expect(pexpect.EOF, timeout=120)
     logs.append(c.before)
+    c.sendline('git gc --aggressive')
+    c.expect(pexpect.EOF, timeout=120)
+    logs.append(c.before)
 except Exception as e:
     logs.append("ERROR !!!")
     logs.append(str(e))

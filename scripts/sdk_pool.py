@@ -17,10 +17,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     api = ApiSession.get_session(args.controller_ip, args.user, args.password,
                                  tenant=args.tenant,api_version=args.version)
+    post_data = {
+            'name':'test123',
+            'servers':[{'ip':{'addr':'0.0.0.0', 'type':'V4'} ,'enabled':True, 'hostname':'abc.def', 'resolve_server_by_dns':True}]
+        }
     import ipdb;ipdb.set_trace()    
-    get_data = api.get_object_by_name('pool', name='abcde-poo')
-    server = {'ip':{'addr':'1.1.1.1/24', 'type':'V4'} ,'enabled':True}
-    get_data['servers'].append(server)
-    uuid = get_data['uuid']
-    put_data = api.put('pool/%s'%(uuid), data=get_data) 
-
+    post_resp = api.post('pool', data=post_data)
+    print ("post = %s "%post_resp.status_code)
+    uuid = json.loads(post_resp.text)['uuid']
+    delete_resp = api.delete('pool/%s'%(uuid)) 
+    print ("delete = %s "%delete_resp.status_code)
