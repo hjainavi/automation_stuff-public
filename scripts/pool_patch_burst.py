@@ -4,18 +4,20 @@ import threading
 from avi.util.login import login
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-import multiprocessing
+import multiprocessing, uuid
 import tempfile, datetime
 
 class server_addtion_pool:
     def __init__(self,*args,**kwargs):
         self.lock = threading.Lock()
+        self.data_file = "/root/optimistic_request_file.json"
         self.ctrl = kwargs['ctrl']
         self.poolid = kwargs['poolid']
         self.ctrluser = kwargs.get('ctrluser','admin')
         self.ctrlpasswd = kwargs.get('ctrlpasswd','avi123')
         self.cloud = kwargs.get('cloud','Default-Cloud')
         self.tenant_name = kwargs.get('tenant_name','admin')
+        self.optimistic_lock = kwargs.get('optimistic_lock',False)
         self.delete_percent = kwargs.get('delete_percent',20) # % delete of burst size
         self.burst_size = kwargs.get('burst_size',10) # num req
         self.cool_down_interval = kwargs.get('cool_down_interval_secs',1) # secs
@@ -27,9 +29,11 @@ class server_addtion_pool:
         self.aysnc_list = self.generate_server_ip_port()
         self.cookies , self.headers , _ = login('https://%s'%self.ctrl, user=self.ctrluser, password= self.ctrlpasswd)
         self.headers['X-Avi-Cloud'] = self.cloud
+        self.headers['X-Avi-Version']='20.1.3'
         self.headers['timeout'] = '181'
         self.net_servers_added = []
         self.delete_count = 0
+        self.unique_id = uuid.uuid1()
         self.delete_dummy_counter = 0
         self.delete_ratio = self.burst_size*self.delete_percent/100.0
         self.total_added = 0
@@ -37,7 +41,24 @@ class server_addtion_pool:
         self.thread_safe_print("================= STARTING =========================")
         self.thread_safe_print(str(datetime.datetime.now()))
         self.thread_safe_print(self.headers)
-    
+        self.write_to_data_file() 
+        self.get_initial_data()
+
+    def write_to_data_file(self):
+        with open(self.data_file, 'r') as f:
+            config = json.loads(f.read())
+        with open(self.data_file, 'w') as f:
+            val_dict = {'id':str(self.unique_id), 'burst_size':self.burst_size, 'cool_down_interval_secs':self.cool_down_interval, 'total_servers_to_add':self.total_servers_to_add, 'optimistic_lock':self.optimistic_lock}
+            config['request_data'].append(val_dict)
+            json.dump(config,f,indent=4)
+
+    def get_initial_data(self):
+        get_call = requests.get('https://%s/api/pool/%s' % (self.ctrl, self.poolid),cookies=self.cookies, headers=self.headers, verify= False)
+        self.initial_data = get_call.json()
+        self.initial_data.pop('_last_modified')
+
+    def put_initial_data(self):
+        put_call =  requests.put('https://%s/api/pool/%s' % (self.ctrl, self.poolid),data = json.dumps(self.initial_data), cookies=self.cookies, headers=self.headers, verify= False)
 
     def generate_server_ip_port(self):
         ip2 = "10.160.91"
@@ -107,7 +128,7 @@ class server_addtion_pool:
                     {'servers': []}
         }
         for i in range(len(ip_addr)):
-            data['add']['servers'] = ({'enabled': 'true','ip': {'addr': ip_addr[i], 'type': 'V4'},'port': int(port[i]),'ratio': 1})
+            data['add']['servers'].append({'enabled': 'true','ip': {'addr': ip_addr[i], 'type': 'V4'},'port': int(port[i]),'ratio': 1})
             self.net_servers_added.append([ip_addr[i], port[i]])
 
         time.sleep(time_sleep)
@@ -115,10 +136,15 @@ class server_addtion_pool:
         #self.thread_safe_print("START TIME %s\t\t IP: %s PORT:%s"%(str(start_time), ip_addr, port))
         i = 0
         while True:
-            patch_call = requests.patch('https://%s/api/pool/%s' % (self.ctrl, self.poolid),
+            if self.optimistic_lock:
+                patch_call = requests.patch('https://%s/api/pool/%s?req_count=%s&optimistic_lock=True&unique_id=%s' % (self.ctrl, self.poolid,count,self.unique_id),
                             json.dumps(data), cookies=self.cookies, headers=self.headers, verify= False)
-            if patch_call.status_code in [200, 202]:
-                break
+            else:
+                patch_call = requests.patch('https://%s/api/pool/%s?req_count=%s&unique_id=%s' % (self.ctrl, self.poolid,count,self.unique_id),
+                            json.dumps(data), cookies=self.cookies, headers=self.headers, verify= False)
+
+            #if patch_call.status_code in [200, 202]:
+            break
             i += 1
             time.sleep(10*6 + random.randint(1, 90))
         #end_time = time.time()
@@ -199,6 +225,7 @@ class server_addtion_pool:
             for i in self.net_servers_added:
                 final_dict[self.poolid].append({'ip':i[0],'port':int(i[1])})    
             json.dump(final_dict,f,indent=4)
+        self.put_initial_data()
 
 def initiate_server_addtion_pool(**kwargs):
     obj = server_addtion_pool(**kwargs)
@@ -207,42 +234,34 @@ def initiate_server_addtion_pool(**kwargs):
 
 configurations = [
         {
-            "ctrl":"10.79.169.176",
-            "poolid":"pool-de844636-685f-4d40-9584-fb186494aa77",
+            "ctrl":"10.79.169.178",
+            "poolid":"pool-f3b3a3a8-9543-44a4-b35e-294af766ec48",
             "ctrluser":"admin",
             "ctrlpasswd":"avi123",
             "cloud":"Default-Cloud",
             "tenant_name":"admin",
-            "delete_percent":20,
-            "burst_size":10,
-            "cool_down_interval_secs":1,
-            "total_servers_to_add":30,
+            "delete_percent":0,
+            "burst_size":5,
+            "cool_down_interval_secs":5,
+            "total_servers_to_add":50,
             "wait_until_prev_burst_req_completes":False,
             "log_file_path":"/root/test123.log",
-            "final_server_list_json":"/root/test123_1.json"
-        },
-        {
-            "ctrl":"10.79.169.176",
-            "poolid":"pool-0080f211-e42b-486b-a334-0908758ad6dc",
-            "ctrluser":"admin",
-            "ctrlpasswd":"avi123",
-            "cloud":"Default-Cloud",
-            "tenant_name":"admin",
-            "delete_percent":20,
-            "burst_size":10,
-            "cool_down_interval_secs":1,
-            "total_servers_to_add":30,
-            "wait_until_prev_burst_req_completes":False,
-            "log_file_path":"/root/test345.log",
-            "final_server_list_json":"/root/test345_1.json"
+            "final_server_list_json":"/root/test123_1.json",
+            "optimistic_lock":True
         }
     ]
 
+permutations = [[True,10,0,10,5], [False,10,0,10,5], [True,24,0,24,20], [False,24,0,24,20], [True,5,5,50,30], [False,5,5,50,30], [True,5,2,50,40], [False,5,2,50,40], [True,10,5,100,60], [False,10,5,100,60], [True,2,2,20,5], [False,2,2,20,5]]
+
 proc_list = []
 for config in configurations:
-    p = multiprocessing.Process(target=initiate_server_addtion_pool,kwargs=config)
-    proc_list.append(p)
-    p.start()
+    for perm in permutations:
+        config['optimistic_lock']= perm[0]
+        config['burst_size'] = perm[1]
+        config['cool_down_interval_secs'] = perm[2]
+        config['total_servers_to_add'] = perm[3]
+        initiate_server_addtion_pool(**config)
+        time.sleep(perm[4])
 
-for proc in proc_list:
-    proc.join()
+#for proc in proc_list:
+#   proc.join()
