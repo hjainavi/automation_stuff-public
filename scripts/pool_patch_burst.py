@@ -5,7 +5,7 @@ from avi.util.login import login
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 import multiprocessing, uuid
-import tempfile, datetime
+import tempfile, datetime, os
 
 class server_addtion_pool:
     def __init__(self,*args,**kwargs):
@@ -29,7 +29,7 @@ class server_addtion_pool:
         self.aysnc_list = self.generate_server_ip_port()
         self.cookies , self.headers , _ = login('https://%s'%self.ctrl, user=self.ctrluser, password= self.ctrlpasswd)
         self.headers['X-Avi-Cloud'] = self.cloud
-        self.headers['X-Avi-Version']='20.1.3'
+        self.headers['X-Avi-Version']=kwargs.get("x_avi_version","16_4_2")
         self.headers['timeout'] = '181'
         self.net_servers_added = []
         self.delete_count = 0
@@ -61,21 +61,27 @@ class server_addtion_pool:
         put_call =  requests.put('https://%s/api/pool/%s' % (self.ctrl, self.poolid),data = json.dumps(self.initial_data), cookies=self.cookies, headers=self.headers, verify= False)
 
     def generate_server_ip_port(self):
-        ip2 = "10.160.91"
-        backend_ip_start = 101
-        num_backend_vs = 100
+        config = {}
+        if os.path.isfile("/root/ip_port_list.json"):
+            with open("/root/ip_port_list.json","r") as f:
+                config = json.loads(f.read())
+        ip2 = ["192.168.20.200","192.168.20.201","192.168.20.202","192.168.20.203","192.168.20.204"]
         list_of_port_http = []
-        for i in range(1010,2001):
+        for i in range(85,485):
+            list_of_port_http.append(str(i))
+        for i in range(8500,8900):
             list_of_port_http.append(str(i))
         server_dict = []
         count = 0
         for k in list_of_port_http:
-            for i in [ip2]:
-                for j in range(backend_ip_start,backend_ip_start + num_backend_vs):
-                    server_dict.append([i+"."+str(j),k,count])
-                    count += 1
+            for i in ip2:
+                if config.get(str(i)+"_"+str(k),False):
+                    continue
+                server_dict.append([i,k,count])
+                count += 1
+        self.thread_safe_print(server_dict)
         return server_dict
-
+    
 
     def thread_safe_print(self, *args, **kwargs):
         with self.lock:
@@ -234,11 +240,12 @@ def initiate_server_addtion_pool(**kwargs):
 
 configurations = [
         {
-            "ctrl":"10.79.169.178",
-            "poolid":"pool-f3b3a3a8-9543-44a4-b35e-294af766ec48",
+            "ctrl":"10.50.57.71",
+            "poolid":"pool-99d37ccd-e751-42a2-99a1-1caa233cae81",
+            "x_avi_version":"18.2.9",
             "ctrluser":"admin",
-            "ctrlpasswd":"avi123",
-            "cloud":"Default-Cloud",
+            "ctrlpasswd":"admin",
+            "cloud":"paypal_lsc",
             "tenant_name":"admin",
             "delete_percent":0,
             "burst_size":5,
