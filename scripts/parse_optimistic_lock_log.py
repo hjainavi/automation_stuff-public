@@ -1,13 +1,13 @@
 import re, json
 from datetime import datetime
 
-with open("/opt/avi/log/optimistic_lock.log","r") as f:
+with open("/root/optimistic_lock.log","r") as f:
     config = f.read()
     pattern = re.compile('\[(\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d,\d\d\d)\].*\nREQUEST (\d{1,4}) :: Loop count : (\d{1,4}) ; Time spent to pass : (\d{1,3}\.\d{1,3}) ; Final status code : (\d{3}) ; Unique ID : ([a-zA-Z0-9-]*)')
     #time_stamp, request_no , loop_count , time_taken , status_code , id
     res = re.findall(pattern,config)
 
-
+# data from requests file from dev machine
 with open("/root/optimistic_request_file.json" , "r") as f:
     config = json.loads(f.read())['request_data']
 new_data = []
