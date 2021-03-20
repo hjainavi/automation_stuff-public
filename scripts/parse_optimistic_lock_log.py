@@ -21,13 +21,13 @@ for req in config:
         if req['id'] == data[5]:
             epoch = datetime.utcfromtimestamp(0)
             dt = datetime.strptime(data[0],'%Y-%m-%d %H:%M:%S,%f')
-            val = (dt - epoch).total_seconds() * 1000
-            temp.append({'Time Stamp Relative':val, 'Request No':data[1], 'Loop Count':data[2], 'Time Taken':data[3], 'Status Code':data[4], "Timestamp original":data[0]})
-            sum_loop += data[2]
-            sum_time += data[3]
-    req['Avg Time Taken'] = sum_time/len(temp)
+            val = int((dt - epoch).total_seconds() * 1000)
+            temp.append({'Time Stamp Epoch':val, 'Request No':data[1], 'Loop Count':data[2], 'Time Taken':data[3], 'Status Code':data[4], "Timestamp original":data[0]})
+            sum_loop += int(data[2])
+            sum_time += float(data[3])
+    req['Avg Time Taken'] = "%.2f" % round(sum_time/len(temp), 2)
     req['Avg Loop Count'] = sum_loop/len(temp)
-    req['data'] = temp
+    #req['data'] = temp
     new_data.append(req)
 print new_data
 
