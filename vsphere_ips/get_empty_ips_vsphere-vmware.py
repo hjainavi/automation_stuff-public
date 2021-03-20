@@ -22,6 +22,7 @@ def connect(vcenter_ip,user,pwd,exit_on_error=True):
         return si
     except:
         print("Unable to connect to %s" % vcenter_ip)
+        raise
         if exit_on_error:
             sys.exit(1)
         else:

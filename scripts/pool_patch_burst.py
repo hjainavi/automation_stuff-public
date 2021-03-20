@@ -45,8 +45,12 @@ class server_addtion_pool:
         self.get_initial_data()
 
     def write_to_data_file(self):
-        with open(self.data_file, 'r') as f:
-            config = json.loads(f.read())
+        if os.path.isfile(self.data_file):
+            with open(self.data_file, 'r') as f:
+                config = json.loads(f.read())
+        else:
+            config = {}
+            config['request_data'] = []
         with open(self.data_file, 'w') as f:
             val_dict = {'id':str(self.unique_id), 'burst_size':self.burst_size, 'cool_down_interval_secs':self.cool_down_interval, 'total_servers_to_add':self.total_servers_to_add, 'optimistic_lock':self.optimistic_lock}
             config['request_data'].append(val_dict)
@@ -240,35 +244,39 @@ def initiate_server_addtion_pool(**kwargs):
 
 configurations = [
         {
-            "ctrl":"10.50.57.71",
-            "poolid":"pool-99d37ccd-e751-42a2-99a1-1caa233cae81",
-            "x_avi_version":"18.2.9",
+            "ctrl":"10.79.169.178",
+            "poolid":"pool-f3b3a3a8-9543-44a4-b35e-294af766ec48",
+            "x_avi_version":"20.1.3",
             "ctrluser":"admin",
-            "ctrlpasswd":"admin",
-            "cloud":"paypal_lsc",
+            "ctrlpasswd":"avi123",
+            "cloud":"Default-Cloud",
             "tenant_name":"admin",
             "delete_percent":0,
             "burst_size":5,
-            "cool_down_interval_secs":5,
-            "total_servers_to_add":50,
+            "cool_down_interval_secs":0,
+            "total_servers_to_add":5,
             "wait_until_prev_burst_req_completes":False,
             "log_file_path":"/root/test123.log",
             "final_server_list_json":"/root/test123_1.json",
-            "optimistic_lock":True
+            "optimistic_lock":False
         }
     ]
 
-permutations = [[True,10,0,10,5], [False,10,0,10,5], [True,24,0,24,20], [False,24,0,24,20], [True,5,5,50,30], [False,5,5,50,30], [True,5,2,50,40], [False,5,2,50,40], [True,10,5,100,60], [False,10,5,100,60], [True,2,2,20,5], [False,2,2,20,5]]
+#permutations = [[True,10,0,10,5], [False,10,0,10,5], [True,24,0,24,20], [False,24,0,24,20], [True,5,5,50,30], [False,5,5,50,30], [True,5,2,50,40], [False,5,2,50,40], [True,10,5,100,60], [False,10,5,100,60], [True,2,2,20,5], [False,2,2,20,5]]
+permutations = []
 
 proc_list = []
 for config in configurations:
-    for perm in permutations:
-        config['optimistic_lock']= perm[0]
-        config['burst_size'] = perm[1]
-        config['cool_down_interval_secs'] = perm[2]
-        config['total_servers_to_add'] = perm[3]
+    if permutations:
+        for perm in permutations:
+            config['optimistic_lock']= perm[0]
+            config['burst_size'] = perm[1]
+            config['cool_down_interval_secs'] = perm[2]
+            config['total_servers_to_add'] = perm[3]
+            initiate_server_addtion_pool(**config)
+            time.sleep(perm[4])
+    else:
         initiate_server_addtion_pool(**config)
-        time.sleep(perm[4])
 
 #for proc in proc_list:
 #   proc.join()
