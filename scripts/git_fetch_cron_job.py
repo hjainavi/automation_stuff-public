@@ -5,11 +5,14 @@ import os
 
 if os.path.isdir("/home/aviuser/workspace/avi-dev"):
     CWD = "/home/aviuser/workspace/avi-dev"
+    FILE_PATH = "/home/aviuser/logfile_git_fetch_cron.txt"
 elif os.path.isdir("/root/workspace/avi-dev"):
     CWD = "/root/workspace/avi-dev"
+    FILE_PATH = "/root/logfile_git_fetch_cron.txt"
+
 
 def print_logs(val):
-    with open('/home/aviuser/logfile_git_fetch_cron.txt','a') as ff:
+    with open(FILE_PATH,'a') as ff:
         ff.write(val)
         ff.write('\n')
 try:
