@@ -17,12 +17,9 @@ def print_logs(val):
         ff.write('\n')
 try:
     print_logs('******** ' + str(datetime.datetime.now()) + '  ********' + '\n')
-    print_logs('git fetch -p -P --force , %s'%(CWD))
-    c = pexpect.spawn('git fetch -p -P --force',cwd=CWD)
-    c.expect("Enter passphrase for key '/home/aviuser/.ssh/id_rsa':")
-    print_logs(c.after)
-    c.sendline('maddy')
-    c.expect(pexpect.EOF, timeout=300)
+    print_logs('git gc --aggressive , %s'%(CWD))
+    c = pexpect.spawn('git gc --aggressive',cwd=CWD)
+    c.expect(pexpect.EOF, timeout=9000)
     print_logs(c.before)
 except Exception as e:
     print_logs("ERROR !!!")
