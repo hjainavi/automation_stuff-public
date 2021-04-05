@@ -2,7 +2,7 @@
 try:
     import pyVim,sys
 except ImportError:
-    print "do -->> pip install --upgrade pyvmomi"
+    print ("do -->> pip install --upgrade pyvmomi")
     sys.exit(1)
 from pyVim.connect import SmartConnect,Disconnect,SmartConnectNoSSL
 from pyVmomi import vim
@@ -15,7 +15,13 @@ import subprocess
 import shlex
 import argparse
 
-def connect(vcenter_ip,user,pwd,exit_on_error=True):
+def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
+    if not vcenter_ip:
+        vcenter_ip = "blr-01-vc06.oc.vmware.com"
+    if not user:
+        user = "aviuser1"
+    if not pwd:
+        pwd = "AviUser1234!."
     try:
         si= SmartConnectNoSSL(host=vcenter_ip, user=user, pwd=pwd)#, sslContext=s)
         atexit.register(Disconnect,si)
@@ -30,11 +36,11 @@ def connect(vcenter_ip,user,pwd,exit_on_error=True):
 
 if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore'):
     with_host_datastore = True if (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore') else False
-    all_reserved_ips = ["10.79.168.223","10.79.168.224","10.79.169.175","10.79.169.176","10.79.169.177","10.79.169.178"]
+    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178", "10.102.65.179", "10.102.65.180", "10.102.65.181"]
 
     folder_name = "harshjain"
-    datacenter_name = "wdc-02-vc20"
-    vmware_host = "wdc-02-vc20.oc.vmware.com"
+    datacenter_name = "blr-01-vc06"
+    vmware_host = "blr-01-vc06.oc.vmware.com"
    
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")#, sslContext=s)
 
@@ -64,7 +70,7 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
                                         if not ip_addr:
                                             ip_addr = "xx NO_IP " + str(random.randint(1000,9999))
                                         ip_name_state[ip_addr]=(str(virtual_m.name),"Power On")
-                                        ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name))
+                                        ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name),"blr"+str(ip_net.network).split("blr")[1])
                                         
                                     except:
                                         continue
@@ -74,7 +80,7 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
                             else:
                                 ip_addr = virtual_m.guest.ipAddress
                             ip_name_state[ip_addr]=(str(virtual_m.name),"Power On")
-                            ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name))
+                            ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name),"blr"+str(virtual_m.guest.net[0].network).split("blr")[1])
                 else:
                     templates.append(virtual_m.name)
             break
@@ -100,12 +106,12 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
             if len(vms)>1:line = line + '\n'
         return line
 
-    print "\n\n"
+    print ("\n\n")
     line_header = " " + "**VM NAME**".ljust(25,' ') + "*STATE*".ljust(12) + "   **IP**".ljust(15)
     if with_host_datastore:
         line_header += " " + " **HOST**".ljust(15) + "**DATASTORE**".ljust(12)
 
-    print line_header
+    print (line_header)
     for ip in iplist1:
         if ip_name_state.get(ip,False):
             line = " " + ip_name_state[ip][0].ljust(25,'-') + ip_name_state[ip][1].ljust(12) + str(ip).ljust(15)
@@ -116,27 +122,28 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
             line = search_by_ip(ip)
             if not line:
                 line = " " + "----Free IP ----".ljust(25,'-') + "---------".ljust(12) + str(ip).ljust(15) 
-        print line
-
+        print (line)
+    
     for ip in no_ips:
         line = " " + ip_name_state[ip][0].ljust(25) + ip_name_state[ip][1].ljust(12) + "".ljust(15,' ')
         if with_host_datastore:
             line += " "  + ip_host_datastore[ip][0].ljust(15) + ip_host_datastore[ip][1].ljust(12)
 
         ip_name_state.pop(ip)
-        print line
+        print (line)
 
     for name in templates:
         line = " " + name.ljust(25) + "=Template=".ljust(12)
-        print line
+        print (line)
     
-    print "\n\n"
+    print ("\n\n")
 
     for key in ip_name_state:
-        line = " " + ip_name_state[key][0].ljust(25,'-') + ip_name_state[key][1].ljust(12) + key
-        print line
+        line = " " + ip_name_state[key][0].ljust(25,'-') + ip_name_state[key][1].ljust(12) + key.ljust(16)
+        line += " "+ ip_host_datastore[key][2]
+        print (line)
 
-    print "\n"
+    print ("\n")
     #for nic in my_vm.guest.net:
     #    addresses = nic.ipConfig.ipAddress
     #    print(macAddress)
@@ -144,23 +151,22 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
     #        print(adr.ipAddress)
     #        print(adr.prefixLength)
 
-    print "\n"
+    print ("\n")
 if 'help' in sys.argv:
-    print "options --> delete 'ip'"
-    print "options --> delete_name 'name'"
-    print "options --> poweroff 'ip'"
-    print "options --> rename 'ip' 'newname'"
-    print "options --> poweron"
-    print "options --> poweron 'name'"
-    print "options --> generate_controller_from_ova"
-    print "options --> with_host_datastore"
+    print ("options --> delete 'ip'")
+    print ("options --> delete_name 'name'")
+    print ("options --> poweroff 'ip'")
+    print ("options --> rename 'ip' 'newname'")
+    print ("options --> poweron")
+    print ("options --> poweron 'name'")
+    print ("options --> generate_controller_from_ova")
+    print ("options --> with_host_datastore")
 
 
 if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
 
     if sys.argv[2]:
         ip=sys.argv[2]
-        vmware_host = "wdc-02-vc20.oc.vmware.com"
         si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
         search = si.RetrieveContent().searchIndex
         vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
@@ -184,11 +190,10 @@ if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
 
 if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
-    vmware_host = "wdc-02-vc20.oc.vmware.com"
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
     vm_name = sys.argv[2]
     folder_name = "harshjain"
-    datacenter_name = "wdc-02-vc20"
+    datacenter_name = "blr-01-vc06"
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
@@ -216,7 +221,6 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 if len(sys.argv)==4 and sys.argv[1]=='rename':
     ip = sys.argv[2]
     newname = sys.argv[3]
-    vmware_host = "wdc-02-vc20.oc.vmware.com"
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
@@ -245,8 +249,7 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
         vm_name = ''
     all_reserved_ips = [("10.140.16."+str(num)) for num in range(171,190)]
     folder_name = "harshjain"
-    datacenter_name = "wdc-02-vc20"
-    vmware_host = "wdc-02-vc20.oc.vmware.com"
+    datacenter_name = "blr-01-vc06"
     si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
     print "powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name)
     
@@ -530,9 +533,9 @@ def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
 
 def generate_controller_from_ova():
     vm_type = "controller"
-    vcenter_ip = raw_input("Vcenter IP ? [Default: wdc-02-vc20.oc.vmware.com] :") or 'wdc-02-vc20.oc.vmware.com'
+    vcenter_ip = raw_input("Vcenter IP ? [Default: blr-01-vc06.oc.vmware.com] :") or 'blr-01-vc06.oc.vmware.com'
     si = connect(vcenter_ip, user="aviuser1", pwd="AviUser1234!.")#, sslContext=s)
-    datacenter = raw_input("Datacenter Name ? [Default: wdc-02-vc20] :") or 'wdc-02-vc20'
+    datacenter = raw_input("Datacenter Name ? [Default: blr-01-vc06] :") or 'blr-01-vc06'
     datacenter_obj = get_datacenter_obj(si,datacenter)
     cluster_name = raw_input("Cluster ? [Default: wdc-02-vc20c01] :") or 'wdc-02-vc20c01'
     cluster_obj = get_cluster_obj(datacenter_obj,cluster_name)
