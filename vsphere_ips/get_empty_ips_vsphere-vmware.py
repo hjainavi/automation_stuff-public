@@ -42,7 +42,7 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
     datacenter_name = "blr-01-vc06"
     vmware_host = "blr-01-vc06.oc.vmware.com"
    
-    si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")#, sslContext=s)
+    si = connect()
 
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
@@ -167,7 +167,7 @@ if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
 
     if sys.argv[2]:
         ip=sys.argv[2]
-        si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
+        si = connect()
         search = si.RetrieveContent().searchIndex
         vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
         if vms:
@@ -190,7 +190,7 @@ if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
 
 if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
-    si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
+    si = connect()
     vm_name = sys.argv[2]
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
@@ -221,7 +221,7 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 if len(sys.argv)==4 and sys.argv[1]=='rename':
     ip = sys.argv[2]
     newname = sys.argv[3]
-    si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
+    si = connect()
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
 
@@ -250,7 +250,7 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
     all_reserved_ips = [("10.140.16."+str(num)) for num in range(171,190)]
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
-    si = connect(vmware_host, user="aviuser1", pwd="AviUser1234!.")
+    si = connect()
     print "powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name)
     
     for dc in si.content.rootFolder.childEntity:
@@ -324,7 +324,7 @@ def assist_in_datastore_value(cluster_obj,host_ip):
         return raw_input("Enter the name of the datastore :")
 
 def sample_host_obj():
-    si = connect('10.140.0.10','root','vmware')
+    si = connect()
     cluster_obj = get_cluster_obj(si,"Bangalore","Netgear")
     return cluster_obj.host[0]
 
@@ -534,7 +534,7 @@ def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
 def generate_controller_from_ova():
     vm_type = "controller"
     vcenter_ip = raw_input("Vcenter IP ? [Default: blr-01-vc06.oc.vmware.com] :") or 'blr-01-vc06.oc.vmware.com'
-    si = connect(vcenter_ip, user="aviuser1", pwd="AviUser1234!.")#, sslContext=s)
+    si = connect()
     datacenter = raw_input("Datacenter Name ? [Default: blr-01-vc06] :") or 'blr-01-vc06'
     datacenter_obj = get_datacenter_obj(si,datacenter)
     cluster_name = raw_input("Cluster ? [Default: wdc-02-vc20c01] :") or 'wdc-02-vc20c01'
