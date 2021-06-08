@@ -1,1 +1,1 @@
-alias avishell='python /opt/avi/python/bin/portal/manage.py shell'
+alias avishell='/opt/avi/python/bin/portal/manage.py shell'

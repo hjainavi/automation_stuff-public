@@ -12,4 +12,4 @@ def set_trace(key=None):
     elif pdbtype == "ipdb" and pdbkey == key:
         return ipdb.set_trace(inspect.currentframe().f_back)
     else:
-        print "IN AVIPDB PASS"
+        print ("IN AVIPDB PASS")

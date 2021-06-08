@@ -75,7 +75,7 @@
 # For advanced commands it is unavoidable to dive a bit into the source code
 # of ranger.
 # ===================================================================
-
+import re
 from ranger.api.commands import *
 
 class alias(Command):
