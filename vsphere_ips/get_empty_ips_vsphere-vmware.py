@@ -56,6 +56,8 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
     for vm in vms:
         if vm.name == folder_name:
             for virtual_m in vm.childEntity:
+                if vim.Folder == type(virtual_m):
+                    continue
                 if virtual_m.config and not virtual_m.config.template:
                     if virtual_m.runtime.powerState == 'poweredOff':
                         ip_r = "xx NO_IP " + str(random.randint(1000,9999))
