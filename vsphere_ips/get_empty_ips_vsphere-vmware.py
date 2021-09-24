@@ -72,7 +72,11 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
                                         if not ip_addr:
                                             ip_addr = "xx NO_IP " + str(random.randint(1000,9999))
                                         ip_name_state[ip_addr]=(str(virtual_m.name),"Power On")
-                                        ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name),"blr"+str(ip_net.network).split("blr")[1])
+                                        if "blr" in ip_net.network:
+                                            ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name),"blr"+str(ip_net.network).split("blr")[1])
+                                        else:
+                                            ip_host_datastore[ip_addr] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name),ip_net.network)
+
                                         
                                     except:
                                         continue
@@ -107,7 +111,6 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
             line = " " + vm.name.ljust(25,'-') + "Power On".ljust(12) + ip
             if len(vms)>1:line = line + '\n'
         return line
-
     print ("\n\n")
     line_header = " " + "**VM NAME**".ljust(25,' ') + "*STATE*".ljust(12) + "   **IP**".ljust(15)
     if with_host_datastore:
@@ -139,7 +142,6 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
         print (line)
     
     print ("\n\n")
-
     for key in ip_name_state:
         line = " " + ip_name_state[key][0].ljust(25,'-') + ip_name_state[key][1].ljust(12) + key.ljust(16)
         line += " "+ ip_host_datastore[key][2]

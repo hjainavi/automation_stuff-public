@@ -4,43 +4,6 @@ VIEWS_INVENTORY_PATCH="/opt/avi/python/bin/portal/api/views_inventory.patch"
 cat > $VIEWS_INVENTORY_PATCH <<- EOM
 --- views_inventory.py	2021-07-29 10:10:35.745977913 +0000
 +++ views_inventory_new.py	2021-07-29 10:10:52.673976920 +0000
-@@ -76,6 +76,7 @@
- from avi.infrastructure.taskqueue import TaskQueueException
- from rest_framework import status
- from avi.protobuf.gslb_pb2 import REPLICATION_MODE_CONTINUOUS
-+from concurrent.futures import ThreadPoolExecutor
- 
- log = logging.getLogger(__name__)
- 
-@@ -933,16 +934,18 @@
-                                                        self.model_type, uuids)
- 
-         threads = []
--        for (index, config_data) in enumerate(list_data['results']):
--            try:
--                runtime_data_obj = runtime_data[index]
--            except IndexError:
--                runtime_data_obj = None
--            threads.append(gevent.spawn(self.get_data_for_one_object,
--                                        config_data, request,
--                                        runtime_data_obj, *args, **kwargs))
--        gevent.joinall(threads)
--        data['results'] = [thread.value for thread in threads]
-+        with ThreadPoolExecutor(max_workers=20) as executor:
-+            for (index, config_data) in enumerate(list_data['results']):
-+                try:
-+                    runtime_data_obj = runtime_data[index]
-+                except IndexError:
-+                    runtime_data_obj = None
-+                future = executor.submit(self.get_data_for_one_object,
-+                                            config_data, request,
-+                                            runtime_data_obj, *args, **kwargs)
-+                threads.append(future)
-+        
-+        data['results'] = [thread.result(timeout=150) for thread in threads]
- 
-         if not self.resource_list or 'upgradestatus' in self.resource_list:
-             # Refer note 01
 @@ -1406,7 +1409,8 @@
          except Exception as e:
              log.error('%s', traceback.format_exc())        
