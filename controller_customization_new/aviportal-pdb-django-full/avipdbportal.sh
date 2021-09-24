@@ -7,9 +7,16 @@
 # args "stop" will gracefully kill the uwsgi process
 # args "kill" will instantly kill the process
 
-export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python2.7/dist-packages:$PWD/avipdb
+export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.8/dist-packages:/usr/local/lib/python3.8/site-packages:$PWD/avipdb
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
+
+ipdb_str = $(pip3 list | grep ipdb)
+if [[ "ipdb" == *"$ipdb_str"* ]]; then
+    echo "ipdb installed"
+else
+    pip3 install ipdb
+fi
 
 chmod +x ./change-conf.py
 
