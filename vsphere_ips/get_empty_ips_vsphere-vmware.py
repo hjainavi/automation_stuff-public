@@ -36,7 +36,7 @@ def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
 
 if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore'):
     with_host_datastore = True if (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore') else False
-    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178", "10.102.65.179", "10.102.65.180", "10.102.65.181"]
+    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177"]
 
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
