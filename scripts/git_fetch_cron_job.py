@@ -22,7 +22,7 @@ try:
     c.expect("Enter passphrase for key '/home/aviuser/.ssh/id_rsa':")
     print_logs(c.after)
     c.sendline('maddy')
-    c.expect(pexpect.EOF, timeout=300)
+    c.expect(pexpect.EOF, timeout=3000)
     print_logs(c.before)
 except Exception as e:
     print_logs("ERROR !!!")
