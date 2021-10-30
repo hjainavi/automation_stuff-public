@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 try:
     import pyVim,sys
 except ImportError:
@@ -14,6 +14,7 @@ import tarfile
 import subprocess
 import shlex
 import argparse
+import os
 
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
     if not vcenter_ip:
@@ -36,7 +37,7 @@ def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
 
 if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore'):
     with_host_datastore = True if (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore') else False
-    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177"]
+    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
 
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
@@ -92,13 +93,13 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
             break
 
     no_ips = []
-    for key,items in ip_name_state.iteritems():
+    for key,items in ip_name_state.items():
         if 'NO_IP' not in key:
             continue
         else:
             no_ips.append(key)
     ips = all_reserved_ips
-    lot = map(inet_aton, ips)
+    lot = list(map(inet_aton, ips))
     lot.sort()
     iplist1 = map(inet_ntoa, lot)
     
@@ -176,21 +177,21 @@ if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
         vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
         if vms:
             for vm in vms:
-                action_confirm = raw_input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
+                action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
                 if action_confirm.lower() == "n":continue
                 if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                    print "powering off ",vm.name," ",ip
+                    print ("powering off ",vm.name," ",ip)
                     task = vm.PowerOff()
                     while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
                         time.sleep(1)
-                    print "power is off.",task.info.state
+                    print ("power is off.",task.info.state)
                 
                 if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
-                    print "deleteing ",vm.name," ",ip
+                    print ("deleteing ",vm.name," ",ip)
                     task = vm.Destroy()
                     while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
                         time.sleep(1)
-                    print "vm is deleted.",task.info.state
+                    print ("vm is deleted.",task.info.state)
 
 if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
@@ -210,16 +211,16 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
             for virtual_m in folder.childEntity:
                 if virtual_m.name != vm_name:
                     continue
-                action_confirm = raw_input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
+                action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
                 if action_confirm.lower() == "n":continue
                 if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-                    print "deleteing ",virtual_m.name
+                    print ("deleteing ",virtual_m.name)
                     task = virtual_m.Destroy()
                     while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
                         time.sleep(1)
-                    print "vm is deleted.",task.info.state
+                    print ("vm is deleted.",task.info.state)
                 else:
-                    print "delete the vm using ip"
+                    print ("delete the vm using ip")
 
 
 if len(sys.argv)==4 and sys.argv[1]=='rename':
@@ -230,20 +231,20 @@ if len(sys.argv)==4 and sys.argv[1]=='rename':
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
 
     for vm in vms:
-        rename_confirm = raw_input("Are you sure you want to rename '%s', (%s) with '%s'  ?[Y/N] \n"%(vm.name,ip,newname))
+        rename_confirm = input("Are you sure you want to rename '%s', (%s) with '%s'  ?[Y/N] \n"%(vm.name,ip,newname))
         if rename_confirm.lower() == "n":continue
-        print "renaming  ",vm.name," ",ip," to ",newname
+        print ("renaming  ",vm.name," ",ip," to ",newname)
         task = vm.Rename(newname)
         while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
             time.sleep(1)
-        print "renaming done.",task.info.state
+        print ("renaming done.",task.info.state)
        
 def power_on_vm(virtual_machine_obj):
     vm = virtual_machine_obj
     task = vm.PowerOn()
     while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
         time.sleep(1)
-    print "power on task for vm %s = %s"%(vm.name,task.info.state)
+    print ("power on task for vm %s = %s"%(vm.name,task.info.state))
 
 
 if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
@@ -255,7 +256,7 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
     si = connect()
-    print "powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name)
+    print ("powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name))
     
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
@@ -275,7 +276,7 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
                         if virtual_m.runtime.powerState == 'poweredOff':
                             executor.submit(power_on_vm,virtual_m)
                         else:
-                            print "vm %s is already ON"%(virtual_m.name)
+                            print ("vm %s is already ON"%(virtual_m.name))
 
 ##################################################################################
 ##################################################################################
@@ -298,7 +299,7 @@ def pretty_print(vals,ljust_vals=[],filler=" "):
     line = " "
     for val,ljust_val in zip(vals,ljust_vals):
         line += str(val).ljust(ljust_val,filler)
-    print line
+    print (line)
 
 def get_datastores_from_host(cluster_obj,host_ip):
 
@@ -312,28 +313,6 @@ def get_datastores_from_host(cluster_obj,host_ip):
             break
     return datastore_obj_list
 
-def assist_in_datastore_value(cluster_obj,host_ip):
-    print "\nlist of available datastore in host:%s\n"%(host_ip)
-    datastore_list = []
-    pretty_print(['Index ','Datastore '],ljust_vals=[7,30]) # printing header
-    for index,datastore in enumerate(get_datastores_from_host(cluster_obj,host_ip)):
-        val = [index,datastore.name]
-        pretty_print(val,ljust_vals=[7,30])
-        datastore_list.append(val)
-    print ""
-    if datastore_list:
-        datastore_index = raw_input("Enter the index value of the datastore :")
-        return datastore_list[int(datastore_index)][1]
-    else:
-        return raw_input("Enter the name of the datastore :")
-
-def sample_host_obj():
-    si = connect()
-    cluster_obj = get_cluster_obj(si,"Bangalore","Netgear")
-    return cluster_obj.host[0]
-
-def sample_datastore_obj():
-    return sample_host_obj().datastore[0] 
 
 def get_hosts_from_cluster(cluster_obj):
     host_obj_list = []
@@ -352,7 +331,7 @@ def get_datastore_info(datastore):
     return free_space_in_MB
 
 def assist_in_host_value(cluster_obj):
-    print "\nList of available hosts in cluster:%s\n"%(cluster_obj.name)
+    print ("\nList of available hosts in cluster:%s\n"%(cluster_obj.name))
     host_list = []
     tmp = []
     for host in get_hosts_from_cluster(cluster_obj):
@@ -367,12 +346,12 @@ def assist_in_host_value(cluster_obj):
         val = [index,host]
         pretty_print(val,ljust_vals=[7,15]) # printing vals
         host_list.append(val)
-    print ""
+    print ("")
     if host_list:
-        host_index = raw_input("Enter the index value of the host :")
+        host_index = input("Enter the index value of the host :")
         return host_list[int(host_index)][1]
     else:
-        return raw_input("Enter the name of the host :")
+        return input("Enter the name of the host :")
 
 def filter_question_based_on_specs(host_datastore_compatible_list, display_all=False):
     compatible_list = []
@@ -396,7 +375,7 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
         final_list = compatible_list + incompatible_list
     elif len(compatible_list) == 0:
         final_list = incompatible_list
-        print "*** No compatible host, datastore options available. The ova may not get deployed succesfully on the incompatible options ***"
+        print ("*** No compatible host, datastore options available. The ova may not get deployed succesfully on the incompatible options ***")
     else:
         final_list = compatible_list
 
@@ -404,8 +383,8 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
         pretty_print(rec, ljust_vals=ljust_vals)
     #for rec in incompatible_list:
     #    pretty_print(rec, ljust_vals=ljust_vals)
-    print ""
-    index_input = int(raw_input("Enter the index value of the host datastore combination to use :"))
+    print ("")
+    index_input = int(input("Enter the index value of the host datastore combination to use :"))
     host_ip , datastore = final_list[index_input][1], final_list[index_input][3]
     return host_ip,datastore
 
@@ -413,10 +392,10 @@ def filter_question_based_on_specs(host_datastore_compatible_list, display_all=F
 def filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB=False, ova_disk_spec_in_MB=False, display_all=False):
     if not ova_memory_spec_in_MB: ova_memory_spec_in_MB = 0
     if not ova_disk_spec_in_MB: ova_disk_spec_in_MB = 0
-    print "\nMemory Specs from OVA",convert_units(ova_memory_spec_in_MB,base_unit='MB',return_unit='GB'),"GB"
-    print "Disk Specs from OVA  ",convert_units(ova_disk_spec_in_MB,base_unit='MB',return_unit='GB'),"GB"
-    print "Swap Space Needed    ",convert_units(ova_memory_spec_in_MB/float(2.0),base_unit='MB',return_unit='GB'),"GB"
-    print ""
+    print ("\nMemory Specs from OVA",convert_units(ova_memory_spec_in_MB,base_unit='MB',return_unit='GB'),"GB")
+    print ("Disk Specs from OVA  ",convert_units(ova_disk_spec_in_MB,base_unit='MB',return_unit='GB'),"GB")
+    print ("Swap Space Needed    ",convert_units(ova_memory_spec_in_MB/float(2.0),base_unit='MB',return_unit='GB'),"GB")
+    print ("")
     host_datastore_compatible = []
     for host in cluster_obj.host:
         free_memory_in_host_in_MB = get_host_info(host)
@@ -510,20 +489,21 @@ def get_cluster_obj(datacenter_obj,cluster_name):
     for cluster in datacenter_obj.hostFolder.childEntity:
         if cluster.name == cluster_name:
             cluster_obj = cluster
-    return cluster_obj
+            return cluster_obj
+    return None
 
 def get_folder_obj(datacenter_obj,folder_name):
     
     for folder in datacenter_obj.vmFolder.childEntity:
         if vim.Folder._wsdlName == folder._wsdlName and folder.name == folder_name:
             return folder
-    print "Folder: %s does not exist"%(folder_name)
+    print ("Folder: %s does not exist"%(folder_name))
     return False
 
 def check_if_ip_is_free(si,datacenter_obj,ip):
     vm =  si.content.searchIndex.FindByIp(ip=ip,datacenter=datacenter_obj,vmSearch=True)
     if vm:
-        print "Ip = %s is already being used by %s"%(ip,vm.name)
+        print ("Ip = %s is already being used by %s"%(ip,vm.name))
         return False
     else:
         return True
@@ -531,51 +511,54 @@ def check_if_ip_is_free(si,datacenter_obj,ip):
 def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
     for vm in folder_obj.childEntity:
         if vim.VirtualMachine._wsdlName == vm._wsdlName and vm.name == vm_name:
-            print "Name already exists"
+            print ("Name already exists")
             return True
     return False
 
 def generate_controller_from_ova():
     vm_type = "controller"
-    vcenter_ip = raw_input("Vcenter IP ? [Default: blr-01-vc06.oc.vmware.com] :") or 'blr-01-vc06.oc.vmware.com'
+    vcenter_ip = input("Vcenter IP ? [Default: blr-01-vc06.oc.vmware.com] :") or 'blr-01-vc06.oc.vmware.com'
     si = connect()
-    datacenter = raw_input("Datacenter Name ? [Default: blr-01-vc06] :") or 'blr-01-vc06'
+    datacenter = input("Datacenter Name ? [Default: blr-01-vc06] :") or 'blr-01-vc06'
     datacenter_obj = get_datacenter_obj(si,datacenter)
-    cluster_name = raw_input("Cluster ? [Default: wdc-02-vc20c01] :") or 'wdc-02-vc20c01'
-    cluster_obj = get_cluster_obj(datacenter_obj,cluster_name)
-    source_ova_path = raw_input("Source Ova Path (local/http/ftp) ? :")
+    cluster_name = input("Cluster ? [Default: blr-01-vc06c01] :") or 'blr-01-vc06c01'
+    datastore = input("Datastore ? [Default: blr-01-vc06c01-vsan] :") or 'blr-01-vc06c01-vsan'
+    #cluster_obj = get_cluster_obj(datacenter_obj,cluster_name)
+    source_ova_path = input("Source Ova Path (local/http/ftp) ? :")
     if not source_ova_path:sys.exit(1)
+    '''
     ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
-    filter_options = raw_input("type 'Y' if you want to see host,datastore options based on ova specs ; 'N' for all options; [Y/N] :")
+    filter_options = input("type 'Y' if you want to see host,datastore options based on ova specs ; 'N' for all options; [Y/N] :")
     if filter_options.lower() == 'y' and si:
         host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB)
     else:
         host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB, display_all=True)
-    management_network = raw_input("Managament Network ? [Default: vxw-dvs-34-virtualwire-3-sid-2200002-wdc-02-vc20-avi-mgmt] :") or "vxw-dvs-34-virtualwire-3-sid-2200002-wdc-02-vc20-avi-mgmt"
+    '''
+    management_network = input("Managament Network ? [Default: vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt] :") or "vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt"
     while True:
-        mgmt_ip = raw_input("Management IP ? :")
+        mgmt_ip = input("Management IP ? :")
         if mgmt_ip:
             if check_if_ip_is_free(si,datacenter_obj,mgmt_ip):
                 break
-    mask = raw_input("Network Mask ? [Default: 22] :") or '22'
-    gw_ip = raw_input("Gateway IP ? [Default: 10.79.168.1] :") or '10.79.168.1'
+    mask = input("Network Mask ? [Default: 22] :") or '22'
+    gw_ip = input("Gateway IP ? [Default: 10.102.67.254] :") or '10.102.67.254'
     while True:
-        folder_name = raw_input("Folder Name ? [Default: harshjain] :") or 'harshjain'
+        folder_name = input("Folder Name ? [Default: harshjain] :") or 'harshjain'
         if folder_name:
             folder_obj = get_folder_obj(datacenter_obj,folder_name)
             if folder_obj:
                 break
     while True:
-        vm_name = raw_input("VM Name ? :")
+        vm_name = input("VM Name ? :")
         if not check_if_vm_name_exists_in_folder(folder_obj,vm_name):
             break
-    power_on = raw_input("Power On VM [Y/N]? [Y] :")
+    power_on = input("Power On VM [Y/N]? [Y] :")
     if power_on.lower() not in ['y','n']:power_on = 'y'
     
     vi = 'vi://aviuser1:AviUser1234!.@' + vcenter_ip
     vi = vi + '/' + datacenter + '/host/'
     vi = vi + cluster_name + '/'
-    vi = vi + host_ip + '/'
+    #vi = vi + host_ip + '/'
 
     prop = ''
     if vm_type == 'controller':
@@ -587,13 +570,14 @@ def generate_controller_from_ova():
             prop += '--powerOn '
         prop += '"--vmFolder='+folder_name+'" ' 
 
-        cmd = '/usr/bin/ovftool --noSSLVerify "--datastore=' + datastore + \
+        cmd = '/usr/bin/ovftool --noSSLVerify --X:logLevel=warning --X:logFile=/tmp/deploy_ova_121212.log "--datastore=' + datastore + \
             '" --net:Management="' + management_network + \
-            '" ' + prop + source_ova_path + ' ' + vi + ' --X:logFile /root/ovftool.log' + ' --X:logLevel info'
-    print '\n',cmd,'\n'
-    verify = raw_input("Verify the command and agree to proceed [Y/N] ? [N] :") or 'N'
+            '" ' + prop + source_ova_path + ' ' + vi 
+    print ('\n',cmd,'\n')
+    verify = input("Verify the command and agree to proceed [Y/N] ? [N] :") or 'N'
     if verify.lower() == 'y':
-        print "\nDeploying OVA"
+        print ("\nDeploying OVA")
+        print ("Logs can be found at /tmp/deploy_ova_121212.log ")
         subprocess.call(cmd, shell=True)
 
 
