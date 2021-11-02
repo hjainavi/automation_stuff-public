@@ -515,6 +515,14 @@ def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
             return True
     return False
 
+def get_own_sysadmin_key():
+    keypath = "/home/aviuser/.ssh/id_rsa.pub"
+    if os.path.exists(keypath):
+        with open(keypath, 'r') as keyfile:
+            data = keyfile.read().rstrip('\n')
+            return data
+    raise Exception('Failed to find sysadmin public key file at %s\n' % (keypath))
+
 def generate_controller_from_ova():
     vm_type = "controller"
     vcenter_ip = input("Vcenter IP ? [Default: blr-01-vc06.oc.vmware.com] :") or 'blr-01-vc06.oc.vmware.com'
@@ -565,6 +573,7 @@ def generate_controller_from_ova():
         prop = '--prop:avi.mgmt-ip.CONTROLLER=' + mgmt_ip + \
             ' --prop:avi.default-gw.CONTROLLER=' + gw_ip + ' '
         prop = prop + ' --prop:avi.mgmt-mask.CONTROLLER=' + str(mask) + ' '
+        prop = prop + ' --prop:avi.sysadmin-public-key.CONTROLLER="' + get_own_sysadmin_key() + '" '
         prop += '--name="' + vm_name + '" '
         if power_on.lower() == 'y':
             prop += '--powerOn '
@@ -577,7 +586,6 @@ def generate_controller_from_ova():
     verify = input("Verify the command and agree to proceed [Y/N] ? [N] :") or 'N'
     if verify.lower() == 'y':
         print ("\nDeploying OVA")
-        print ("Logs can be found at /tmp/deploy_ova_121212.log ")
         subprocess.call(cmd, shell=True)
 
 
