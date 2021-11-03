@@ -501,12 +501,41 @@ def get_folder_obj(datacenter_obj,folder_name):
     return False
 
 def check_if_ip_is_free(si,datacenter_obj,ip):
-    vm =  si.content.searchIndex.FindByIp(ip=ip,datacenter=datacenter_obj,vmSearch=True)
-    if vm:
-        print ("Ip = %s is already being used by %s"%(ip,vm.name))
-        return False
-    else:
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
+    if not vms:
         return True
+    if vms: 
+        delete_vm = input("Do you want to delete the vm occupying the ip '%s' ?[Y/N] \n"%(ip))
+        if delete_vm.lower() == "y":
+            delete_vm = True
+        else:
+            delete_vm = False
+            return False
+
+    if vms and delete_vm:
+        
+        for vm in vms:
+            action_confirm = input("Are you sure you want to delete '%s' with ip = %s ?[Y/N] \n"%(vm.name,ip))
+            if action_confirm.lower() == "n":continue
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                print ("powering off ",vm.name," ",ip)
+                task = vm.PowerOff()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("power is off.",task.info.state)
+    
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
+                print ("deleteing ",vm.name," ",ip)
+                task = vm.Destroy()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("vm is deleted.",task.info.state)
+    new_vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
+    if not vms:
+        return True
+    else:
+        return False
 
 def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
     for vm in folder_obj.childEntity:
