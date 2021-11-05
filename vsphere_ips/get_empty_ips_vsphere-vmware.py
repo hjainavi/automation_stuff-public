@@ -16,6 +16,7 @@ import shlex
 import argparse
 import os
 
+all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
     if not vcenter_ip:
         vcenter_ip = "blr-01-vc06.oc.vmware.com"
@@ -37,7 +38,6 @@ def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
 
 if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore'):
     with_host_datastore = True if (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore') else False
-    all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
 
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
@@ -500,11 +500,13 @@ def get_folder_obj(datacenter_obj,folder_name):
     print ("Folder: %s does not exist"%(folder_name))
     return False
 
-def check_if_ip_is_free(si,datacenter_obj,ip):
+def check_if_ip_is_free(si,datacenter_obj,ip,only_check=False):
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
     if not vms:
         return True
+    if vms and only_check:
+        return False
     if vms: 
         delete_vm = input("Do you want to delete the vm occupying the ip '%s' ?[Y/N] \n"%(ip))
         if delete_vm.lower() == "y":
@@ -561,8 +563,9 @@ def generate_controller_from_ova():
     cluster_name = input("Cluster ? [Default: blr-01-vc06c01] :") or 'blr-01-vc06c01'
     datastore = input("Datastore ? [Default: blr-01-vc06c01-vsan] :") or 'blr-01-vc06c01-vsan'
     #cluster_obj = get_cluster_obj(datacenter_obj,cluster_name)
-    source_ova_path = input("Source Ova Path (local/http/ftp) ? :")
-    if not source_ova_path:sys.exit(1)
+    source_ova_path = input("Source Ova Path (local/http/ftp) ? [Default: /home/aviuser/workspace/avi-dev/build/controller.ova] :")
+    if not source_ova_path:
+        source_ova_path = "/home/aviuser/workspace/avi-dev/build/controller.ova"
     '''
     ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
     filter_options = input("type 'Y' if you want to see host,datastore options based on ova specs ; 'N' for all options; [Y/N] :")
@@ -573,6 +576,8 @@ def generate_controller_from_ova():
     '''
     management_network = input("Managament Network ? [Default: vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt] :") or "vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt"
     while True:
+        free_ips_1 = [ip for ip in all_reserved_ips if check_if_ip_is_free(si,datacenter_obj,ip,True)]
+        print ("Free IP's : %s"%(free_ips_1))
         mgmt_ip = input("Management IP ? :")
         if mgmt_ip:
             if check_if_ip_is_free(si,datacenter_obj,mgmt_ip):
@@ -612,10 +617,12 @@ def generate_controller_from_ova():
             '" --net:Management="' + management_network + \
             '" ' + prop + source_ova_path + ' ' + vi 
     print ('\n',cmd,'\n')
-    verify = input("Verify the command and agree to proceed [Y/N] ? [N] :") or 'N'
+    verify = input("Verify the command and agree to proceed [Y/N] ? [Y] :") or 'Y'
     if verify.lower() == 'y':
         print ("\nDeploying OVA")
         subprocess.call(cmd, shell=True)
+    else:
+        print ("Exiting ...")
 
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
