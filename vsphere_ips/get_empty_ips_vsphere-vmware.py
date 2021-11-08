@@ -68,7 +68,7 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
                 if virtual_m.config and not virtual_m.config.template:
                     if virtual_m.runtime.powerState == 'poweredOff':
                         ip_r = "xx NO_IP " + str(random.randint(1000,9999))
-                        ip_name_state[ip_r]=(str(virtual_m.name),"POWER OFF")
+                        ip_name_state[ip_r]=(str(virtual_m.name),"POWER OFF",virtual_m.guest.hostName)
                         ip_host_datastore[ip_r] = (str(virtual_m.runtime.host.name),str(virtual_m.datastore[0].name))
                     else:
                         if len(virtual_m.guest.net)>1:
@@ -137,7 +137,7 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
         print (line)
     
     for ip in no_ips:
-        line = " " + ip_name_state[ip][0].ljust(25) + ip_name_state[ip][1].ljust(12) + "".ljust(15,' ')
+        line = " " + ip_name_state[ip][0].ljust(25) + ip_name_state[ip][1].ljust(12) + ip_name_state[ip][2].ljust(15) + "".ljust(15,' ')
         if with_host_datastore:
             line += " "  + ip_host_datastore[ip][0].ljust(15) + ip_host_datastore[ip][1].ljust(12)
 
