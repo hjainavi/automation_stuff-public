@@ -15,6 +15,12 @@ import subprocess
 import shlex
 import argparse
 import os
+import requests
+import time
+import json
+import re
+import urllib3
+urllib3.disable_warnings()
 
 all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
@@ -165,8 +171,9 @@ if 'help' in sys.argv:
     print ("options --> poweron")
     print ("options --> poweron 'name'")
     print ("options --> generate_controller_from_ova")
+    print ("options --> configure_raw_controller")
     print ("options --> with_host_datastore")
-
+    
 
 if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
 
@@ -252,7 +259,6 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
         vm_name = sys.argv[2]
     else:
         vm_name = ''
-    all_reserved_ips = [("10.140.16."+str(num)) for num in range(171,190)]
     folder_name = "harshjain"
     datacenter_name = "blr-01-vc06"
     si = connect()
@@ -281,6 +287,148 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
 ##################################################################################
 ##################################################################################
 ##################################################################################
+
+DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
+DEFAULT_PASSWORD = "avi123"
+
+def get_headers(controller_ip=None, version="",query_version=False, tenant='admin'):
+    headers = {
+        "Content-Type": "application/json",
+        "X-Avi-Tenant": tenant,
+    }
+    if query_version:
+        # Query the controller version if 'version' is set
+        resp = requests.get('https://%s/api/initial-data' % controller_ip,
+                            headers={
+                                'Content-Type': 'application/json',
+                                'X-Avi-Tenant': 'admin'
+                            },
+                            verify=False)
+        if resp.status_code == 200:
+            version = resp.json()['version']['Version']
+            headers["X-Avi-Version"] = "%s" % version
+    else:
+        if not version:
+            raise Exception("Need controller version")
+        headers["X-Avi-Version"] = "%s" % version
+    return headers
+
+
+def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
+    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+    uri = 'https://' + c_uri + '/api/cluster/runtime'
+
+    sleep_time = 2
+    iters = int(timeout / sleep_time)
+    rsp = ''
+    for i in range(iters):
+        try:
+            rsp = requests.get(uri, verify=False)
+            print('controller %s' % c_uri)
+            print('rsp_code %s' % rsp.status_code)
+            print('rsp_data %s' % rsp.json())
+        except:
+            print('Get for %s fails. Controller %s' % (uri, c_uri))
+            pass
+
+        if rsp and rsp.status_code == 200:
+            cluster_state = rsp.json().get('cluster_state', {})
+            if cluster_state.get('state') in ['CLUSTER_UP_HA_ACTIVE', 'CLUSTER_UP_NO_HA']:
+                print('Found cluster state ACTIVE')
+                return True
+        time.sleep(sleep_time)
+    raise Exception('Timeout: waited approximately %s sec. and the cluster '
+                    'is still not active. controller %s' % (timeout, c_uri))
+
+def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+    if not current_password:
+        current_password=DEFAULT_SETUP_PASSWORD
+    wait_until_cluster_ready(c_ip,c_port)
+    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+    uri_base = 'https://' + c_uri + '/'
+    data = {'username':'admin', 'password':current_password}
+    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+    print ("login and change password to avi123$%")
+    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+    if login.status_code not in [200, 201]:
+        raise Exception(login.text)
+    time.sleep(1) 
+    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()
+    data.update({'username':'admin','password':"avi123$%" ,'old_password':current_password})
+    headers['X-CSRFToken'] = login.cookies['csrftoken']
+    headers['Referer'] = uri_base
+    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    current_password = "avi123$%"
+    time.sleep(1) 
+    print ("login and change password to avi123$% -- done")
+    print("change systemconfiguration settings")
+    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=headers ,cookies=login.cookies)
+    data = r.json()
+    data['portal_configuration']['password_strength_check'] = False
+    data['portal_configuration']['allow_basic_authentication'] = True
+    data['dns_configuration']['server_list'] = [{'addr':'10.102.0.2', 'type':'V4'}]
+    data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': "ntp3-sjc05.vmware.com", 'type': "DNS"}}]
+    data['welcome_workflow_complete']=True
+
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+
+    print("change systemconfiguration settings -- done")
+    print("changing password to avi123")
+    time.sleep(1) 
+    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()
+    data.update({'username':'admin','password':'avi123' ,'old_password':current_password})
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+
+    print("changing password to avi123 -- done")
+    print("setting backup default passphrase")
+    time.sleep(1) 
+    r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()
+    uuid = data['results'][0]['uuid']
+
+    time.sleep(1) 
+    r = requests.get(uri_base+'api/backupconfiguration'+'/'+uuid,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    data = r.json()
+    data['backup_passphrase']='avi123'
+    
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+
+    print("setting backup default passphrase -- done")
+    print("setting complete")
+
+
+def get_version_controller_from_ova(ova_path=None):
+    if not ova_path:
+        version = input("Please Enter Controller Version ? :")
+        return version
+    
+    print("Getting Controller Version from OVA %s"%(ova_path))
+    cmd_ova_spec = '/usr/bin/ovftool --schemaValidate %s'%(ova_path)
+    ova_specs = subprocess.check_output(shlex.split(cmd_ova_spec),text=True)
+    pattern = re.compile('\\nVersion:\s*(\d+\.\d+\.\d+)\\n')
+    res = re.findall(pattern,ova_specs)
+    if res:
+        return res[0]
+    else:
+        print("Unable to get Controller Version from OVA %s"%(ova_path))
+        version = input("Please Enter Controller Version ? :")
+        return version
+
 
 def change_vm_memory(vm,memory):
     if vm.runtime.powerState != 'poweredOff':
@@ -596,7 +744,11 @@ def generate_controller_from_ova():
             break
     power_on = input("Power On VM [Y/N]? [Y] :")
     if power_on.lower() not in ['y','n']:power_on = 'y'
-    
+    ctlr_version = get_version_controller_from_ova(source_ova_path)
+    print("Controller Version: %s"%(ctlr_version))
+    set_password_and_sys_config = input("Do you want to change default password and set systemconfiguration [Y/N] ? [Y] :") or 'Y'
+
+
     vi = 'vi://aviuser1:AviUser1234!.@' + vcenter_ip
     vi = vi + '/' + datacenter + '/host/'
     vi = vi + cluster_name + '/'
@@ -617,17 +769,30 @@ def generate_controller_from_ova():
             '" --net:Management="' + management_network + \
             '" ' + prop + source_ova_path + ' ' + vi 
     print ('\n',cmd,'\n')
+
     verify = input("Verify the command and agree to proceed [Y/N] ? [Y] :") or 'Y'
     if verify.lower() == 'y':
         print ("\nDeploying OVA")
         subprocess.call(cmd, shell=True)
     else:
         print ("Exiting ...")
+    if set_password_and_sys_config.lower() == 'y':
+        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
+
+    print("================== DONE ==============")
 
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
 
+if len(sys.argv)==2 and sys.argv[1] == 'configure_raw_controller':
+    si = connect()
+    datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
+    used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_ip = input("Management IP ? :")
+    ctlr_version = get_version_controller_from_ova()
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
 
 
