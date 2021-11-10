@@ -737,11 +737,23 @@ def generate_controller_from_ova():
     '''
     management_network = input("Managament Network ? [Default: vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt] :") or "vxw-dvs-34-virtualwire-3-sid-1060002-blr-01-vc06-avi-mgmt"
     while True:
-        free_ips_1 = [ip for ip in all_reserved_ips if check_if_ip_is_free(si,datacenter_obj,ip,True)]
+        free_ips_1 = {str(index):val for index,val in enumerate([ip for ip in all_reserved_ips if check_if_ip_is_free(si,datacenter_obj,ip,True)]) }
         print ("Free IP's : %s"%(free_ips_1))
-        mgmt_ip = input("Management IP ? :")
+
+        mgmt_index = input("Management IP ? [Enter Index] :")
+        if mgmt_index not in free_ips_1.keys():
+            print("not a valid index ")
+            mgmt_ip = input("Management IP ? [Enter IP] :")
+        else:
+            mgmt_ip = free_ips_1[mgmt_index]
         if mgmt_ip:
             if check_if_ip_is_free(si,datacenter_obj,mgmt_ip):
+                try:
+                    mgmt_ip = inet_ntoa(inet_aton(mgmt_ip))
+                except Exception as e:
+                    print(str(e))
+                    continue
+                print(" %s ip is free"%(mgmt_ip))
                 break
     mask = input("Network Mask ? [Default: 22] :") or '22'
     gw_ip = input("Gateway IP ? [Default: 10.102.67.254] :") or '10.102.67.254'
