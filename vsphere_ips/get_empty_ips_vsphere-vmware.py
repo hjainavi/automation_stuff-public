@@ -21,6 +21,7 @@ import json
 import re
 import urllib3
 urllib3.disable_warnings()
+from fabric.api import env, put, sudo, cd
 
 all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
@@ -410,6 +411,18 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
 
     print("setting backup default passphrase -- done")
     print("setting complete")
+    time.sleep(1) 
+    print("Setting Controller with tmux and other packages")
+    env.host_string = c_ip
+    env.user = "admin"
+    env.password = "avi123"
+    env.sudo_password = "avi123"
+    env.disable_known_hosts = True
+    put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
+    with cd("/root/"):
+        sudo("tar -xvf ctlr_new.tar.gz")
+    with cd("/root/controller_customization_new/"):
+        sudo("./controller_cust.sh")
 
 
 def get_version_controller_from_ova(ova_path=None):
