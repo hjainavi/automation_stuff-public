@@ -103,9 +103,9 @@ EOL
     git config --global user.name "Your Name"
     git config --global pull.rebase false
     git init
-    git add -A
+    git add -A > /dev/null 2>&1
     git commit -m "first commit"
-    flake8 --install-hook git
+    # flake8 --install-hook git
     echo "===================git init done /opt/avi/python"
 else
     echo "Not a controller VM setting up git config"
