@@ -1,0 +1,19 @@
+# dev machine hosts file ,location ~/.ssh/config
+Host 176
+    IdentityFile ~/.ssh/id_rsa
+    User admin
+    HostName 10.102.65.176
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+Host 177
+    IdentityFile ~/.ssh/id_rsa
+    User admin
+    HostName 10.102.65.177
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+Host 178
+    IdentityFile ~/.ssh/id_rsa
+    User admin
+    HostName 10.102.65.178
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
