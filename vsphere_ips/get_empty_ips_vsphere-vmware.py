@@ -173,6 +173,7 @@ if 'help' in sys.argv:
     print ("options --> poweron 'name'")
     print ("options --> generate_controller_from_ova")
     print ("options --> configure_raw_controller")
+    print ("options --> configure_raw_controller_wo_tmux")
     print ("options --> with_host_datastore")
     
 
