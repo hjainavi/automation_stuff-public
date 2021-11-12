@@ -341,7 +341,7 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_uri))
 
-def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password="",skip_tmux=False):
     if not current_password:
         current_password=DEFAULT_SETUP_PASSWORD
     wait_until_cluster_ready(c_ip,c_port)
@@ -412,6 +412,8 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     print("setting backup default passphrase -- done")
     print("setting complete")
     time.sleep(1) 
+    if skip_tmux:
+        return
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
@@ -810,14 +812,17 @@ def generate_controller_from_ova():
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
 
-if len(sys.argv)==2 and sys.argv[1] == 'configure_raw_controller':
+if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1] == 'configure_raw_controller_wo_tmux'):
     si = connect()
     datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
     used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
-    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
+    if sys.argv[1] == 'configure_raw_controller_wo_tmux':
+        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="",skip_tmux=True)
+    else:
+        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
 
 
