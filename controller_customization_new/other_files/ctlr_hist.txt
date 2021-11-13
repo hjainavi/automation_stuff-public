@@ -3,6 +3,8 @@ ls -al
 ls -al /opt/avi/python/bin/portal/api/
 printenv
 tail -f /opt/avi/log/portal-webapp.log 
+tail -f /opt/avi/log/octavius.INFO 
+tail -f /var/log/upstart/aviportal.log 
 reboot
 cd /opt/avi/
 cd python/
@@ -35,9 +37,7 @@ vim pdb-portal.ini
 ps -ef | grep :portal
 ./avipdbportal.sh start
 start aviportal
-tail -f /var/log/upstart/aviportal.log 
 stop aviportal;start aviportal
-tail -f /var/log/upstart/aviportal.log 
 stop aviportal
 cd /opt/avi
 python -m compileall .

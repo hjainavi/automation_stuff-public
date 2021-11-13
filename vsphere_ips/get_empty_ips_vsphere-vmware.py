@@ -426,6 +426,8 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
         sudo("tar -xvf ctlr_new.tar.gz")
     with cd("/root/controller_customization_new/"):
         sudo("./controller_cust.sh")
+    with cd("/root/controller_customization_new/other_files"):
+        sudo("./tmux_start_script.sh")
 
 
 def get_version_controller_from_ova(ova_path=None):
