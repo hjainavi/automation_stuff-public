@@ -104,7 +104,7 @@ EOL
     git config --global pull.rebase false
     git init
     git add -A > /dev/null 2>&1
-    git commit -m "first commit"
+    git commit -m "first commit" > /dev/null 2>&1
     # flake8 --install-hook git
     echo "===================git init done /opt/avi/python"
 else

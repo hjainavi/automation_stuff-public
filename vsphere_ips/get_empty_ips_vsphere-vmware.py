@@ -23,7 +23,7 @@ import urllib3
 urllib3.disable_warnings()
 from fabric.api import env, put, sudo, cd
 
-all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178"]
+all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178", "10.102.65.179", "10.102.65.180", "10.102.65.181",]
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
     if not vcenter_ip:
         vcenter_ip = "blr-01-vc06.oc.vmware.com"
