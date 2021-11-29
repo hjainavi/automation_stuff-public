@@ -63,4 +63,6 @@ set hlsearch
 hi Search guifg=LightBlue ctermfg=LightBlue
 syntax on
 set clipboard=unnamed
-
+nnoremap <F2> :set invpaste paste?<CR>
+set pastetoggle=<F2>
+set showmode
