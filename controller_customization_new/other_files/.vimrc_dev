@@ -1,0 +1,245 @@
+set nocompatible              " be iMproved, required
+set autoindent
+set smartindent
+set go-=T
+set cino=(0
+
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set expandtab
+set smarttab                  " tab and backspace are smart
+set backspace=indent,eol,start
+set noerrorbells              " No error bells please
+
+filetype off                  " required
+
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+" alternatively, pass a path where Vundle should install plugins
+"call vundle#begin('~/some/path/here')
+
+" let Vundle manage Vundle, required
+Plugin 'gmarik/Vundle.vim'
+" Plugin 'Valloric/YouCompleteMe'
+Plugin 'airblade/vim-gitgutter'
+Plugin 'tpope/vim-fugitive'
+Plugin 'fatih/vim-go'
+
+" All of your Plugins must be added before the following line
+call vundle#end()            " required
+filetype on                  " required
+filetype plugin indent on    " required
+let g:go_fmt_autosave = 0
+let g:go_imports_autosave = 0
+
+
+"highlight Cursor guifg=white guibg=black
+"highlight iCursor guifg=white guibg=steelblue
+set guicursor=n-v-c:block-Cursor
+set guicursor+=i:ver100-iCursor
+set guicursor+=n-v-c:blinkon0
+set guicursor+=i:blinkwait100
+
+"set mouse=a
+
+set backup
+set backupdir=~/.vim_backup
+
+set hlsearch
+set incsearch
+set ignorecase
+set smartcase
+set infercase
+set ruler
+set linebreak
+set showcmd
+set showmatch                 " show matching bracket
+"set cursorline
+set encoding=utf-8
+set scrolloff=2
+
+map <C-j> <C-W>j
+map <C-k> <C-W>k
+map <C-h> <C-W>h
+map <C-l> <C-W>l
+
+au FileType c,h,java,js setlocal mps+==:;
+
+let g:EasyMotion_leader_key = '1'
+
+"folds
+set foldmethod=syntax
+set foldnestmax=1
+set foldlevelstart=20
+autocmd Syntax c,cpp,vim,xml,html,xhtml setlocal foldmethod=syntax
+autocmd Syntax c,cpp,vim,xml,html,xhtml,perl normal zR
+nnoremap <silent> <Space> @=(foldlevel('.')?'za':"\<Space>")<CR>
+vnoremap <Space> zf
+
+"tagbar
+let tagbar_sort=0
+"autocmd VimEnter * nested :call tagbar#autoopen(1)
+"autocmd FileType * nested :call tagbar#autoopen(0)
+"autocmd BufEnter * nested :call tagbar#autoopen(0)
+"autocmd FileType c,cpp,h,cc nested :TagbarOpen
+
+
+
+"automatically insert closing braces
+"inoremap {  {<CR>}<Esc>0<Up>o
+
+
+" tab navigation like firefox <----- Does not seem to work
+nnoremap <C-S-tab> :tabprevious<CR>
+nnoremap <C-tab>   :tabnext<CR>
+"nnoremap <C-t>     :tabnew<CR>
+inoremap <C-S-tab> <Esc>:tabprevious<CR>i
+inoremap <C-tab>   <Esc>:tabnext<CR>i
+"inoremap <C-t>     <Esc>:tabnew<CR>
+
+" more tab navigation <----- Does not seem to work
+nnoremap <A-F1> 1gt
+nnoremap <A-F2> 2gt
+nnoremap <A-F3> 3gt
+nnoremap <A-F4> 4gt
+nnoremap <A-F5> 5gt
+nnoremap <A-F6> 6gt
+nnoremap <A-F7> 7gt
+nnoremap <A-F8> 8gt
+nnoremap <A-F9> 9gt
+nnoremap <A-F0> 10gt
+
+"macro
+let @e=':tabprevious'
+map <F8> @e
+
+"macro
+let @f=':tabnext'
+map <F9> @f
+
+"macro
+let @h=':tabnew:cs f f '
+map <F10> @h
+
+"macro
+let @b=':TagbarToggle'
+map <F4> @b
+
+"macro to invoke vimdiff
+let @c=':VCSVimDiff'
+map <F5> @c
+
+"macro to quit original and vimdiff windows
+let @d=':q:q'
+map <F6> @d
+
+"macro
+let @g=':Shell cd ../build/ && make -j4 && make install_aviG'
+map <F12> @g
+
+"open a file in a vertical split
+map <F11> :vertical wincmd F<CR>
+
+"set background=dark
+"set background=light
+
+set tabpagemax=50
+
+set t_Co=256
+
+syntax enable
+syntax on
+
+"if &t_Co > 2 || has("gui_running")
+"    syntax enable
+"    colorscheme hemisu
+"endif
+
+let Tlist_Process_File_Always=1
+let Tlist_Inc_Winwidth=0
+
+"let VCSCommandSplit="vertical"
+
+"execute pathogen#infect()
+
+" Solarized stuff
+"let g:solarized_termtrans = 1
+"set background=dark
+"let g:solarized_termcolors = 256
+"let g:solarized_visibility = "high"
+"let g:solarized_contrast = "high"
+"colorscheme molokai
+highlight iCursor   cterm=NONE ctermbg=yellow ctermfg=black
+hi MatchParen cterm=none ctermbg=green ctermfg=blue
+set hlsearch
+hi Search guifg=Red ctermfg=Black
+"highlight Normal ctermbg=236
+" Powerline stuff
+"python from powerline.vim import setup as powerline_setup
+"python powerline_setup()
+"python del powerline_setup
+
+"Dont use powerline statusbar
+"set statusline=%<%f\ %h%m%t%r%=%-54.(%l,%c%V,[%{Tlist_Get_Tagname_By_Line()}]%)
+
+"Powerline Configuration
+set rtp+=~/.local/lib/python2.7/site-packages/powerline/bindings/vim/
+set laststatus=2
+set noshowmode
+
+" Search for selected text, forwards or backwards.
+vnoremap <silent> * :<C-U>
+\let old_reg=getreg('"')<Bar>let old_regtype=getregtype('"')<CR>
+\gvy/<C-R><C-R>=substitute(
+        \escape(@", '/\.*$^~['), '\_s\+', '\\_s\\+', 'g')<CR><CR>
+\gV:call setreg('"', old_reg, old_regtype)<CR>
+vnoremap <silent> # :<C-U>
+\let old_reg=getreg('"')<Bar>let old_regtype=getregtype('"')<CR>
+\gvy?<C-R><C-R>=substitute(
+        \escape(@", '?\.*$^~['), '\_s\+', '\\_s\\+', 'g')<CR><CR>
+\gV:call setreg('"', old_reg, old_regtype)<CR>
+
+" reduce the time to escape insert mode - based on https://powerline.readthedocs.org/en/latest/tipstricks.html
+if ! has('gui_running')
+    set ttimeoutlen=10
+    augroup FastEscape
+        autocmd!
+        au InsertEnter * set timeoutlen=0
+        au InsertLeave * set timeoutlen=1000
+    augroup END
+endif
+
+" Run commands in a split 
+command! -complete=shellcmd -nargs=+ Shell call s:RunShellCommand(<q-args>)
+function! s:RunShellCommand(cmdline)
+    echo a:cmdline
+    let expanded_cmdline = a:cmdline
+    for part in split(a:cmdline, ' ')
+        if part[0] =~ '\v[%#<]'
+            let expanded_part = fnameescape(expand(part))
+            let expanded_cmdline = substitute(expanded_cmdline, part, expanded_part, '')
+        endif
+    endfor
+    botright new
+    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile nowrap
+    call setline(1, 'You entered:    ' . a:cmdline)
+    call setline(2, 'Expanded Form:  ' .expanded_cmdline)
+    call setline(3,substitute(getline(2),'.','=','g'))
+    execute '$read !'. expanded_cmdline
+    setlocal nomodifiable
+    1
+endfunction
+
+"let g:gitgutter_sign_column_always=1
+let g:ycm_enable_diagnostic_signs=0
+let g:ycm_server_keep_logfiles = 1
+let g:ycm_server_log_level = 'debug'
+"autocmd FileType python let &makeprg='/usr/local/bin/pylint %'
+"autocmd BufWritePost *.py make
+"autocmd FileType python let &makeprg='/usr/local/bin/pyflakes %'
+"autocmd BufWritePost *.py make
+nnoremap <F2> :set invpaste paste?<CR>
+set pastetoggle=<F2>
+set showmode
