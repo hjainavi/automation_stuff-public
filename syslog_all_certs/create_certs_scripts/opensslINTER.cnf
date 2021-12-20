@@ -7,7 +7,7 @@ default_ca = CA_default
 
 [ CA_default ]
 # Directory and file locations.
-dir               = /root/syslog_all_certs/create_certs_scripts/ca/intermediate
+dir               = /home/aviuser/automation_stuff/syslog_all_certs/create_certs_scripts/ca/intermediate
 certs             = $dir/certs
 crl_dir           = $dir/crl
 new_certs_dir     = $dir/newcerts
@@ -112,12 +112,12 @@ extendedKeyUsage = clientAuth, emailProtection
 [ server_cert ]
 # Extensions for server certificates (`man x509v3_config`).
 basicConstraints = CA:FALSE
-nsCertType = server
+#nsCertType = server
 nsComment = "OpenSSL Generated Server Certificate"
 subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer:always
-keyUsage = critical, digitalSignature, keyEncipherment
-extendedKeyUsage = serverAuth
+#keyUsage = critical, digitalSignature, keyEncipherment
+#extendedKeyUsage = serverAuth
 
 [ crl_ext ]
 # Extension for CRLs (`man x509v3_config`).

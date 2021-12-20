@@ -25,3 +25,6 @@ controller_customization_new/other_files/tmux-resurrect/.gitignore
 controller_customization_new/other_files/tmux-resurrect/.gitmodules
 controller_customization_new/other_files/tmux-resurrect/.travis.yml
 controller_customization_new/other_files/tmux-resurrect/tmux-resurrect/
+**/create_certs_scripts/allcerts/
+**/create_certs_scripts/ca/
+

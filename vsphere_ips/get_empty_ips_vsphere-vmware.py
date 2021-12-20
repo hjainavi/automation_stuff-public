@@ -62,7 +62,11 @@ if len(sys.argv)==1 or (len(sys.argv)==2 and sys.argv[1]=='with_host_datastore')
     ip_host_datastore = {}
     templates = []
     for vm in vms:
-        if vm.name == folder_name:
+        if vm.name == "AviSeFolder" and type(vm) == vim.Folder:
+            pass
+            # vm.config.vAppConfig.property[1].value, id
+
+        if vm.name == folder_name and type(vm) == vim.Folder:
             for virtual_m in vm.childEntity:
                 if vim.Folder == type(virtual_m):
                     continue
@@ -177,30 +181,34 @@ if 'help' in sys.argv:
     print ("options --> with_host_datastore")
     
 
-if len(sys.argv)==3 and sys.argv[1] in ('delete','poweroff'):
+if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
 
     if sys.argv[2]:
-        ip=sys.argv[2]
+        ips = sys.argv[2:]
         si = connect()
         search = si.RetrieveContent().searchIndex
-        vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
-        if vms:
-            for vm in vms:
-                action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
-                if action_confirm.lower() == "n":continue
-                if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                    print ("powering off ",vm.name," ",ip)
-                    task = vm.PowerOff()
-                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print ("power is off.",task.info.state)
-                
-                if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
-                    print ("deleteing ",vm.name," ",ip)
-                    task = vm.Destroy()
-                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print ("vm is deleted.",task.info.state)
+        vms_to_operate_on = []
+        for ip in ips:
+            vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
+            if vms:
+                for vm in vms:
+                    action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
+                    if action_confirm.lower() == "n":continue
+                    vms_to_operate_on.append((vm,ip))
+        for vm,ip in vms_to_operate_on:
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                print ("powering off ",vm.name," ",ip)
+                task = vm.PowerOff()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("power is off.",task.info.state)
+            
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
+                print ("deleteing ",vm.name," ",ip)
+                task = vm.Destroy()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("vm is deleted.",task.info.state)
 
 if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
@@ -353,7 +361,13 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     print ("login and change password to avi123$%")
     login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
     if login.status_code not in [200, 201]:
-        raise Exception(login.text)
+        data = {'username':'admin', 'password':'avi123'}
+        login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+        if login.status_code not in [200, 201]:
+            data = {'username':'admin', 'password':'admin'}
+            login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+            if login.status_code not in [200, 201]:
+                raise Exception(login.text)
     time.sleep(1) 
     r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     data = r.json()
