@@ -388,6 +388,7 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     data['dns_configuration']['server_list'] = [{'addr':'10.102.0.2', 'type':'V4'}]
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': "ntp3-sjc05.vmware.com", 'type': "DNS"}}]
     data['welcome_workflow_complete']=True
+    data['default_license_tier']='ENTERPRISE'
 
     time.sleep(1) 
     r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
