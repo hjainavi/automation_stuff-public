@@ -20,10 +20,13 @@ import time
 import json
 import re
 import urllib3
+import ipaddress
+import random
 urllib3.disable_warnings()
 from fabric.api import env, put, sudo, cd
 
-all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178", "10.102.65.179", "10.102.65.180", "10.102.65.181",]
+all_reserved_ips = ["10.102.65.175", "10.102.65.176", "10.102.65.177", "10.102.65.178", "10.102.65.179", "10.102.65.180", "10.102.65.181"]
+
 def connect(vcenter_ip=None, user=None, pwd=None ,exit_on_error=True):
     if not vcenter_ip:
         vcenter_ip = "blr-01-vc06.oc.vmware.com"
@@ -179,7 +182,8 @@ if 'help' in sys.argv:
     print ("options --> configure_raw_controller")
     print ("options --> configure_raw_controller_wo_tmux")
     print ("options --> with_host_datastore")
-    
+    print ("options --> configure_cloud_vs_se")
+
 
 if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
 
@@ -328,7 +332,7 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
     c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
     uri = 'https://' + c_uri + '/api/cluster/runtime'
 
-    sleep_time = 2
+    sleep_time = 10
     iters = int(timeout / sleep_time)
     rsp = ''
     for i in range(iters):
@@ -461,6 +465,156 @@ def get_version_controller_from_ova(ova_path=None):
         print("Unable to get Controller Version from OVA %s"%(ova_path))
         version = input("Please Enter Controller Version ? :")
         return version
+
+
+def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, c_port=None, timeout=450):
+    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+    uri_base = 'https://' + c_uri + '/'
+
+    sleep_time = 10
+    iters = int(timeout / sleep_time)
+    rsp = ''
+    for i in range(iters):
+        try:
+            uri = uri_base+'api/cloud/%s/runtime'%(cloud_uuid)
+            rsp = requests.get(uri,verify=False, headers=headers, cookies=cookies)
+        except:
+            print('Get for %s fails. Controller %s' % (uri, c_uri))
+            pass
+
+        if rsp and rsp.status_code == 200:
+            cloud_state = rsp.json().get("network_sync_complete")
+            if cloud_state:
+                print('Cloud Network Sync Complete')
+                return True
+            else:
+                print(i,'Cloud Network Sync INCOMPLETE')
+        time.sleep(sleep_time)
+    raise Exception('Timeout: waited approximately %s sec. and the cloud '
+                    'is still not active. controller %s' % (timeout, uri))
+
+
+def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+    uri_base = 'https://' + c_uri + '/'
+    data = {'username':'admin', 'password':current_password}
+    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+    headers['X-CSRFToken'] = login.cookies['csrftoken']
+    headers['Referer'] = uri_base
+    print("setting up vmware write access cloud")
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    for val in r.json()['results']:
+        if val['name'] == 'Default-Cloud':
+            data = val
+            break
+    default_cloud_uuid = data['uuid']
+    data.update({
+        "dhcp_enabled":True,
+        "vtype":"CLOUD_VCENTER",
+        "vcenter_configuration":{
+            "privilege": "WRITE_ACCESS",
+            "deactivate_vm_discovery": False,
+            "username": "aviuser1",
+            "vcenter_url": "blr-01-vc06.oc.vmware.com",
+            "password": "AviUser1234!.",
+            "datacenter": "blr-01-vc06"
+        }
+    })
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    wait_until_cloud_ready(c_ip, login.cookies, headers, default_cloud_uuid, c_port=None, timeout=450)
+    # retrieving portgroups
+    data = {"cloud_uuid":"cloud-a1746f89-2f84-4255-9061-8a024d89ca5f"}
+    r = requests.post(uri_base+'api/vimgrvcenterruntime/retrieve/portgroups',data=json.dumps(data), verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    data = r.json()
+    management_network = "/api/vimgrnwruntime/"
+    for val in data['resource']['vcenter_pg_names']:
+        if "avi-mgmt" in val["name"]:
+            management_network += val['uuid']
+            break
+    
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()['results'][0]
+    data["vcenter_configuration"]["management_network"] = management_network
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    print("changing service engine group settings")
+    r = requests.get(uri_base+'api/serviceenginegroup',verify=False, headers=headers, cookies=login.cookies)
+    for val in r.json()['results']:
+        if default_cloud_uuid in val['cloud_ref']:
+            data = val
+            break
+    se_name_prefix = c_ip.split(".")[-1]+"_"+version.replace(".","")
+    data.update({
+        "se_name_prefix":se_name_prefix,
+        "vcenter_folder":"harshjain",
+        "max_se":"1"
+    })
+    r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+
+    print("creating a vs")
+    # getting dev020 network uuid
+    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=headers, cookies=login.cookies)
+    for val in r.json()['results']:
+        if "dev020" in val['name']:
+            data = val
+            break
+    network_dev020_uuid = data['uuid']
+    network_dev020_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
+    occupied_ips = []
+    "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
+    r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,network_dev020_uuid),verify=False, headers=headers, cookies=login.cookies)
+    for val in r.json()['results']:
+        for guest_nic in val['guest_nic']:
+            for guest_ip in guest_nic['guest_ip']:
+                occupied_ips.append(guest_ip["prefix"]["ip_addr"]["addr"])
+    ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet.replace("/24","/26"))]))
+    ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
+    while True:
+        vsvip_ip = random.choice(ip_list)
+        if vsvip_ip not in occupied_ips:
+            break
+    data_macro = {
+        "model_name": "VirtualService",
+        "data": {
+            "name":"test_vs",
+            "services": [{"port":80}],
+            "pool_ref_data":{
+                "name":"test_pool",
+                "servers": [
+                    {
+                        "ip": {
+                            "type": "V4",
+                            "addr": "100.64.28.21"
+                        }
+                    }
+                ]
+            },
+            "vsvip_ref_data":{
+                "name":"test_vsvip",
+                "vip":[
+                    {
+                        "ip_address":{
+                            "type":"V4",
+                            "addr":vsvip_ip
+                        }
+                    }
+                ]
+            }
+
+        }
+    }
+
+    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
 
 
 def change_vm_memory(vm,memory):
@@ -823,9 +977,18 @@ def generate_controller_from_ova():
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
+        setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
 
     print("================== DONE ==============")
 
+if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
+    si = connect()
+    datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
+    used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_ip = input("Management IP ? :")
+    ctlr_version = get_version_controller_from_ova()
+    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
@@ -839,6 +1002,7 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
     ctlr_version = get_version_controller_from_ova()
     if sys.argv[1] == 'configure_raw_controller_wo_tmux':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="",skip_tmux=True)
+        setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
     else:
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
