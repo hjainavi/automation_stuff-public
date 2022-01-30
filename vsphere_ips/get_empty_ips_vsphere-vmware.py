@@ -526,7 +526,7 @@ def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password
         raise Exception(r.text)
     wait_until_cloud_ready(c_ip, login.cookies, headers, default_cloud_uuid, c_port=None, timeout=450)
     # retrieving portgroups
-    data = {"cloud_uuid":"cloud-a1746f89-2f84-4255-9061-8a024d89ca5f"}
+    data = {"cloud_uuid":default_cloud_uuid}
     r = requests.post(uri_base+'api/vimgrvcenterruntime/retrieve/portgroups',data=json.dumps(data), verify=False, headers=headers, cookies=login.cookies)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
