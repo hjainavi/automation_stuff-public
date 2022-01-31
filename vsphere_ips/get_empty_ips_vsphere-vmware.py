@@ -183,6 +183,7 @@ if 'help' in sys.argv:
     print ("options --> configure_raw_controller_wo_tmux")
     print ("options --> with_host_datastore")
     print ("options --> configure_cloud_vs_se")
+    print ("options --> flush_db_configure_raw_controller_wo_tmux")
 
 
 if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
@@ -340,7 +341,7 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
             rsp = requests.get(uri, verify=False)
             print('controller %s' % c_uri)
             print('rsp_code %s' % rsp.status_code)
-            print('rsp_data %s' % rsp.json())
+            #print('rsp_data %s' % rsp.json())
         except:
             print('Get for %s fails. Controller %s' % (uri, c_uri))
             pass
@@ -350,6 +351,8 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
             if cluster_state.get('state') in ['CLUSTER_UP_HA_ACTIVE', 'CLUSTER_UP_NO_HA']:
                 print('Found cluster state ACTIVE')
                 return True
+            else:
+                print('cluster state INACTIVE')
         time.sleep(sleep_time)
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_uri))
@@ -437,8 +440,8 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = "avi123"
-    env.sudo_password = "avi123"
+    env.password = DEFAULT_PASSWORD
+    env.sudo_password = DEFAULT_PASSWORD
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
@@ -447,6 +450,19 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
         sudo("./controller_cust.sh")
     with cd("/root/controller_customization_new/other_files"):
         sudo("./tmux_start_script.sh")
+    with cd("/opt/avi/python"):
+        sudo("ls")
+
+
+def flush_db(c_ip,password=DEFAULT_PASSWORD):
+
+    env.host_string = c_ip
+    env.user = "admin"
+    env.password = password
+    env.sudo_password = password
+    env.disable_known_hosts = True
+    with cd("/root/"):
+        sudo("sudo systemctl stop process-supervisor.service && rm /var/lib/avi/etc/flushdb.done && /opt/avi/scripts/flushdb.sh && sudo systemctl start process-supervisor.service")
 
 
 def get_version_controller_from_ova(ova_path=None):
@@ -488,7 +504,7 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, c_port=None, time
                 print('Cloud Network Sync Complete')
                 return True
             else:
-                print(i,'Cloud Network Sync INCOMPLETE')
+                print('Cloud Network Sync Incomplete')
         time.sleep(sleep_time)
     raise Exception('Timeout: waited approximately %s sec. and the cloud '
                     'is still not active. controller %s' % (timeout, uri))
@@ -989,6 +1005,18 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
     setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+
+if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
+    si = connect()
+    datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
+    used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_ip = input("Management IP ? :")
+    ctlr_version = get_version_controller_from_ova()
+    flush_db(mgmt_ip)
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="",skip_tmux=True)
+    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
