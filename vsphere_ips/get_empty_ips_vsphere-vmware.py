@@ -432,6 +432,17 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
+    r = requests.get(uri_base+'api/controllerproperties',verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    data = r.json()
+    data['api_idle_timeout']=1400
+    
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    
     print("setting backup default passphrase -- done")
     print("setting complete")
     time.sleep(1) 
