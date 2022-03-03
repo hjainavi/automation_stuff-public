@@ -199,6 +199,14 @@ if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
                 for vm in vms:
                     action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
                     if action_confirm.lower() == "n":continue
+                    if "10.102.65.175" in ip:
+                        while True:
+                            action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(ip))
+                            if action_confirm.lower() not in ['confirm','deny']:
+                                continue
+                            break
+                        if action_confirm == 'deny':
+                            continue
                     vms_to_operate_on.append((vm,ip))
         for vm,ip in vms_to_operate_on:
             if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
@@ -235,6 +243,14 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
                     continue
                 action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
                 if action_confirm.lower() == "n":continue
+                if "harsh" in vm_name and "dev" in vm_name:
+                    while True:
+                        action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
+                        if action_confirm.lower() not in ['confirm','deny']:
+                            continue
+                        break
+                    if action_confirm == 'deny':
+                        continue
                 if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
                     print ("deleteing ",virtual_m.name)
                     task = virtual_m.Destroy()
@@ -404,8 +420,9 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
 
     print("change systemconfiguration settings -- done")
     print("changing password to avi123")
-    time.sleep(1) 
-    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    time.sleep(1)
+    
+    r = requests.get(uri_base+'api/useraccount',verify=False, headers=headers, cookies=login.cookies)
     data = r.json()
     data.update({'username':'admin','password':'avi123' ,'old_password':current_password})
     time.sleep(1) 
