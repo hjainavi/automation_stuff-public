@@ -4,16 +4,16 @@ try:
 except ImportError:
     print ("do -->> pip install --upgrade pyvmomi")
     sys.exit(1)
-from pyVim.connect import SmartConnect,Disconnect,SmartConnectNoSSL
+from pyVim.connect import Disconnect,SmartConnectNoSSL
 from pyVmomi import vim
 from socket import inet_aton, inet_ntoa
 import random,time,atexit
 from concurrent.futures import ThreadPoolExecutor
-import tarfile
+#import tarfile
 #import xmltodict
 import subprocess
 import shlex
-import argparse
+#import argparse
 import os
 import requests
 import time
@@ -373,7 +373,7 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_uri))
 
-def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password="",skip_tmux=False):
+def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
     if not current_password:
         current_password=DEFAULT_SETUP_PASSWORD
     wait_until_cluster_ready(c_ip,c_port)
@@ -462,9 +462,9 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     
     print("setting backup default passphrase -- done")
     print("setting complete")
-    time.sleep(1) 
-    if skip_tmux:
-        return
+   
+    
+def setup_tmux(c_ip):
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
@@ -1022,6 +1022,7 @@ def generate_controller_from_ova():
     if set_password_and_sys_config.lower() == 'y':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
         setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+        setup_tmux(mgmt_ip)
 
     print("================== DONE ==============")
 
@@ -1042,7 +1043,7 @@ if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux'
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
     flush_db(mgmt_ip)
-    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="",skip_tmux=True)
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
     setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
 
 
@@ -1056,11 +1057,10 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
-    if sys.argv[1] == 'configure_raw_controller_wo_tmux':
-        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="",skip_tmux=True)
-        setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
-    else:
-        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
+    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    if sys.argv[1] != 'configure_raw_controller_wo_tmux':
+        setup_tmux(mgmt_ip)
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
 
 
