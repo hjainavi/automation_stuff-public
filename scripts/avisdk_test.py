@@ -1,7 +1,7 @@
 from avi.sdk.avi_api import ApiSession
 import ipdb
 
-api = ApiSession.get_session("10.102.65.176", "admin", "avi123", tenant="admin")
+api = ApiSession.get_session("10.50.56.149", "admin", "admin", tenant="admin")
 
 data_pool = {"name":"pool-test"}
 
