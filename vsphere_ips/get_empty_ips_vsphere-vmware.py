@@ -184,6 +184,7 @@ if 'help' in sys.argv:
     print ("options --> with_host_datastore")
     print ("options --> configure_cloud_vs_se")
     print ("options --> flush_db_configure_raw_controller_wo_tmux")
+    print ("options --> setup_tmux")
 
 
 if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
@@ -562,7 +563,8 @@ def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password
             "username": "aviuser1",
             "vcenter_url": "blr-01-vc06.oc.vmware.com",
             "password": "AviUser1234!.",
-            "datacenter": "blr-01-vc06"
+            "datacenter": "blr-01-vc06",
+            "use_content_lib": False
         }
     })
     r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
@@ -605,6 +607,7 @@ def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password
 
     print("creating a vs")
     # getting dev020 network uuid
+    time.sleep(20)
     r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=headers, cookies=login.cookies)
     for val in r.json()['results']:
         if "dev020" in val['name']:
@@ -1034,6 +1037,14 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
     setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+
+if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
+    si = connect()
+    datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
+    used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_ip = input("Management IP ? :")
+    setup_tmux(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
     si = connect()
