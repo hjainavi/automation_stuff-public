@@ -183,6 +183,7 @@ if 'help' in sys.argv:
     print ("options --> configure_raw_controller_wo_tmux")
     print ("options --> with_host_datastore")
     print ("options --> configure_cloud_vs_se")
+    print ("options --> configure_vs")
     print ("options --> flush_db_configure_raw_controller_wo_tmux")
     print ("options --> setup_tmux")
 
@@ -538,8 +539,87 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, c_port=None, time
     raise Exception('Timeout: waited approximately %s sec. and the cloud '
                     'is still not active. controller %s' % (timeout, uri))
 
+def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+    c_uri = c_ip
+    uri_base = 'https://' + c_uri + '/'
+    data = {'username':'admin', 'password':current_password}
+    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+    headers['X-CSRFToken'] = login.cookies['csrftoken']
+    headers['Referer'] = uri_base
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    for val in r.json()['results']:
+        if val['name'] == 'Default-Cloud':
+            data = val
+            break
+    default_cloud_uuid = data['uuid']
+    cookies=login.cookies
+    print("creating a vs")
+    # getting dev020 network uuid
+    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=headers, cookies=cookies)
+    for val in r.json()['results']:
+        if "dev020" in val['name']:
+            data = val
+            break
+    network_dev020_uuid = data['uuid']
+    network_dev020_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
+    occupied_ips = []
+    "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
+    while True:
+        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,network_dev020_uuid),verify=False, headers=headers, cookies=cookies)
+        try:
+            for val in r.json()['results']:
+                for guest_nic in val['guest_nic']:
+                    for guest_ip in guest_nic['guest_ip']:
+                        occupied_ips.append(guest_ip["prefix"]["ip_addr"]["addr"])
+            break
+        except:
+            print("Error: ",r.json())
+            time.sleep(10)
 
-def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+    ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet.replace("/24","/26"))]))
+    ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
+    while True:
+        vsvip_ip = random.choice(ip_list)
+        if vsvip_ip not in occupied_ips:
+            break
+    data_macro = {
+        "model_name": "VirtualService",
+        "data": {
+            "name":"test_vs",
+            "services": [{"port":80}],
+            "pool_ref_data":{
+                "name":"test_pool",
+                "servers": [
+                    {
+                        "ip": {
+                            "type": "V4",
+                            "addr": "100.64.28.21"
+                        }
+                    }
+                ]
+            },
+            "vsvip_ref_data":{
+                "name":"test_vsvip",
+                "vip":[
+                    {
+                        "ip_address":{
+                            "type":"V4",
+                            "addr":vsvip_ip
+                        }
+                    }
+                ]
+            }
+
+        }
+    }
+
+    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=headers, cookies=cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+
+
+def setup_cloud_se(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
     c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
     uri_base = 'https://' + c_uri + '/'
     data = {'username':'admin', 'password':current_password}
@@ -605,64 +685,7 @@ def setup_cloud_vs_se(c_ip, c_port=None,version="" ,timeout=60, current_password
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
-    print("creating a vs")
-    # getting dev020 network uuid
-    time.sleep(20)
-    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=headers, cookies=login.cookies)
-    for val in r.json()['results']:
-        if "dev020" in val['name']:
-            data = val
-            break
-    network_dev020_uuid = data['uuid']
-    network_dev020_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
-    occupied_ips = []
-    "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
-    r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,network_dev020_uuid),verify=False, headers=headers, cookies=login.cookies)
-    for val in r.json()['results']:
-        for guest_nic in val['guest_nic']:
-            for guest_ip in guest_nic['guest_ip']:
-                occupied_ips.append(guest_ip["prefix"]["ip_addr"]["addr"])
-    ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet.replace("/24","/26"))]))
-    ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
-    while True:
-        vsvip_ip = random.choice(ip_list)
-        if vsvip_ip not in occupied_ips:
-            break
-    data_macro = {
-        "model_name": "VirtualService",
-        "data": {
-            "name":"test_vs",
-            "services": [{"port":80}],
-            "pool_ref_data":{
-                "name":"test_pool",
-                "servers": [
-                    {
-                        "ip": {
-                            "type": "V4",
-                            "addr": "100.64.28.21"
-                        }
-                    }
-                ]
-            },
-            "vsvip_ref_data":{
-                "name":"test_vsvip",
-                "vip":[
-                    {
-                        "ip_address":{
-                            "type":"V4",
-                            "addr":vsvip_ip
-                        }
-                    }
-                ]
-            }
-
-        }
-    }
-
-    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=headers, cookies=login.cookies)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
-
+    
 
 def change_vm_memory(vm,memory):
     if vm.runtime.powerState != 'poweredOff':
@@ -1024,7 +1047,8 @@ def generate_controller_from_ova():
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-        setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+        setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+        setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
         setup_tmux(mgmt_ip)
 
     print("================== DONE ==============")
@@ -1036,7 +1060,18 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
-    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+
+if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
+    si = connect()
+    datacenter_obj = get_datacenter_obj(si,'blr-01-vc06')
+    used_ips_1 = [ip for ip in all_reserved_ips if not check_if_ip_is_free(si,datacenter_obj,ip,True)]
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_ip = input("Management IP ? :")
+    ctlr_version = get_version_controller_from_ova()
+    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+
 
 if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
     si = connect()
@@ -1055,7 +1090,8 @@ if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux'
     ctlr_version = get_version_controller_from_ova()
     flush_db(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
-    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
 
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
@@ -1069,7 +1105,8 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
     set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version,current_password="")
-    setup_cloud_vs_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
+    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60, current_password=DEFAULT_PASSWORD)
     if sys.argv[1] != 'configure_raw_controller_wo_tmux':
         setup_tmux(mgmt_ip)
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
