@@ -381,18 +381,15 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="
     wait_until_cluster_ready(c_ip,c_port)
     c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
     uri_base = 'https://' + c_uri + '/'
-    data = {'username':'admin', 'password':current_password}
     headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
     print ("login and change password to avi123$%")
-    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-    if login.status_code not in [200, 201]:
-        data = {'username':'admin', 'password':'avi123'}
+    for password in [current_password,"avi123","avi123$%","admin"]:
+        data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-        if login.status_code not in [200, 201]:
-            data = {'username':'admin', 'password':'admin'}
-            login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-            if login.status_code not in [200, 201]:
-                raise Exception(login.text)
+        if login.status_code in [200, 201]:
+            current_password = password
+            break
+        
     time.sleep(1) 
     r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     data = r.json()
