@@ -2,7 +2,12 @@
 try:
     import pyVim,sys
 except ImportError:
-    print ("do -->> pip install --upgrade pyvmomi")
+    print ("do -->> pip3 install --upgrade pyvmomi")
+    sys.exit(1)
+try:
+    from tabulate import tabulate
+except ImportError:
+    print ("do -->> pip3 install tabulate")
     sys.exit(1)
 from pyVim.connect import Disconnect,SmartConnectNoSSL
 from pyVmomi import vim
@@ -160,9 +165,7 @@ if len(sys.argv)==1:
             if ip_network_val[0] not in ALL_RESERVED_IPS:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))    
     final_print_vals.append(("","","",""))
-    print ("\n")
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
-    print ("\n")
         
 
 if 'help' in sys.argv:
@@ -523,7 +526,7 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
     raise Exception('Timeout: waited approximately %s sec. and the cloud '
                     'is still not active. controller %s' % (timeout, uri))
 
-def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
     c_uri = c_ip
     uri_base = 'https://' + c_uri + '/'
     data = {'username':'admin', 'password':current_password}
@@ -603,7 +606,7 @@ def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
         raise Exception(r.text)
 
 
-def setup_cloud_se(c_ip, c_port=None,version="" ,timeout=60, current_password=""):
+def setup_cloud_se(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
     c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
     uri_base = 'https://' + c_uri + '/'
     data = {'username':'admin', 'password':current_password}
