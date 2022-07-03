@@ -81,7 +81,7 @@ def fill_vms_table(vms_table,virtual_m):
         folder_name = virtual_m.parent.name
         if virtual_m.config and not virtual_m.config.template:
             if virtual_m.runtime.powerState == 'poweredOff':
-                vms_table[(folder_name,virtual_m.name)] = {'state':'POWER OFF','ip_network':[["",""]]}
+                vms_table[(folder_name,virtual_m.name)] = {'state':'POWER OFF','ip_network':[["------","------"]]}
             else:
                 vms_table[(folder_name,virtual_m.name)] = {'state':'POWER ON','ip_network':[]}
                 if len(virtual_m.guest.net)>0:
@@ -93,9 +93,9 @@ def fill_vms_table(vms_table,virtual_m):
                                 vms_table[(folder_name,virtual_m.name)]['ip_network'].append([ip_addr, ip_net.network])
                                 
         elif virtual_m.config and virtual_m.config.template:
-            vms_table[(folder_name,virtual_m.name)] = {'state':'TEMPLATE','ip_network':[["",""]]}
+            vms_table[(folder_name,virtual_m.name)] = {'state':'TEMPLATE','ip_network':[["------","------"]]}
         else:
-            vms_table[(folder_name,virtual_m.name)] = {'state':'UNKNOWN','ip_network':[["",""]]}
+            vms_table[(folder_name,virtual_m.name)] = {'state':'UNKNOWN','ip_network':[["------","------"]]}
 
     except:
         raise
@@ -339,8 +339,8 @@ def get_headers(controller_ip=None, version="",query_version=False, tenant='admi
     return headers
 
 
-def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
-    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+def wait_until_cluster_ready(c_ip,  timeout=1800):
+    c_uri = c_ip 
     uri = 'https://' + c_uri + '/api/cluster/runtime'
 
     sleep_time = 10
@@ -367,9 +367,9 @@ def wait_until_cluster_ready(c_ip, c_port=None, timeout=1800):
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_uri))
 
-def set_welcome_password_and_set_systemconfiguration(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_SETUP_PASSWORD):
-    wait_until_cluster_ready(c_ip,c_port)
-    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, current_password=DEFAULT_SETUP_PASSWORD):
+    wait_until_cluster_ready(c_ip)
+    c_uri = c_ip 
     uri_base = 'https://' + c_uri + '/'
     headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
     print ("login and change password to avi123$%")
@@ -526,7 +526,7 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
     raise Exception('Timeout: waited approximately %s sec. and the cloud '
                     'is still not active. controller %s' % (timeout, uri))
 
-def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
+def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
     c_uri = c_ip
     uri_base = 'https://' + c_uri + '/'
     data = {'username':'admin', 'password':current_password}
@@ -606,8 +606,8 @@ def setup_vs(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_
         raise Exception(r.text)
 
 
-def setup_cloud_se(c_ip, c_port=None,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
-    c_uri = c_ip + ':' + str(c_port) if c_port else c_ip
+def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
+    c_uri = c_ip 
     uri_base = 'https://' + c_uri + '/'
     data = {'username':'admin', 'password':current_password}
     headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
@@ -637,7 +637,7 @@ def setup_cloud_se(c_ip, c_port=None,version="" ,timeout=60, current_password=DE
     r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-    wait_until_cloud_ready(c_ip, login.cookies, headers, default_cloud_uuid, c_port=None, timeout=450)
+    wait_until_cloud_ready(c_ip, login.cookies, headers, default_cloud_uuid, timeout=450)
 
     management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])
     r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
@@ -800,7 +800,7 @@ def generate_controller_from_ova():
                 break
     while True:
         vm_name = input("VM Name ? :")
-        if not check_if_vm_name_exists_in_folder(folder_obj,vm_name):
+        if not check_if_vm_name_exists_in_folder(folder_obj,vm_name) and vm_name:
             break
     power_on = input("Power On VM [Y/N]? [Y] :")
     if power_on.lower() not in ['y','n']:power_on = 'y'
@@ -838,8 +838,8 @@ def generate_controller_from_ova():
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-        setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
-        setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
+        setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
+        setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
         setup_tmux(mgmt_ip)
 
     print("================== DONE ==============")
@@ -850,8 +850,8 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
-    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
+    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
+    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
@@ -859,7 +859,7 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
-    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
+    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
 
 
 if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
@@ -877,8 +877,8 @@ if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux'
     ctlr_version = get_version_controller_from_ova()
     flush_db(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
+    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
+    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
 
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
@@ -891,8 +891,8 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
     mgmt_ip = input("Management IP ? :")
     ctlr_version = get_version_controller_from_ova()
     set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-    setup_cloud_se(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, c_port=None,version=ctlr_version ,timeout=60)
+    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
+    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
     if sys.argv[1] != 'configure_raw_controller_wo_tmux':
         setup_tmux(mgmt_ip)
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
