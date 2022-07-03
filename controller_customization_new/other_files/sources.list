@@ -1,0 +1,2 @@
+deb [arch=amd64] https://linux-repo.vmware.com/ubuntu/ focal-updates main restricted universe multiverse
+deb [arch=amd64] https://linux-repo.vmware.com/ubuntu/ focal main restricted universe multiverse

@@ -38,16 +38,27 @@ cp -v ./git_show_branch_cmd/git-prompt.sh ~/.config/git-prompt.sh
 #else
 #    cat ./git_show_branch_cmd/bash_profile_course >> ~/.bashrc
 #fi
+release=$(lsb_release -a 2>&1)
+if [[ $release == *"focal"* ]]
+then
+    mv /etc/apt/sources.list /etc/apt/sources_1.list_1
+    cp -v ./other_files/sources.list /etc/apt/sources.list
+    sudo apt-get update;apt-get install aria2 ranger git mosh -y
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
 
-echo "==================git config and bashrc done"
-export DEBIAN_FRONTEND=noninteractive
-sudo add-apt-repository ppa:git-core/ppa -y;add-apt-repository ppa:pi-rho/dev -y
-echo "==================add-apt done"
+else
+    echo "==================git config and bashrc done"
+    export DEBIAN_FRONTEND=noninteractive
+    sudo add-apt-repository ppa:git-core/ppa -y;add-apt-repository ppa:pi-rho/dev -y
+    echo "==================add-apt done"
 
-sudo apt-get update;apt-get install aria2 ranger git mosh -y
-sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
+    sudo apt-get update;apt-get install aria2 ranger git mosh -y
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
 
-echo "==================apt-get done"
+    echo "==================apt-get done"
+fi
+mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
+    
 
 sudo pip3 install flake8
 sudo pip3 install ipdb
