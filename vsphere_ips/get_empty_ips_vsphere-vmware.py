@@ -740,7 +740,7 @@ def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
     return False
 
 def get_own_sysadmin_key():
-    keypath = "/home/aviuser/.ssh/id_rsa.pub"
+    keypath = "/home/aviuser/.ssh/id_rsa_ctlr.pub"
     if os.path.exists(keypath):
         with open(keypath, 'r') as keyfile:
             data = keyfile.read().rstrip('\n')
