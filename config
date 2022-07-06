@@ -17,3 +17,6 @@ Host 178
     HostName 10.102.65.178
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
+Host github.com
+    HostName github.com
+    IdentityFile ~/.ssh/id_rsa_github
