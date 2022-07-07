@@ -146,7 +146,6 @@ if len(sys.argv)==1:
     ################# FORMING PRINT STRUCTURE #####################
 
     final_print_vals = [("**VM NAME**", "*STATE*", "**IP**", "*NETWORK*")]
-    final_print_vals.append(("","","",""))
     for val_ip in ALL_RESERVED_IPS:
         found = False
         for folder_name,value in vms_table.items():
@@ -158,13 +157,11 @@ if len(sys.argv)==1:
             final_print_vals.append(("--Free IP--", "-------", val_ip, "------"))
 
     final_print_vals.append(("","","",""))
-    final_print_vals.append(("","","",""))
 
     for folder_name,value in vms_table.items():
         for ip_network_val in value['ip_network']:
             if ip_network_val[0] not in ALL_RESERVED_IPS:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))    
-    final_print_vals.append(("","","",""))
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
         
 
