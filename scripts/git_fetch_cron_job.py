@@ -11,9 +11,9 @@ import time
 main_branch_pattern = re.compile(r"\d+\.\d+\.\d+")
 patch_branch_pattern = re.compile(r"\d+\.\d+\.\d+-\d+p\d+")
 all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
-all_branches += ["eng","webapp2-release1","webapp2-release2"]
-
 all_branches = sorted(all_branches, reverse=True)
+all_branches = ["eng","webapp2-release1","webapp2-release2"] + all_branches
+
 
 if os.path.isdir("/home/aviuser/workspace/avi-dev"):
     CWD = "/home/aviuser/workspace/avi-dev"
@@ -30,7 +30,7 @@ def fetch_branch(cwd,branch,file_path,file_path_error, lock):
     try:
         start = '******** ' + str(datetime.datetime.now()) + '  ********\n'
         ff.append(start)
-        command = "git fetch -v -p -P origin %s:%s"%(branch,branch)
+        command = "git fetch -v -p -P origin %s:remotes/origin/%s"%(branch,branch)
         ff.append(command+"\n")
         #subprocess.run(shlex.split(command), stdout=ff, stderr=ff, cwd=CWD, check=True, timeout=120)
         result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
