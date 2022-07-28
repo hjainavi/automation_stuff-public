@@ -24,13 +24,16 @@ elif os.path.isdir("/root/workspace/avi-dev"):
     FILE_PATH = "/root/logfile_git_fetch_cron.txt"
     FILE_PATH_ERROR = "/root/logfile_git_fetch_cron_error.txt"
 
-def fetch_branch(cwd,branch,file_path,file_path_error, lock):
+def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False):
     ff = []
     ffe = []
     try:
         start = '******** ' + str(datetime.datetime.now()) + '  ********\n'
         ff.append(start)
-        command = "git fetch -v -p -P origin %s:remotes/origin/%s"%(branch,branch)
+        if remote_fetch:
+            command = "git fetch -v -p -P origin %s:remotes/origin/%s"%(branch,branch)
+        else:
+            command = "git fetch -v -p -P origin %s:%s"%(branch,branch)
         ff.append(command+"\n")
         #subprocess.run(shlex.split(command), stdout=ff, stderr=ff, cwd=CWD, check=True, timeout=120)
         result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
@@ -38,13 +41,19 @@ def fetch_branch(cwd,branch,file_path,file_path_error, lock):
         ff.append(str(result.stderr))
         ff.append("\n")
     except Exception as e:
+        #raise
+        #import ipdb;ipdb.set_trace()
         ffe.append(start)
         ffe.append(command+"\n")
         ffe.append("ERROR !!!  ")
         if not hasattr(e,"stderr"):
             ffe.append(str(e)+"\n")
+            if "refusing to fetch into branch" in str(e):
+                fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
         if hasattr(e,"stderr"):
             ffe.append(str(e.stderr))
+            if "refusing to fetch into branch" in str(e.stderr):
+                fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
         #ffe.append(str(result.stdout))
         #ffe.append(str(result.stderr))
         ffe.append("\n")
@@ -60,15 +69,15 @@ def fetch_branch(cwd,branch,file_path,file_path_error, lock):
                     f.write(i) 
 
 lock = threading.Lock()
-with ThreadPoolExecutor(1) as exe:
-    for branch in all_branches:
-        try:
-            if int(branch[:2])<20:
-                continue
-        except ValueError:
-            pass
-        #time.sleep(2)
-        _ = exe.submit(fetch_branch, CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
-        #fetch_branch(CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
+#with ThreadPoolExecutor(1) as exe:
+for branch in all_branches:
+    try:
+        if int(branch[:2])<20:
+            continue
+    except ValueError:
+        pass
+    #time.sleep(2)
+    #_ = exe.submit(fetch_branch, CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
+    fetch_branch(CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
 
 # crontab -e has : 0 */8 * * * /usr/bin/python /root/automation_stuff/scripts/git_fetch_cron_job.py
