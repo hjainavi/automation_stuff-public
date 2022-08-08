@@ -10,7 +10,8 @@ import time
 
 main_branch_pattern = re.compile(r"\d+\.\d+\.\d+")
 patch_branch_pattern = re.compile(r"\d+\.\d+\.\d+-\d+p\d+")
-all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
+#all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
+all_branches = [i for i in os.listdir("/mnt/builds") if re.fullmatch(main_branch_pattern, i)]
 all_branches = sorted(all_branches, reverse=True)
 all_branches = ["eng","webapp2-release1","webapp2-release2"] + all_branches
 
@@ -43,6 +44,10 @@ def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False)
     except Exception as e:
         #raise
         #import ipdb;ipdb.set_trace()
+        if "bad object" in str(e) and "tags" in str(e):
+            tag = str(e).split("/")[-1]
+            command_1 = "git tag -d %s"(tag)
+            subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
         ffe.append(start)
         ffe.append(command+"\n")
         ffe.append("ERROR !!!  ")
