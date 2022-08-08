@@ -1,1 +1,0 @@
-INSERT INTO api_seproperties (uuid, slug, json_data) values ('global','global','{}');

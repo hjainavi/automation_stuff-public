@@ -48,6 +48,7 @@ then
     cp -v ./other_files/sources.list /etc/apt/sources.list
     sudo apt-get update;apt-get install aria2 ranger git mosh -y
     sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
+    mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
 
 else
     echo "==================git config and bashrc done"
@@ -60,7 +61,6 @@ else
 
     echo "==================apt-get done"
 fi
-mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
     
 
 sudo pip3 install flake8

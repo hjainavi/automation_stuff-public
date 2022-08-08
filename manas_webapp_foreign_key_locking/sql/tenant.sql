@@ -1,1 +1,0 @@
-INSERT INTO api_tenant (name, uuid, slug, json_data) values ('admin','admin','admin','{"local": true, "name": "admin", "uuid": "admin"}');

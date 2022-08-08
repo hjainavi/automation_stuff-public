@@ -1,1 +1,0 @@
-INSERT INTO api_controllerproperties (uuid, slug, json_data) values ('global','global','{}');
