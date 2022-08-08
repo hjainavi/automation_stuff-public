@@ -38,8 +38,11 @@ cp -v ./git_show_branch_cmd/git-prompt.sh ~/.config/git-prompt.sh
 #else
 #    cat ./git_show_branch_cmd/bash_profile_course >> ~/.bashrc
 #fi
-release=$(lsb_release -a 2>&1)
-if [[ $release == *"focal"* ]]
+
+
+#release=$(lsb_release -a 2>&1)
+#if [[ $release == *"focal"* ]]
+if false
 then
     mv /etc/apt/sources.list /etc/apt/sources_1.list_1
     cp -v ./other_files/sources.list /etc/apt/sources.list
