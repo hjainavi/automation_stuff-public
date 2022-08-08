@@ -56,8 +56,8 @@ VCENTER_MANAGEMENT_MAP = {
                         }
 VCENTER_DNS_SERVERS = ["10.102.0.193", "10.102.0.195"]
 VCENTER_NTP = "time.vmware.com"
-VCENTER_PORT_GROUP = "blr-01-avi-66-66"
-VCENTER_SERVER_IP = "100.66.66.3"
+VCENTER_PORT_GROUP = "blr-01-avi-66-68"
+VCENTER_SERVER_IP = "100.66.68.2"
 
 
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
@@ -146,7 +146,6 @@ if len(sys.argv)==1:
     ################# FORMING PRINT STRUCTURE #####################
 
     final_print_vals = [("**VM NAME**", "*STATE*", "**IP**", "*NETWORK*")]
-    final_print_vals.append(("","","",""))
     for val_ip in ALL_RESERVED_IPS:
         found = False
         for folder_name,value in vms_table.items():
@@ -158,13 +157,11 @@ if len(sys.argv)==1:
             final_print_vals.append(("--Free IP--", "-------", val_ip, "------"))
 
     final_print_vals.append(("","","",""))
-    final_print_vals.append(("","","",""))
 
     for folder_name,value in vms_table.items():
         for ip_network_val in value['ip_network']:
             if ip_network_val[0] not in ALL_RESERVED_IPS:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))    
-    final_print_vals.append(("","","",""))
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
         
 
@@ -548,12 +545,12 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
         if VCENTER_PORT_GROUP in val['name']:
             data = val
             break
-    network_dev020_uuid = data['uuid']
-    network_dev020_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
+    port_group_uuid = data['uuid']
+    port_group_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
     occupied_ips = []
     "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
     while True:
-        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,network_dev020_uuid),verify=False, headers=headers, cookies=cookies)
+        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=headers, cookies=cookies)
         try:
             for val in r.json()['results']:
                 for guest_nic in val['guest_nic']:
@@ -564,7 +561,7 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
             print("Error: ",r.json())
             time.sleep(10)
 
-    ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(network_dev020_subnet.replace("/24","/26"))]))
+    ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet.replace("/24","/26"))]))
     ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
     while True:
         vsvip_ip = random.choice(ip_list)
