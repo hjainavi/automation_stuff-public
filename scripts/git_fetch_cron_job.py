@@ -44,10 +44,6 @@ def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False)
     except Exception as e:
         #raise
         #import ipdb;ipdb.set_trace()
-        if "bad object" in str(e) and "tags" in str(e):
-            tag = str(e).split("/")[-1]
-            command_1 = "git tag -d %s"(tag)
-            subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
         ffe.append(start)
         ffe.append(command+"\n")
         ffe.append("ERROR !!!  ")
@@ -55,10 +51,20 @@ def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False)
             ffe.append(str(e)+"\n")
             if "refusing to fetch into branch" in str(e):
                 fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
+            if "bad object" in str(e) and "tags" in str(e):
+                tag = str(e).split("\n")[0].split("/")[-1]
+                command_1 = "git tag -d %s"%(tag)
+                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
+                fetch_branch(CWD,branch,file_path,file_path_error, lock, False)
         if hasattr(e,"stderr"):
             ffe.append(str(e.stderr))
             if "refusing to fetch into branch" in str(e.stderr):
                 fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
+            if "bad object" in str(e.stderr) and "tags" in str(e.stderr):
+                tag = str(e.stderr).split("\n")[0].split("/")[-1]
+                command_1 = "git tag -d %s"%(tag)
+                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
+                fetch_branch(CWD,branch,file_path,file_path_error, lock, False)
         #ffe.append(str(result.stdout))
         #ffe.append(str(result.stderr))
         ffe.append("\n")
