@@ -44,11 +44,11 @@ cp -v ./git_show_branch_cmd/git-prompt.sh ~/.config/git-prompt.sh
 #if [[ $release == *"focal"* ]]
 if false
 then
-    mv /etc/apt/sources.list /etc/apt/sources_1.list_1
-    cp -v ./other_files/sources.list /etc/apt/sources.list
+    #mv /etc/apt/sources.list /etc/apt/sources_1.list_1
+    #cp -v ./other_files/sources.list /etc/apt/sources.list
     sudo apt-get update;apt-get install aria2 ranger git mosh -y
     sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
-    mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
+    #mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
 
 else
     echo "==================git config and bashrc done"
