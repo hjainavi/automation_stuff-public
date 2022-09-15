@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 )
-
+//
 func main() {
 	links := []string{
 		"http://google.com",
