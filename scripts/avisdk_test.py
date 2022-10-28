@@ -1,22 +1,7 @@
 from avi.sdk.avi_api import ApiSession
 import ipdb
 
-api = ApiSession.get_session("10.50.56.149", "admin", "admin", tenant="admin")
+api = ApiSession.get_session("100.65.9.177", "admin", "admin", tenant="admin")
 
-data_pool = {"name":"pool-test"}
-
-data = { "name":"abc",
-    "trap_servers":[
-        {
-            "community":"12345",
-            "ip_addr":{"addr":"1.1.1.1","type":"V4"}
-        }
-    ]
-}
-
-try:
-    resp = api.post("pool",data=data_pool)
-except:
-    pass
-ipdb.set_trace()
-resp = api.delete_by_name("pool",data_pool["name"])
+resp = api.get("cloud")
+api.

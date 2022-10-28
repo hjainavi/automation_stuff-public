@@ -2,26 +2,18 @@ package main
 
 import "fmt"
 
-type CommonApiHandler struct{}
-
-func (v *CommonApiHandler) Print() {
-	fmt.Println("in common api handler print")
-}
-
-type BaseApiHandler struct {
-	CommonApiHandler
-}
-
-type ListApiHandler struct {
-	hdlr BaseApiHandler
-}
-
-func (v *ListApiHandler) Get() {
-	v.hdlr.Print()
-}
+// Here we are defining the global variable and assigning value to it
 
 func main() {
-	v := ListApiHandler{}
-	v.hdlr = BaseApiHandler{}
-	v.Get()
+	abc := 10
+	display(&abc)
+	display(nil)
+}
+func display(abc *int) {
+	if abc == nil {
+		s := 10
+		abc = &s
+	}
+	fmt.Printf("The Global variable glvariable's inside function value is : %v\n",
+		abc)
 }
