@@ -5,11 +5,17 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-api = ApiSession.get_session("10.50.56.149", "admin", "admin", tenant="admin")
+api = ApiSession.get_session("100.65.9.181", "admin", "avi123", tenant="admin")
 
 data_pool = api.get("pool?page_size=-1")
 #data_pool = api.get("pool")
+for pool in data_pool.json()['results']:
+    print(api.delete("pool/%s"%(pool['uuid'])))
 
+
+#api.delete("pool")
+
+'''
 fqdn_ip ={
         "10.140.19.101": "avi01.abc",
         "10.140.19.102": "avi02.abc",
@@ -58,3 +64,4 @@ with ThreadPoolExecutor(max_workers=20) as executor:
         #executor.submit(put_pool,data_pool,uuid)
 
 
+'''
