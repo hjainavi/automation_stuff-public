@@ -38,7 +38,7 @@ VCENTER_PASSWORD = "AviUser1234!."
 VCENTER_DATACENTER_NAME = "blr-01-vc13"
 VCENTER_CLUSTER_NAME = "blr-01-vc13c01"
 VCENTER_DATASTORE_NAME = "blr-01-vc13c01-vsan"
-VCENTER_FOLDER_NAME = "harshjain"
+VCENTER_FOLDER_NAME = "harshj"
 DEV_VM_IP = "10.102.96.175"
 VCENTER_MANAGEMENT_MAP = {
                             "blr-01-avi-dev-IntMgmt":{
