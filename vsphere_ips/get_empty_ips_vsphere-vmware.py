@@ -369,36 +369,16 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     c_uri = c_ip 
     uri_base = 'https://' + c_uri + '/'
     headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
-    print ("login and change password to avi123$%")
     for password in [current_password,"avi123","avi123$%","admin"]:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
             current_password = password
             break
-        
-    time.sleep(1) 
-    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
-    data = r.json()
-    data.update({'username':'admin','password':"avi123$%" ,'old_password':current_password})
     headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
-    
-    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
-    current_password = "avi123$%"
-    time.sleep(1) 
-    for password in [current_password,"avi123","avi123$%","admin"]:
-        data = {'username':'admin', 'password':password}
-        login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-        if login.status_code in [200, 201]:
-            current_password = password
-            break
-    time.sleep(1) 
-    headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
-    print ("login and change password to avi123$% -- done")
+    headers['Referer'] = uri_base    
+
+    time.sleep(1)    
     print("change systemconfiguration settings")
     #import ipdb;ipdb.set_trace()
     r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=headers ,cookies=login.cookies)
@@ -409,40 +389,11 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
     data['welcome_workflow_complete']=True
     data['default_license_tier']='ENTERPRISE'
-
-    time.sleep(1) 
     r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-
     print("change systemconfiguration settings -- done")
-    print("changing password to avi123")
-    time.sleep(1)
-    
-    r = requests.get(uri_base+'api/useraccount',verify=False, headers=headers, cookies=login.cookies)
-    data = r.json()
-    data.update({'username':'admin','password':'avi123' ,'old_password':current_password})
-    time.sleep(1) 
-    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
 
-    print("changing password to avi123 -- done")
-    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
-    print ("login and change password to avi123$%")
-    for password in [current_password,"avi123","avi123$%","admin"]:
-        data = {'username':'admin', 'password':password}
-        login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-        if login.status_code in [200, 201]:
-            current_password = password
-            break
-        
-    time.sleep(1) 
-    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
-    data = r.json()
-    data.update({'username':'admin','password':"avi123$%" ,'old_password':current_password})
-    headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
     print("setting backup default passphrase")
     time.sleep(1) 
     r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=headers, cookies=login.cookies)
@@ -471,8 +422,18 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-    
     print("setting backup default passphrase -- done")
+
+    print("changing password to avi123")
+    r = requests.get(uri_base+'api/useraccount',verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()
+    data.update({'username':'admin','password':'avi123' ,'old_password':current_password})
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    print("changing password to avi123 -- done")
+
     print("setting complete")
    
     
