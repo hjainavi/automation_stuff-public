@@ -417,6 +417,21 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
         raise Exception(r.text)
 
     print("changing password to avi123 -- done")
+    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+    print ("login and change password to avi123$%")
+    for password in [current_password,"avi123","avi123$%","admin"]:
+        data = {'username':'admin', 'password':password}
+        login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+        if login.status_code in [200, 201]:
+            current_password = password
+            break
+        
+    time.sleep(1) 
+    r = requests.get(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    data = r.json()
+    data.update({'username':'admin','password':"avi123$%" ,'old_password':current_password})
+    headers['X-CSRFToken'] = login.cookies['csrftoken']
+    headers['Referer'] = uri_base
     print("setting backup default passphrase")
     time.sleep(1) 
     r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=headers, cookies=login.cookies)
