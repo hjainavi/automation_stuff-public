@@ -383,13 +383,24 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     data.update({'username':'admin','password':"avi123$%" ,'old_password':current_password})
     headers['X-CSRFToken'] = login.cookies['csrftoken']
     headers['Referer'] = uri_base
+    
     r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     current_password = "avi123$%"
     time.sleep(1) 
+    for password in [current_password,"avi123","avi123$%","admin"]:
+        data = {'username':'admin', 'password':password}
+        login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
+        if login.status_code in [200, 201]:
+            current_password = password
+            break
+    time.sleep(1) 
+    headers['X-CSRFToken'] = login.cookies['csrftoken']
+    headers['Referer'] = uri_base
     print ("login and change password to avi123$% -- done")
     print("change systemconfiguration settings")
+    #import ipdb;ipdb.set_trace()
     r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=headers ,cookies=login.cookies)
     data = r.json()
     data['portal_configuration']['password_strength_check'] = False
