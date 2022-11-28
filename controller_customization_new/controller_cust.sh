@@ -53,7 +53,7 @@ then
 else
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
-    sudo add-apt-repository ppa:git-core/ppa -y;add-apt-repository ppa:pi-rho/dev -y
+    sudo add-apt-repository ppa:pi-rho/dev -y
     echo "==================add-apt done"
 
     sudo apt-get update;apt-get install aria2 ranger git mosh -y
