@@ -15,7 +15,6 @@ all_branches = [i for i in os.listdir("/mnt/builds") if re.fullmatch(main_branch
 all_branches = sorted(all_branches, reverse=True)
 all_branches = ["eng","webapp2-release1","webapp2-release2"] + all_branches
 
-
 if os.path.isdir("/home/aviuser/workspace/avi-dev"):
     CWD = "/home/aviuser/workspace/avi-dev"
     FILE_PATH = "/home/aviuser/logfile_git_fetch_cron.txt"
@@ -83,10 +82,11 @@ lock = threading.Lock()
 #with ThreadPoolExecutor(1) as exe:
 for branch in all_branches:
     try:
-        if int(branch[:2])<20:
+        if int(branch[:2])<22:
             continue
     except ValueError:
         pass
+    print(branch)
     #time.sleep(2)
     #_ = exe.submit(fetch_branch, CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
     fetch_branch(CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)

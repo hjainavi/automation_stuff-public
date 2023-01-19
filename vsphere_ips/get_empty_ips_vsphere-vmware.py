@@ -369,12 +369,18 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     c_uri = c_ip 
     uri_base = 'https://' + c_uri + '/'
     headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+    logged_in = False
     for password in [current_password,"avi123","avi123$%","admin"]:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
             current_password = password
+            logged_in = True
             break
+    if not logged_in:
+        print("not able to login using various passwords")
+        print(login.text)
+        exit(1)
     headers['X-CSRFToken'] = login.cookies['csrftoken']
     headers['Referer'] = uri_base    
 
@@ -817,7 +823,13 @@ def generate_controller_from_ova():
     verify = input("Verify the command and agree to proceed [Y/N] ? [Y] :") or 'Y'
     if verify.lower() == 'y':
         print ("\nDeploying OVA")
-        subprocess.call(cmd, shell=True)
+        while True:
+            try:
+                subprocess.run(cmd, shell=True,check=True)
+                break
+            except subprocess.CalledProcessError:
+                print("======================== Retrying Ova deploy ============================")
+                pass
     else:
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
