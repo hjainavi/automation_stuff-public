@@ -39,7 +39,8 @@ func main() {
 		for key, val := range x_map {
 			if strings.ToLower(v_type.Field(i).Name) == strings.ToLower(key) {
 				f := v_val.Elem().FieldByName(v_type.Field(i).Name)
-				if f.Kind() == reflect.Bool {
+				kind := v_type.Field(i).Type.Kind()
+				if kind == reflect.Bool {
 					if val == "true" {
 						f.SetBool(true)
 					}
@@ -47,7 +48,7 @@ func main() {
 						f.SetBool(false)
 					}
 				}
-				if f.Kind() == reflect.String {
+				if kind == reflect.String {
 					f.SetString(val)
 				}
 			}
