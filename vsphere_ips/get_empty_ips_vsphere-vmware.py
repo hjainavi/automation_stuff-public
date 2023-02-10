@@ -580,6 +580,7 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
                 "name":"test_vsvip",
                 "vip":[
                     {
+                        "vip_id":1,
                         "ip_address":{
                             "type":"V4",
                             "addr":vsvip_ip
