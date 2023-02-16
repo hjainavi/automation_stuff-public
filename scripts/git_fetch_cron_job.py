@@ -28,7 +28,7 @@ def fetch_branch(CWD_c,branch,file_path,file_path_error, lock, remote_fetch=Fals
         ff.append(start)
         ff.append("current dir: %s\n"%(CWD_c))
         if remote_fetch:
-            command = "git pull origin %s"%(branch)
+            command = "git pull -p origin %s"%(branch)
         else:
             command = "git fetch -v -p -P origin %s:%s"%(branch,branch)
         ff.append(command+"\n")
