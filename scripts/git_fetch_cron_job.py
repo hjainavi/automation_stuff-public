@@ -24,19 +24,19 @@ elif os.path.isdir("/root/workspace/avi-dev"):
     FILE_PATH = "/root/logfile_git_fetch_cron.txt"
     FILE_PATH_ERROR = "/root/logfile_git_fetch_cron_error.txt"
 
-def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False):
+def fetch_branch(CWD_c,branch,file_path,file_path_error, lock, remote_fetch=False):
     ff = []
     ffe = []
     try:
         start = '******** ' + str(datetime.datetime.now()) + '  ********\n'
         ff.append(start)
         if remote_fetch:
-            command = "git fetch -v -p -P origin %s:remotes/origin/%s"%(branch,branch)
+            command = "git pull origin %s"%(branch)
         else:
             command = "git fetch -v -p -P origin %s:%s"%(branch,branch)
         ff.append(command+"\n")
         #subprocess.run(shlex.split(command), stdout=ff, stderr=ff, cwd=CWD, check=True, timeout=120)
-        result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
+        result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=120)
         ff.append(str(result.stdout))
         ff.append(str(result.stderr))
         ff.append("\n")
@@ -49,21 +49,30 @@ def fetch_branch(CWD,branch,file_path,file_path_error, lock, remote_fetch=False)
         if not hasattr(e,"stderr"):
             ffe.append(str(e)+"\n")
             if "refusing to fetch into branch" in str(e):
-                fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
+                if "avi-dev" in str(e):
+                    cwd_c = "/root/workspace/avi-dev"
+                if "dev-1" in str(e):
+                    cwd_c = "/root/workspace/dev-1"
+                fetch_branch(cwd_c,branch,file_path,file_path_error, lock, True)
             if "bad object" in str(e) and "tags" in str(e):
                 tag = str(e).split("\n")[0].split("/")[-1]
                 command_1 = "git tag -d %s"%(tag)
-                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
-                fetch_branch(CWD,branch,file_path,file_path_error, lock, False)
+                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=120)
+                fetch_branch(CWD_c,branch,file_path,file_path_error, lock, False)
         if hasattr(e,"stderr"):
             ffe.append(str(e.stderr))
+            
             if "refusing to fetch into branch" in str(e.stderr):
-                fetch_branch(CWD,branch,file_path,file_path_error, lock, True)
+                if "avi-dev" in str(e):
+                    cwd_c = "/root/workspace/avi-dev"
+                if "dev-1" in str(e):
+                    cwd_c = "/root/workspace/dev-1"
+                fetch_branch(cwd_c,branch,file_path,file_path_error, lock, True)
             if "bad object" in str(e.stderr) and "tags" in str(e.stderr):
                 tag = str(e.stderr).split("\n")[0].split("/")[-1]
                 command_1 = "git tag -d %s"%(tag)
-                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD, check=True, timeout=120)
-                fetch_branch(CWD,branch,file_path,file_path_error, lock, False)
+                subprocess.run(shlex.split(command_1), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=120)
+                fetch_branch(CWD_c,branch,file_path,file_path_error, lock, False)
         #ffe.append(str(result.stdout))
         #ffe.append(str(result.stderr))
         ffe.append("\n")
