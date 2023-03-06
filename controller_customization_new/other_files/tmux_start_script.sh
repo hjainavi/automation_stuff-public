@@ -6,3 +6,6 @@ tmux new-window -t $TMUX_SESSION_NAME
 tmux send-keys -t $TMUX_SESSION_NAME:2 'tail -f /opt/avi/log/portal-webapp.log' Enter
 tmux new-window -t $TMUX_SESSION_NAME
 tmux send-keys -t $TMUX_SESSION_NAME:3 'tail -f /opt/avi/log/octavius.INFO' Enter
+tmux new-window -t $TMUX_SESSION_NAME
+tmux send-keys -t $TMUX_SESSION_NAME:4 'tail -f /opt/avi/log/apiserver.INFO' Enter
+cd ~/
