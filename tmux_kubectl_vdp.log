@@ -635,3 +635,17 @@ aviuser:[/home/aviuser]
 aviuser:[/home/aviuser]
  $ tmux capture-pane -b temp-capture-buffer -S -
 
+## delete resource 
+
+aviuser:[/home/aviuser]
+ $ kubectl get avi
+NAME                   STATUS                          READY   CONTROLLER STATUS           INGRESS HOST                                     NODE COUNT   FLAVOR   CONTROLLER VERSION                     PATCH VERSION   AGE
+adreddy-controller     Ready                           true    CLUSTER_UP_HA_ACTIVE        adreddy-controller.nsbu03.vdp-stg.vmware.com     3            small    30.2.1(7349) 2023-02-22 03:32:45 UTC   -               6d15h
+adreddy-controller-2   Cluster Formation in Progress   false   CLUSTER_FORMATION_FAILURE   adreddy-controller-2.nsbu03.vdp-stg.vmware.com   3            small    23.1.1(5000) 2023-01-23 21:29:04 UTC   -               20d
+test-ctrl-harshj       Cluster Formation in Progress   false   CLUSTER_UP_HA_COMPROMISED   test-ctrl-harshj.nsbu03.vdp-stg.vmware.com       3            small    30.1.1(9000) 2023-02-28 21:37:59 UTC   -               5d
+test-ctrl-harshj-1     Resources Created               false   CONTROLLERS_NOT_READY       test-ctrl-harshj-1.nsbu03.vdp-stg.vmware.com     1            small    30.1.1(9000) 2023-02-28 21:37:59 UTC   -               3d15h
+aviuser:[/home/aviuser]
+ $ kubectl delete avi test-ctrl-harshj-1
+aviclusterinstaller.aviclusterinstaller.avinetworks.com "test-ctrl-harshj-1" deleted
+aviuser:[/home/aviuser]
+ $

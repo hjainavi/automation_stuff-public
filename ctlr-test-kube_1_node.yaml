@@ -1,0 +1,53 @@
+apiVersion: aviclusterinstaller.avinetworks.com/v1alpha1
+kind: AviClusterInstaller
+metadata:
+  name: test-ctrl-harshj-1
+  namespace: aviamer-staging-ft
+spec:
+  usageType: "LB"
+  clusterLoc: "AMER"
+
+  controllerSpec:
+    nodeCount: 1
+    flavor:
+      type: "small"
+#      Resources present in flavour are only considered if the flavour type is "custom"
+#      resources:
+#        CPU: "6"
+#        memory: "16"
+    image:
+      imageRepo: "public.ecr.aws/v8c6b4v3/avinetworks/controller"
+#      update the image tag with the latest one you are using
+      imageTag: 30.1.1-9000-20230228.213759
+    controllerEnvVars:
+      - name: "SAAS_CONTROLLER"
+        value: "true"
+      - name: "CONTAINER_DEPLOYMENT"
+        value: "VDP"
+    storageSpec:
+      # imagePullSecrets are now read from Operator Env config which is same for all CRs, will remove this field in future CRD iterations
+      storageClassName: "gp2-encrypted"
+      diskSize: 128
+    securityContext:
+      runAsUser: 0
+      runAsGroup: 0
+      privileged: true
+
+  deploymentMgrSpec:
+    image:
+      imageRepo: "public.ecr.aws/v8c6b4v3/avi_deployment_mgr"
+      imageTag: "1.57"
+
+# imagePullSecrets are now read from Operator Env config which is same for all CRs, will remove this field in future CRD iterations
+  imagePullSecrets: harbor-corp-registry
+# ingressDomain is now read from Operator Env config which is same for all CRs, will remove this field in future CRD iterations
+  ingressDomain: nsbu03.vdp-stg.vmware.com
+  serviceAccount: "avicontroller-psp-exception"
+
+  ports:
+    sysIntPort: 8443
+    sysExtPort: 9443
+
+# customConfig is used to pass the AuthProfile configurations in json format, placement->LCM-> Operator
+# Note: Operator will not create Deployment Mgr till org-id, client-id and client-secret are not passed in CR. For now you can also pass the dummy values.
+  customConfig: "{\"org_id\":\"743e1e94-c7e6-4f79-ab59-f994b0e6fc1d\",\"client_id\":\"TwFAfJ3XSCPPffsGD7KRvPi4Z378FuUZcCG\",\"client_secret\": \"f71FFzf3baLPHFbl51SSWrl8hYyhWdig8vzzQyBfMex6ExBNIb\"}"
