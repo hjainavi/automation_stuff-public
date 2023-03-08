@@ -13,7 +13,6 @@ patch_branch_pattern = re.compile(r"\d+\.\d+\.\d+-\d+p\d+")
 #all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
 all_branches = [i for i in os.listdir("/mnt/builds") if re.fullmatch(main_branch_pattern, i)]
 all_branches = sorted(all_branches, reverse=True)
-all_branches = ["eng"] + all_branches
 
 if os.path.isdir("/home/aviuser/workspace/avi-dev"):
     CWD = "/home/aviuser/workspace/avi-dev"
@@ -94,10 +93,11 @@ for branch in all_branches:
             continue
     except ValueError:
         pass
-    print(branch)
     fetched_branches.append(branch)
 
+fetched_branches = ["eng","21.1.7"] + fetched_branches
 for branch in fetched_branches:
+    print(branch)
     fetch_branch(CWD, branch, FILE_PATH,FILE_PATH_ERROR, lock)
 
 

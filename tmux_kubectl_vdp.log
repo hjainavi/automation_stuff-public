@@ -1,0 +1,637 @@
+aviuser:[/home/aviuser]
+ $ curl -s https://vdp-binaries-src.s3.us-west-2.amazonaws.com/vdpcli/latest/install.sh | VDP_PATH=/usr/local/bin bash
+Installing VDP v1.0.14 to /usr/local/bin
+^C
+aviuser:[/home/aviuser]
+ $ ^C
+aviuser:[/home/aviuser]
+ $ ^C
+aviuser:[/home/aviuser]
+ $ ls -l /usr/local/bin/
+total 33684
+-rwxr-xr-x 1 root root    12280 Oct 28 12:00 ace_converter.py
+-rw-r--r-- 1 root root    10563 Oct 28 12:00 ace_converter.pyc
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-config
+-rwxr-xr-x 1 root root    10974 Jun  1  2020 ansible-connection
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-console
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-doc
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-galaxy
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-inventory
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-playbook
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-pull
+-rwxr-xr-x 1 root root     5842 Jun  1  2020 ansible-vault
+-rwxr-xr-x 1 root root    11986 Jun  1  2020 asadmin
+-rwxr-xr-x 1 root root      217 Jun  1  2020 automat-visualize
+-rwxr-xr-x 1 root root      207 Jun  1  2020 autopep8
+-rwxr-xr-x 1 root root     8259 Oct 28 12:00 avi_config_to_ansible.py
+-rw-r--r-- 1 root root     7658 Oct 28 12:00 avi_config_to_ansible.pyc
+-rwxr-xr-x 1 root root      815 Jun  1  2020 aws
+-rwxr-xr-x 1 root root      204 Jun  1  2020 aws_bash_completer
+-rwxr-xr-x 1 root root     1432 Jun  1  2020 aws.cmd
+-rwxr-xr-x 1 root root     1136 Jun  1  2020 aws_completer
+-rwxr-xr-x 1 root root     1807 Jun  1  2020 aws_zsh_completer.sh
+-rwxr-xr-x 1 root root      222 Jun  1  2020 barbican
+-rwxr-xr-x 1 root root     1552 Jun  1  2020 bundle_image
+-rwxr-xr-x 1 root root     3442 Jun  1  2020 cfadmin
+-rwxr-xr-x 1 root root      223 Jun  1  2020 cftp
+-rwxr-xr-x 1 root root      220 Jun  1  2020 chardetect
+-rwxr-xr-x 1 root root      217 Jun  1  2020 cinder
+-rwxr-xr-x 1 root root      226 Jun  1  2020 ckeygen
+-rwxr-xr-x 1 root root      224 Jun  1  2020 conch
+-rwxr-xr-x 1 root root    12864 Oct 28 12:00 config_patch.py
+-rw-r--r-- 1 root root    10943 Oct 28 12:00 config_patch.pyc
+-rwxr-xr-x 1 root root      207 Jun  1  2020 coverage
+-rwxr-xr-x 1 root root      207 Jun  1  2020 coverage3
+-rwxr-xr-x 1 root root      207 Jun  1  2020 coverage-3.7
+-rwxr-xr-x 1 root root     3051 Jun  1  2020 cq
+-rwxr-xr-x 1 root root     5043 Jun  1  2020 cwutil
+-rwxr-xr-x 1 root root      220 Jun  1  2020 cygdb
+-rwxr-xr-x 1 root root      241 Jun  1  2020 cython
+-rwxr-xr-x 1 root root      221 Jun  1  2020 cythonize
+-rwxrwxr-x 1 root root 13259457 Jun  1  2020 dep
+-rwxr-xr-x 1 root root      262 Jun  1  2020 django-admin
+-rwxr-xr-x 1 root root      124 Jun  1  2020 django-admin.py
+-rw-r--r-- 1 root root      306 Jun  1  2020 django-admin.pyc
+-rwxr-xr-x 1 root root     1533 Feb 10  2016 docker-enter
+-rwxr-xr-x 1 root root      494 May 22  2019 dotenv
+-rwxr-xr-x 1 root root     2131 Jun  1  2020 dynamodb_dump
+-rwxr-xr-x 1 root root     3501 Jun  1  2020 dynamodb_load
+-rwxr-xr-x 1 root root      229 Jun  1  2020 easy_install
+-rwxr-xr-x 1 root root      229 Jun  1  2020 easy_install-2.7
+-rwxr-xr-x 1 root root      230 Jun  1  2020 easy_install-3.7
+-rwxr-xr-x 1 root root     9691 Jun  1  2020 elbadmin
+-rwxr-xr-x 1 root root      219 Jun  1  2020 epylint
+-rwxr-xr-x 1 root root      198 Nov  4  2018 epylint.bat
+-rwxr-xr-x 1 root root      216 Jun  1  2020 f2py
+-rwxr-xr-x 1 root root      216 Jun  1  2020 f2py3
+-rwxr-xr-x 1 root root      216 Jun  1  2020 f2py3.7
+-rwxr-xr-x 1 root root    34093 Oct 28 12:00 f5_converter.py
+-rw-r--r-- 1 root root    23456 Oct 28 12:00 f5_converter.pyc
+-rwxr-xr-x 1 root root    28488 Oct 28 12:00 f5_discovery.py
+-rw-r--r-- 1 root root    19339 Oct 28 12:00 f5_discovery.pyc
+-rwxr-xr-x 1 root root      210 Jun  1  2020 fab
+-rwxr-xr-x 1 root root     1871 Jun  1  2020 fetch_file
+-rwxr-xr-x 1 root root      214 Mar 20  2021 flake8
+-rwxr-xr-x 1 root root      482 Jun  1  2020 fpm
+-rwxr-xr-x 1 root root      215 Jun  1  2020 futurize
+-rwxr-xr-x 1 root root     1707 Jun  1  2020 git-pylint-commit-hook
+-rwxr-xr-x 1 root root  3665944 Jun 16  2021 git-sizer
+-rwxr-xr-x 1 root root     5244 Jun  1  2020 glacier
+-rwxr-xr-x 1 root root      217 Jun  1  2020 glance
+lrwxrwxrwx 1 root root       20 Jun  1  2020 go -> /usr/local/go/bin/go
+-rwxr-xr-x 1 root root  1299056 Feb  5  2019 grpc_cpp_plugin
+-rwxr-xr-x 1 root root  1261904 Feb  5  2019 grpc_csharp_plugin
+-rwxr-xr-x 1 root root  1175888 Feb  5  2019 grpc_node_plugin
+-rwxr-xr-x 1 root root  1249648 Feb  5  2019 grpc_objective_c_plugin
+-rwxr-xr-x 1 root root  1229136 Feb  5  2019 grpc_php_plugin
+-rwxr-xr-x 1 root root  1212784 Feb  5  2019 grpc_python_plugin
+-rwxr-xr-x 1 root root  1167728 Feb  5  2019 grpc_ruby_plugin
+-rwxr-xr-x 1 root root    10353 Oct 28 12:00 gss_convertor.py
+-rw-r--r-- 1 root root     8494 Oct 28 12:00 gss_convertor.pyc
+-rwxr-xr-x 1 root root      215 Jun  1  2020 heat
+-rwxr-xr-x 1 root root   833944 Feb 10  2016 importenv
+-rwxr-xr-x 1 root root     5776 Jun  1  2020 instance_events
+-rwxr-xr-x 1 root root      211 Apr  5  2021 ipdb
+-rwxr-xr-x 1 root root      212 Mar 20  2021 ipdb3
+-rwxr-xr-x 1 root root      231 Apr  6  2021 iptest
+-rwxr-xr-x 1 root root      231 Apr  6  2021 iptest3
+-rwxr-xr-x 1 root root      224 Apr  6  2021 ipython
+-rwxr-xr-x 1 root root      224 Apr  6  2021 ipython3
+-rwxr-xr-x 1 root root      209 Jun  1  2020 isort
+-rwxr-xr-x 1 root root      213 Jun  1  2020 jirashell
+-rwxr-xr-x 1 root root     1695 Jun  1  2020 jp.py
+-rw-r--r-- 1 root root     1842 Nov  4  2018 jp.pyc
+-rwxr-xr-x 1 root root     1003 Jun  1  2020 jsondiff
+-rwxr-xr-x 1 root root     3661 Jun  1  2020 jsonpatch
+-rwxr-xr-x 1 root root     1341 Jun  1  2020 jsonpointer
+-rwxr-xr-x 1 root root      213 Jun  1  2020 jsonschema
+-rwxr-xr-x 1 root root      210 Jun  1  2020 keyring
+-rwxr-xr-x 1 root root      922 Jun  1  2020 kill_instance
+-rwxr-xr-x 1 root root    10603 Jun  1  2020 launch_instance
+-rwxr-xr-x 1 root root     3096 Jun  1  2020 list_instances
+-rwxr-xr-x 1 root root     3442 Jun  1  2020 lss3
+-rwxr-xr-x 1 root root      226 Jun  1  2020 mailmail
+-rwxr-xr-x 1 root root     2979 Nov  4  2018 make_metadata.py
+-rw-r--r-- 1 root root     2753 Nov  4  2018 make_metadata.pyc
+-rwxr-xr-x 1 root root     4662 Jun  1  2020 manhole-cli
+-rwxr-xr-x 1 root root     1381 Nov  4  2018 mdexport.py
+-rw-r--r-- 1 root root     1599 Nov  4  2018 mdexport.pyc
+-rwxr-xr-x 1 root root     1897 Nov  4  2018 merge_metadata.py
+-rw-r--r-- 1 root root     1742 Nov  4  2018 merge_metadata.pyc
+-rwxr-xr-x 1 root root    19146 Jun  1  2020 mturk
+-rwxr-xr-x 1 root root      502 May 22  2019 mustache
+-rwxr-xr-x 1 root root     1155 Jun  1  2020 netaddr
+-rwxr-xr-x 1 root root    18010 Oct 28 12:00 netscaler_converter.py
+-rw-r--r-- 1 root root    14176 Oct 28 12:00 netscaler_converter.pyc
+-rwxr-xr-x 1 root root      218 Jun  1  2020 neutron
+-rwxr-xr-x 1 root root      211 Jun  1  2020 nosetests
+-rwxr-xr-x 1 root root      213 Nov  4  2018 nosetests-2.7
+-rwxr-xr-x 1 root root      211 Jun  1  2020 nosetests-3.7
+-rwxr-xr-x 1 root root      215 Jun  1  2020 nova
+-rwxr-xr-x 1 root root   901608 Feb 10  2016 nsenter
+-rwxr-xr-x 1 root root     2977 Jun  1  2020 num2words
+-rwxr-xr-x 1 root root      239 Nov  4  2018 openshift-ansible-gen
+-rwxr-xr-x 1 root root      220 Jun  1  2020 openstack
+-rwxr-xr-x 1 root root      228 Jun  1  2020 openstack-inventory
+-rwxr-xr-x 1 root root      220 Jun  1  2020 oslo-config-generator
+-rwxr-xr-x 1 root root      220 Jun  1  2020 oslo-config-validator
+-rwxr-xr-x 1 root root    68575 Nov  4  2018 parse_xsd2.py
+-rw-r--r-- 1 root root    62279 Nov  4  2018 parse_xsd2.pyc
+-rwxr-xr-x 1 root root      217 Jun  1  2020 pasteurize
+-rwxr-xr-x 1 root root      211 Jun  1  2020 pbr
+-rwxr-xr-x 1 root root      207 Nov  4  2018 pep8
+-rwxr-xr-x 1 root root      220 Jun  1  2020 pip
+-rwxr-xr-x 1 root root      220 Jun  1  2020 pip2
+-rwxr-xr-x 1 root root      220 Jun  1  2020 pip2.7
+-rwxr-xr-x 1 root root      221 Jun  1  2020 pip3
+-rwxr-xr-x 1 root root      221 Jun  1  2020 pip3.7
+-rwxr-xr-x 1 root root      218 Jun  1  2020 pkginfo
+-rwxr-xr-x 1 root root      515 May 22  2019 please-manage-user
+-rwxr-xr-x 1 root root      506 May 22  2019 pleaserun
+-rwxrwxr-x 1 root root  5841575 Jun  1  2020 protoc-gen-go
+-rwxr-xr-x 1 root root      327 Jun  1  2020 py2dsc
+-rwxr-xr-x 1 root root      335 Jun  1  2020 py2dsc-deb
+-rwxr-xr-x 1 root root     2615 Jun  1  2020 pyami_sendmail
+-rwxr-xr-x 1 root root     3797 Nov  4  2018 pyasn_util_convert.py
+-rw-r--r-- 1 root root     2626 Nov  4  2018 pyasn_util_convert.pyc
+-rwxr-xr-x 1 root root     4851 Nov  4  2018 pyasn_util_download.py
+-rw-r--r-- 1 root root     3642 Nov  4  2018 pyasn_util_download.pyc
+-rwxr-xr-x 1 root root      222 Jun  1  2020 pybabel
+-rwxr-xr-x 1 root root       79 Nov  4  2018 pybot
+drwxr-xr-x 2 root root     4096 Jun  1  2020 __pycache__
+-rwxr-xr-x 1 root root      212 Mar 20  2021 pycodestyle
+-rwxr-xr-x 1 root root      211 Mar 20  2021 pyflakes
+-rwxr-xr-x 1 root root      215 Jun  1  2020 pygmentize
+-rwxr-xr-x 1 root root      221 Jun  1  2020 pyhtmlizer
+-rwxr-xr-x 1 root root      217 Jun  1  2020 pylint
+-rwxr-xr-x 1 root root      203 Nov  4  2018 pylint.bat
+-rwxr-xr-x 1 root root      227 Nov  4  2018 pylint-gui
+-rwxr-xr-x 1 root root      203 Nov  4  2018 pylint-gui.bat
+-rwxr-xr-x 1 root root     1153 Jun  1  2020 pypi-download
+-rwxr-xr-x 1 root root     2348 Jun  1  2020 pypi-install
+-rwxr-xr-x 1 root root      223 Jun  1  2020 pyreverse
+-rwxr-xr-x 1 root root      198 Nov  4  2018 pyreverse.bat
+-rwxr-xr-x 1 root root      212 Jun  1  2020 pyrsa-decrypt
+-rwxr-xr-x 1 root root      228 Jun  1  2020 pyrsa-decrypt-bigfile
+-rwxr-xr-x 1 root root      212 Jun  1  2020 pyrsa-encrypt
+-rwxr-xr-x 1 root root      228 Jun  1  2020 pyrsa-encrypt-bigfile
+-rwxr-xr-x 1 root root      210 Jun  1  2020 pyrsa-keygen
+-rwxr-xr-x 1 root root      233 Jun  1  2020 pyrsa-priv2pub
+-rwxr-xr-x 1 root root      206 Jun  1  2020 pyrsa-sign
+-rwxr-xr-x 1 root root      210 Jun  1  2020 pyrsa-verify
+-rwxr-xr-x 1 root root      205 Mar 24  2021 pytest
+-rwxr-xr-x 1 root root      205 Mar 24  2021 py.test
+-rwxr-xr-x 1 root root      220 Jun  1  2020 rebot
+-rwxr-xr-x 1 root root     1058 Nov  4  2018 ride_postinstall.py
+-rw-r--r-- 1 root root     1747 Nov  4  2018 ride_postinstall.pyc
+-rwxr-xr-x 1 root root      897 Nov  4  2018 ride.py
+-rw-r--r-- 1 root root      324 Nov  4  2018 ride.pyc
+-rwxr-xr-x 1 root root      214 Jun  1  2020 robot
+-rwxr-xr-x 1 root root     9032 Jun  1  2020 route53
+-rwxr-xr-x 1 root root      714 Jun  1  2020 rst2html4.py
+-rwxr-xr-x 1 root root     1139 Jun  1  2020 rst2html5.py
+-rwxr-xr-x 1 root root      594 Jun  1  2020 rst2html.py
+-rwxr-xr-x 1 root root      791 Jun  1  2020 rst2latex.py
+-rwxr-xr-x 1 root root      600 Jun  1  2020 rst2man.py
+-rwxr-xr-x 1 root root     1698 Jun  1  2020 rst2odt_prepstyles.py
+-rwxr-xr-x 1 root root      764 Jun  1  2020 rst2odt.py
+-rwxr-xr-x 1 root root      601 Jun  1  2020 rst2pseudoxml.py
+-rwxr-xr-x 1 root root      637 Jun  1  2020 rst2s5.py
+-rwxr-xr-x 1 root root      871 Jun  1  2020 rst2xetex.py
+-rwxr-xr-x 1 root root      602 Jun  1  2020 rst2xml.py
+-rwxr-xr-x 1 root root      670 Jun  1  2020 rstpep2html.py
+-rwxr-xr-x 1 root root      504 May 22  2019 rubygems-cabin-test
+-rwxr-xr-x 1 root root    16837 Jun  1  2020 s3put
+-rwxr-xr-x 1 root root     6993 Jun  1  2020 sdbadmin
+-rwxr-xr-x 1 root root     1884 Jun  1  2020 serve-stdio
+-rwxr-xr-x 1 root root      221 Nov  4  2018 sort_wsdl
+-rwxr-xr-x 1 root root      216 Jun  1  2020 swift
+-rwxr-xr-x 1 root root      219 Jun  1  2020 symilar
+-rwxr-xr-x 1 root root      203 Nov  4  2018 symilar.bat
+-rwxr-xr-x 1 root root     3767 Jun  1  2020 taskadmin
+-rwxr-xr-x 1 root root      226 Jun  1  2020 tkconch
+-rwxr-xr-x 1 root root      207 Jun  1  2020 tqdm
+-rwxr-xr-x 1 root root      218 Jun  1  2020 trial
+-rwxr-xr-x 1 root root      213 Jun  1  2020 twine
+-rwxr-xr-x 1 root root      238 Jun  1  2020 twist
+-rwxr-xr-x 1 root root      219 Jun  1  2020 twistd
+-rwxr-xr-x 1 root root      218 Apr 18  2022 unit2
+-rwxr-xr-x 1 root root     9850 Nov  4  2018 uwsgitop
+-rwxr-xr-x 1 root root     1953 Jun  1  2020 vba_extract.py
+-rw-r--r-- 1 root root     1347 Nov  4  2018 vba_extract.pyc
+-rwxr-xr-x 1 root root      238 Jun  1  2020 virtualenv
+-rwxr-xr-x 1 root root    20248 Oct 28 12:00 virtualservice_examples_api.py
+-rw-r--r-- 1 root root    17145 Oct 28 12:00 virtualservice_examples_api.pyc
+-rwxr-xr-x 1 root root     5912 Oct 28 12:00 vs_filter.py
+-rw-r--r-- 1 root root     5803 Oct 28 12:00 vs_filter.pyc
+-rwxr-xr-x 1 root root      212 Jun  1  2020 waitress-serve
+-rwxr-xr-x 1 root root      208 Jun  1  2020 wheel
+-rwxr-xr-x 1 root root     5901 Jun  1  2020 wsdump.py
+-rwxr-xr-x 1 root root      209 Jun  1  2020 yamllint
+aviuser:[/home/aviuser]
+ $ curl -s https://vdp-binaries-src.s3.us-west-2.amazonaws.com/vdpcli/latest/install.sh | bash
+Installing VDP v1.0.14 to /home/aviuser/bin
+Installed vdp v1.0.14 (adb4486)
+Installation complete. Make sure to add /home/aviuser/bin to your PATH, if it is not already.
+aviuser:[/home/aviuser]
+ $ export PATH="$PATH:/home/aviuser/bin"
+aviuser:[/home/aviuser]
+ $ ls
+automation_stuff        blob_files.txt               devops          godlv                             logfile_git_fetch_cron.txt  scp.sh               test.sh
+AV-136627_calculations  containerized-testenv        files_scp_1.sh  id_rsa_test                       octavius_gen_models.py      sdk                  VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle
+avi-dev_files           ctlr_new.tar.gz              files_scp.sh    learning-go                       ovftool                     test10               VMware-ovftool-4.4.3-18663434-lin.x86_64.zip
+avitest_rc.json         custom_macro_apihandlers.go  git-sizer       linkedin-golang                   portal_octavius.log         testbed_config_home  workspace
+bin                     custom_macro_router.go       go              logfile_git_fetch_cron_error.txt  py3-client-v1.0.tar.gz      testing
+aviuser:[/home/aviuser]
+ $ ls bin/
+kubectl-vdp  vdp
+aviuser:[/home/aviuser]
+ $ ls -al bin/
+total 31828
+drwxrwxr-x  2 aviuser aviuser     4096 Mar  3 05:06 .
+drwxr-xr-x 36 aviuser aviuser     4096 Mar  3 05:06 ..
+lrwxrwxrwx  1 aviuser aviuser       21 Mar  3 05:06 kubectl-vdp -> /home/aviuser/bin/vdp
+-rwx--x--x  1 aviuser aviuser 32583680 Mar  3 05:06 vdp
+aviuser:[/home/aviuser]
+ $ vdp profile set devprofile --endpoint https://api.vdp-stg.vmware.com --token eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InNpZ25pbmdfMiJ9.eyJzdWIiOiJ2bXdhcmUuY29tOmJiZGViMDE1LTBjYzYtNDhiMS1iNmJjLTgxMjY1Nzdj
+YTM3ZiIsImlzcyI6Imh0dHBzOi8vZ2F6LXByZXZpZXcuY3NwLXZpZG0tcHJvZC5jb20iLCJjb250ZXh0X25hbWUiOiI3NDNlMWU5NC1jN2U2LTRmNzktYWI1OS1mOTk0YjBlNmZjMWQiLCJfbm9uY2UiOiI4NTM3MTc4MC1iOTE3LTExZWQtYjY4Yy1hOThlZjlhN2VkMWEiLCJhe
+nAiOiJjc3Bfc3RnX3BrY2VfcG9ydGFsX2NsaWVudF9pZCIsImF1dGhvcml6YXRpb25fZGV0YWlscyI6W10sImRvbWFpbiI6InZtd2FyZS5jb20iLCJjb250ZXh0IjoiYzJjYjdkZmYtZGZlNC00MjE1LWIxMWEtNTcyNDEyODVkYjJhIiwicGVybXMiOlsiY3NwOm9yZ19tZW1iZX
+IiXSwiZXhwIjoxNjc3ODIxNTg3LCJpYXQiOjE2Nzc4MTk3ODcsImp0aSI6ImY0ZmE4NzcxLWIzNTMtNGQwNC04ZjdkLTZlZDg3MWJmNWJlMyIsImFjY3QiOiJoYXJzaGpAdm13YXJlLmNvbSIsInVzZXJuYW1lIjoiaGFyc2hqIn0.YEdC2rnhiNFjw7H74QYan-Oyehfaf8hZtLv
+HFLuuQat1oPzDpM9rThe9lOs14HCQAREBZYhNmn5c5ImN67HgAGuHy0XzRvFa228MxGERlzyJEYP5eKy0YSmgGj602h5l1wWaFknvC14Ue3pvljO-LchtNq5f_DcdbB6_RFb_5T2x_9sjCD65N8N_QQTXkklE-dE4Ze52nBhELm-F0-DL-0-FSDoKPkyQfKq2sUIYVeYJp8Vdz6uy
+-2MmLZmfQQ6farHGjXDKatREM2egS-CHL_TI8PTQKCTCeqB5-1-xCdYOjCDMCRJdauUe4R0DcYwMitFc8rToEwvHtB9Un48ztg --activate
+INFO[0056] POST API call failed for CSP URL: https://console-stg.cloud.vmware.com/csp/gateway/am/api/auth/api-tokens/authorize, Response Body: {"traceId":"660673add8c6eeb0","requestId":"580f4cd143be7db4","modu
+leCode":540,"metadata":null,"cspErrorCode":"540.120-340.800","errorCode":null,"message":"invalid_grant:  xxxx...48ztg","statusCode":400}  file="logger.go:165"
+Error: error getting claims: cannot exchange refresh token for access token: 400
+Usage:
+  vdp profile set <NAME> [flags]
+
+Flags:
+      --activate          Activate the profile immediately
+      --endpoint string   Set the VDP service endpoint
+  -h, --help              help for set
+      --insecure          Ignore TLS errors
+      --project string    Set the default project for this profile
+      --token string      Provide refresh token. Get your refresh token from the CSP console
+      --ts                Display creation timestamps as timestamps
+
+error getting claims: cannot exchange refresh token for access token: 400
+aviuser:[/home/aviuser]
+ $ vdp profile set devprofile --endpoint https://api.vdp-stg.vmware.com --token eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InNpZ25pbmdfMiJ9.eyJzdWIiOiJ2bXdhcmUuY29tOmJiZGViMDE1LTBjYzYtNDhiMS1iNmJjLTgxMjY1Nzdj
+YTM3ZiIsImlzcyI6Imh0dHBzOi8vZ2F6LXByZXZpZXcuY3NwLXZpZG0tcHJvZC5jb20iLCJjb250ZXh0X25hbWUiOiI3NDNlMWU5NC1jN2U2LTRmNzktYWI1OS1mOTk0YjBlNmZjMWQiLCJfbm9uY2UiOiI4NTM3MTc4MC1iOTE3LTExZWQtYjY4Yy1hOThlZjlhN2VkMWEiLCJhe
+nAiOiJjc3Bfc3RnX3BrY2VfcG9ydGFsX2NsaWVudF9pZCIsImF1dGhvcml6YXRpb25fZGV0YWlscyI6W10sImRvbWFpbiI6InZtd2FyZS5jb20iLCJjb250ZXh0IjoiYzJjYjdkZmYtZGZlNC00MjE1LWIxMWEtNTcyNDEyODVkYjJhIiwicGVybXMiOlsiY3NwOm9yZ19tZW1iZX
+IiXSwiZXhwIjoxNjc3ODIxNTg3LCJpYXQiOjE2Nzc4MTk3ODcsImp0aSI6ImY0ZmE4NzcxLWIzNTMtNGQwNC04ZjdkLTZlZDg3MWJmNWJlMyIsImFjY3QiOiJoYXJzaGpAdm13YXJlLmNvbSIsInVzZXJuYW1lIjoiaGFyc2hqIn0.YEdC2rnhiNFjw7H74QYan-Oyehfaf8hZtLv
+HFLuuQat1oPzDpM9rThe9lOs14HCQAREBZYhNmn5c5ImN67HgAGuHy0XzRvFa228MxGERlzyJEYP5eKy0YSmgGj602h5l1wWaFknvC14Ue3pvljO-LchtNq5f_DcdbB6_RFb_5T2x_9sjCD65N8N_QQTXkklE-dE4Ze52nBhELm-F0-DL-0-FSDoKPkyQfKq2sUIYVeYJp8Vdz6uy
+-2MmLZmfQQ6farHGjXDKatREM2egS-CHL_TI8PTQKCTCeqB5-1-xCdYOjCDMCRJdauUe4R0DcYwMitFc8rToEwvHtB9Un48ztg --activate^C
+aviuser:[/home/aviuser]
+ $ vdp profile set devprofile --endpoint https://api.vdp-stg.vmware.com --token nu-HnGXyydWuSCwuOXyYEDhABqhRfDW46v_byCZdUxT8XZlJxHgGk1BAtTpIxNfi --activate
+aviuser:[/home/aviuser]
+ $ vdp list
+Error: unknown command "list" for "vdp"
+Run 'vdp --help' for usage.
+unknown command "list" for "vdp"
+aviuser:[/home/aviuser]
+ $ vdp cluster list
+NAME                          K8S-VERSION   REGION      ENDPOINT                                                                         STATUS   LABELS   LINK
+nsbu03-stg-nsbu03-us-west-2   v1.22.7       us-west-2   https://api-k8s-nsbu03-stg-nsbu03-6tl7i8-267803976.us-west-2.elb.amazonaws.com   READY             /vdp/orgs/aviamer/clusters/nsbu03-stg-nsbu03-us-west-2
+aviuser:[/home/aviuser]
+ $ vdp cluster kubeconfig nsbu03-stg-nsbu03-us-west-2 > ~/.kube/my-config^C
+aviuser:[/home/aviuser]
+ $ vdp cluster kubeconfig nsbu03-stg-nsbu03-us-west-2 > ~/.kube/my-config
+-bash: /home/aviuser/.kube/my-config: No such file or directory
+aviuser:[/home/aviuser]
+ $ mkdir ~/.kube
+aviuser:[/home/aviuser]
+ $ vdp cluster kubeconfig nsbu03-stg-nsbu03-us-west-2 > ~/.kube/my-config
+aviuser:[/home/aviuser]
+ $ vim ~/.kube/my-config
+aviuser:[/home/aviuser]
+ $ export KUBECONFIG=~/.kube/my-config^C
+aviuser:[/home/aviuser]
+ $ kubectl
+kubectl controls the Kubernetes cluster manager.
+
+ Find more information at: https://kubernetes.io/docs/reference/kubectl/overview/
+
+Basic Commands (Beginner):
+  create         Create a resource from a file or from stdin.
+  expose         Take a replication controller, service, deployment or pod and expose it as a new Kubernetes Service
+  run            Run a particular image on the cluster
+  set            Set specific features on objects
+
+Basic Commands (Intermediate):
+  explain        Documentation of resources
+  get            Display one or many resources
+  edit           Edit a resource on the server
+  delete         Delete resources by filenames, stdin, resources and names, or by resources and label selector
+
+Deploy Commands:
+  rollout        Manage the rollout of a resource
+  scale          Set a new size for a Deployment, ReplicaSet or Replication Controller
+  autoscale      Auto-scale a Deployment, ReplicaSet, or ReplicationController
+
+Cluster Management Commands:
+  certificate    Modify certificate resources.
+  cluster-info   Display cluster info
+  top            Display Resource (CPU/Memory/Storage) usage.
+  cordon         Mark node as unschedulable
+  uncordon       Mark node as schedulable
+  drain          Drain node in preparation for maintenance
+  taint          Update the taints on one or more nodes
+
+Troubleshooting and Debugging Commands:
+  describe       Show details of a specific resource or group of resources
+  logs           Print the logs for a container in a pod
+  attach         Attach to a running container
+  exec           Execute a command in a container
+  port-forward   Forward one or more local ports to a pod
+  proxy          Run a proxy to the Kubernetes API server
+  cp             Copy files and directories to and from containers.
+  auth           Inspect authorization
+
+Advanced Commands:
+  diff           Diff live version against would-be applied version
+  apply          Apply a configuration to a resource by filename or stdin
+  patch          Update field(s) of a resource using strategic merge patch
+  replace        Replace a resource by filename or stdin
+  wait           Experimental: Wait for a specific condition on one or many resources.
+  convert        Convert config files between different API versions
+  kustomize      Build a kustomization target from a directory or a remote url.
+
+Settings Commands:
+  label          Update the labels on a resource
+  annotate       Update the annotations on a resource
+  completion     Output shell completion code for the specified shell (bash or zsh)
+
+Other Commands:
+  api-resources  Print the supported API resources on the server
+  api-versions   Print the supported API versions on the server, in the form of "group/version"
+  config         Modify kubeconfig files
+  plugin         Provides utilities for interacting with plugins.
+  version        Print the client and server version information
+
+Usage:
+  kubectl [flags] [options]
+
+Use "kubectl <command> --help" for more information about a given command.
+Use "kubectl options" for a list of global command-line options (applies to all commands).
+aviuser:[/home/aviuser]
+ $ kubectl get pods
+The connection to the server localhost:8080 was refused - did you specify the right host or port?
+aviuser:[/home/aviuser]
+ $ export KUBECONFIG=~/.kube/my-config
+aviuser:[/home/aviuser]
+ $ kubectl get pods
+Error from server (Forbidden): pods is forbidden: User "harshj@vmware.com" cannot list resource "pods" in API group "" in the namespace "aviamer-default": RBAC: [role.rbac.authorization.k8s.io "vdp:installatio
+n-service-role" not found, role.rbac.authorization.k8s.io "vdp:sre-role" not found]
+aviuser:[/home/aviuser]
+ $ vdp org tree
+ERRO[0002] failed to get project roles fir Org: aviamer Project: staging. API returned StatusCode: 401. API Response: [
+:Unauthorized: only a controller can perform this operation$bc4c8e75-c47e-4022-a9a1-534c71d0a544(�:(/vdp/orgs/aviamer/projects/staging/roles]
+.
+└── [ Org ]  aviamer
+    ├── [ Projects ]
+    │   ├── staging
+    │   └── [ Namespaces ]
+    │       ├── caas
+    │       ├── devops
+    │       ├── ft
+    │       ├── operator-dev
+    │       └── systest
+    └── [ Clusters ]
+        └── nsbu03-stg-nsbu03-us-west-2
+aviuser:[/home/aviuser]
+ $ kubectl get pods -n aviamer-staging-ft
+NAME                                                   READY   STATUS    RESTARTS         AGE
+adreddy-controller-0                                   1/1     Running   0                38h
+adreddy-controller-1                                   1/1     Running   0                38h
+adreddy-controller-2                                   1/1     Running   0                38h
+adreddy-controller-2-0                                 1/1     Running   0                8d
+adreddy-controller-2-1                                 1/1     Running   0                5d23h
+adreddy-controller-2-2                                 1/1     Running   0                5d23h
+adreddy-controller-2-deployment-mgr-74c95f5749-4zt9g   1/1     Running   99 (6m13s ago)   15h
+adreddy-controller-deployment-mgr-674bff4d47-xx7cz     1/1     Running   0                38h
+controller-manager-6cd94957fb-hvnfw                    1/1     Running   0                8d
+aviuser:[/home/aviuser]
+ $ vim ~/.kube/my-config
+aviuser:[/home/aviuser]
+ $ kubectl get pods
+NAME                                                   READY   STATUS    RESTARTS         AGE
+adreddy-controller-0                                   1/1     Running   0                38h
+adreddy-controller-1                                   1/1     Running   0                38h
+adreddy-controller-2                                   1/1     Running   0                38h
+adreddy-controller-2-0                                 1/1     Running   0                8d
+adreddy-controller-2-1                                 1/1     Running   0                5d23h
+adreddy-controller-2-2                                 1/1     Running   0                5d23h
+adreddy-controller-2-deployment-mgr-74c95f5749-4zt9g   1/1     Running   99 (6m58s ago)   15h
+adreddy-controller-deployment-mgr-674bff4d47-xx7cz     1/1     Running   0                38h
+controller-manager-6cd94957fb-hvnfw                    1/1     Running   0                8d
+aviuser:[/home/aviuser]
+ $ vim ctlr-test-kube.yaml
+aviuser:[/home/aviuser]
+ $ ls
+automation_stuff        blob_files.txt               custom_macro_router.go  go               logfile_git_fetch_cron_error.txt  py3-client-v1.0.tar.gz  testing
+AV-136627_calculations  containerized-testenv        devops                  godlv            logfile_git_fetch_cron.txt        scp.sh                  test.sh
+avi-dev_files           ctlr_new.tar.gz              files_scp_1.sh          id_rsa_test      octavius_gen_models.py            sdk                     VMware-ovftool-4.3.0-7948156-lin.x86_64.bundle
+avitest_rc.json         ctlr-test-kube.yaml          files_scp.sh            learning-go      ovftool                           test10                  VMware-ovftool-4.4.3-18663434-lin.x86_64.zip
+bin                     custom_macro_apihandlers.go  git-sizer               linkedin-golang  portal_octavius.log               testbed_config_home     workspace
+aviuser:[/home/aviuser]
+ $ kubectl apply -f ctlr-test-kube.yaml
+aviclusterinstaller.aviclusterinstaller.avinetworks.com/test-ctrl-harshj created
+aviuser:[/home/aviuser]
+ $ kubectl get pods
+NAME                                                   READY   STATUS              RESTARTS        AGE
+adreddy-controller-0                                   1/1     Running             0               38h
+adreddy-controller-1                                   1/1     Running             0               38h
+adreddy-controller-2                                   1/1     Running             0               38h
+adreddy-controller-2-0                                 1/1     Running             0               8d
+adreddy-controller-2-1                                 1/1     Running             0               5d23h
+adreddy-controller-2-2                                 1/1     Running             0               5d23h
+adreddy-controller-2-deployment-mgr-74c95f5749-4zt9g   0/1     CrashLoopBackOff    99 (110s ago)   15h
+adreddy-controller-deployment-mgr-674bff4d47-xx7cz     1/1     Running             0               38h
+controller-manager-6cd94957fb-hvnfw                    1/1     Running             0               8d
+test-ctrl-harshj-0                                     0/1     ContainerCreating   0               7s
+test-ctrl-harshj-1                                     0/1     ContainerCreating   0               7s
+test-ctrl-harshj-2                                     0/1     Pending             0               7s
+test-ctrl-harshj-deployment-mgr-c8dd7886-7hblk         1/1     Running             0               6s
+aviuser:[/home/aviuser]
+ $ kubectl get ingress
+NAME                                      CLASS    HOSTS                                                       ADDRESS                                                                  PORTS     AGE
+adreddy-controller-2-ingress              <none>   adreddy-controller-2.nsbu03.vdp-stg.vmware.com              a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   15d
+adreddy-controller-2-internal-ingress-0   <none>   adreddy-controller-2-internal-0.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-2-internal-ingress-1   <none>   adreddy-controller-2-internal-1.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-2-internal-ingress-2   <none>   adreddy-controller-2-internal-2.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-ingress                <none>   adreddy-controller.nsbu03.vdp-stg.vmware.com                a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   38h
+adreddy-controller-internal-ingress-0     <none>   adreddy-controller-internal-0.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+adreddy-controller-internal-ingress-1     <none>   adreddy-controller-internal-1.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+adreddy-controller-internal-ingress-2     <none>   adreddy-controller-internal-2.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+test-ctrl-harshj-ingress                  <none>   test-ctrl-harshj.nsbu03.vdp-stg.vmware.com                  a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   24s
+test-ctrl-harshj-internal-ingress-0       <none>   test-ctrl-harshj-internal-0.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        24s
+test-ctrl-harshj-internal-ingress-1       <none>   test-ctrl-harshj-internal-1.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        24s
+test-ctrl-harshj-internal-ingress-2       <none>   test-ctrl-harshj-internal-2.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        24s
+aviuser:[/home/aviuser]
+ $ kubectl exec -it test-ctrl-harshj-0 bash
+error: unable to upgrade connection: container not found ("test-ctrl-harshj-container")
+aviuser:[/home/aviuser]
+ $ kubectl get secrets
+NAME                                         TYPE                                  DATA   AGE
+adreddy-controller-2-credentials             kubernetes.io/basic-auth              2      15d
+adreddy-controller-2-secure-channel          kubernetes.io/tls                     3      30d
+adreddy-controller-credentials               kubernetes.io/basic-auth              2      38h
+adreddy-controller-secure-channel            kubernetes.io/tls                     3      38h
+avicontroller-psp-exception-token-mw6w2      kubernetes.io/service-account-token   3      37d
+controller-manager-token-qsj74               kubernetes.io/service-account-token   3      30d
+default-token-29c2v                          kubernetes.io/service-account-token   3      70d
+root-secret                                  kubernetes.io/tls                     3      37d
+sbijendra-new-avicontroller-secure-channel   kubernetes.io/tls                     3      37d
+test-ctrl-harshj-credentials                 kubernetes.io/basic-auth              1      2m53s
+test-ctrl-harshj-secure-channel              kubernetes.io/tls                     3      2m53s
+aviuser:[/home/aviuser]
+ $ kubectl get secrets test-ctrl-harshj-credentials -o yaml
+apiVersion: v1
+data:
+  password: NThORmFHREptKFBKSDBH
+kind: Secret
+metadata:
+  creationTimestamp: "2023-03-03T05:35:07Z"
+  labels:
+    app.kubernetes.io/instance: test-ctrl-harshj
+    app.kubernetes.io/managed-by: avi-cluster-operator
+    app.kubernetes.io/name: avicontroller
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        .: {}
+        f:password: {}
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/instance: {}
+          f:app.kubernetes.io/managed-by: {}
+          f:app.kubernetes.io/name: {}
+        f:ownerReferences:
+          .: {}
+          k:{"uid":"6d2bd096-d479-453e-a170-057b096a3649"}: {}
+      f:type: {}
+    manager: manager
+    operation: Update
+    time: "2023-03-03T05:35:07Z"
+  name: test-ctrl-harshj-credentials
+  namespace: aviamer-staging-ft
+  ownerReferences:
+  - apiVersion: aviclusterinstaller.avinetworks.com/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: AviClusterInstaller
+    name: test-ctrl-harshj
+    uid: 6d2bd096-d479-453e-a170-057b096a3649
+  resourceVersion: "211145915"
+  uid: dc39faca-e703-489a-ae57-7d0f0c67f1a2
+type: kubernetes.io/basic-auth
+aviuser:[/home/aviuser]
+ $ kubectl get secrets test-ctrl-harshj-credentials -o yaml | grep password | awk {print $2} | base64 -d
+awk: line 2: missing } near end of file
+aviuser:[/home/aviuser]
+ $ kubectl get secrets test-ctrl-harshj-credentials -o yaml | grep password | awk '{print $2}' | base64 -d
+58NFaGDJm(PJH0Gbase64: invalid input
+aviuser:[/home/aviuser]
+ $ kubectl get secrets test-ctrl-harshj-credentials -o yaml | grep password | awk '{print $2}'
+NThORmFHREptKFBKSDBH
+{}
+aviuser:[/home/aviuser]
+ $ echo NThORmFHREptKFBKSDBH | base64 -d
+58NFaGDJm(PJH0Gaviuser:[/home/aviuser]
+ $ 58NFaGDJm(PJH0G
+-bash: syntax error near unexpected token `PJH0G'
+aviuser:[/home/aviuser]
+ $ 58NFaGDJm(PJH0G^C
+aviuser:[/home/aviuser]
+ $ kubectl get pods
+NAME                                                   READY   STATUS             RESTARTS        AGE
+adreddy-controller-0                                   1/1     Running            0               38h
+adreddy-controller-1                                   1/1     Running            0               38h
+adreddy-controller-2                                   1/1     Running            0               38h
+adreddy-controller-2-0                                 1/1     Running            0               8d
+adreddy-controller-2-1                                 1/1     Running            0               5d23h
+adreddy-controller-2-2                                 1/1     Running            0               5d23h
+adreddy-controller-2-deployment-mgr-74c95f5749-4zt9g   0/1     CrashLoopBackOff   100 (48s ago)   15h
+adreddy-controller-deployment-mgr-674bff4d47-xx7cz     1/1     Running            0               38h
+controller-manager-6cd94957fb-hvnfw                    1/1     Running            0               8d
+test-ctrl-harshj-0                                     1/1     Running            0               8m43s
+test-ctrl-harshj-1                                     1/1     Running            0               8m43s
+test-ctrl-harshj-2                                     1/1     Running            0               8m43s
+test-ctrl-harshj-deployment-mgr-c8dd7886-7hblk         1/1     Running            0               8m42s
+aviuser:[/home/aviuser]
+ $ kubectl get pods^C
+aviuser:[/home/aviuser]
+ $ kubectl get ingress
+NAME                                      CLASS    HOSTS                                                       ADDRESS                                                                  PORTS     AGE
+adreddy-controller-2-ingress              <none>   adreddy-controller-2.nsbu03.vdp-stg.vmware.com              a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   15d
+adreddy-controller-2-internal-ingress-0   <none>   adreddy-controller-2-internal-0.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-2-internal-ingress-1   <none>   adreddy-controller-2-internal-1.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-2-internal-ingress-2   <none>   adreddy-controller-2-internal-2.nsbu03.vdp-stg.vmware.com   a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        15d
+adreddy-controller-ingress                <none>   adreddy-controller.nsbu03.vdp-stg.vmware.com                a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   38h
+adreddy-controller-internal-ingress-0     <none>   adreddy-controller-internal-0.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+adreddy-controller-internal-ingress-1     <none>   adreddy-controller-internal-1.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+adreddy-controller-internal-ingress-2     <none>   adreddy-controller-internal-2.nsbu03.vdp-stg.vmware.com     a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        38h
+test-ctrl-harshj-ingress                  <none>   test-ctrl-harshj.nsbu03.vdp-stg.vmware.com                  a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80, 443   9m2s
+test-ctrl-harshj-internal-ingress-0       <none>   test-ctrl-harshj-internal-0.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        9m2s
+test-ctrl-harshj-internal-ingress-1       <none>   test-ctrl-harshj-internal-1.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        9m2s
+test-ctrl-harshj-internal-ingress-2       <none>   test-ctrl-harshj-internal-2.nsbu03.vdp-stg.vmware.com       a04de8a6da0a747e98a82c86295b3932-952980180.us-west-2.elb.amazonaws.com   80        9m2s
+aviuser:[/home/aviuser]
+ $ nslookup test-ctrl-harshj.nsbu03.vdp-stg.vmware.com
+Server:         10.102.0.193
+Address:        10.102.0.193#53
+
+** server can't find test-ctrl-harshj.nsbu03.vdp-stg.vmware.com: NXDOMAIN
+
+aviuser:[/home/aviuser]
+ $ nslookup test-ctrl-harshj.nsbu03.vdp-stg.vmware.com
+Server:         10.102.0.193
+Address:        10.102.0.193#53
+
+** server can't find test-ctrl-harshj.nsbu03.vdp-stg.vmware.com: NXDOMAIN
+
+aviuser:[/home/aviuser]
+ $ kubectl exec -it test-ctrl-harshj-0 bash
+root@test-ctrl-harshj-0-test-ctrl-harshj:/# shell
+Login: admin
+Password:
+
+[admin:test-ctrl-harshj-0-test-ctrl-harshj]: > show cluster
++---------------+----------------------------------------------+
+| Field         | Value                                        |
++---------------+----------------------------------------------+
+| uuid          | cluster-75181e69-7272-4e5c-b478-f79e1d9444b8 |
+| name          | cluster-0-1                                  |
+| nodes[1]      |                                              |
+|   name        | test-ctrl-harshj-0.test-ctrl-harshj          |
+|   ip          | test-ctrl-harshj-0.test-ctrl-harshj          |
+|   vm_uuid     | test-ctrl-harshj-0                           |
+|   vm_mor      |                                              |
+|   vm_hostname | node1.controller.local                       |
++---------------+----------------------------------------------+
+[admin:test-ctrl-harshj-0-test-ctrl-harshj]: > show cluster nodes
++-------------------------------------+----------------+----------------+---------------------+
+| Name                                | Role           | State          | Up Since            |
++-------------------------------------+----------------+----------------+---------------------+
+| test-ctrl-harshj-0.test-ctrl-harshj | CLUSTER_LEADER | CLUSTER_ACTIVE | 2023-03-03 05:41:18 |
++-------------------------------------+----------------+----------------+---------------------+
+[admin:test-ctrl-harshj-0-test-ctrl-harshj]: > root@test-ctrl-harshj-0-test-ctrl-harshj:/# exit
+aviuser:[/home/aviuser]
+ $ kubectl get avi
+NAME                   STATUS                          READY   CONTROLLER STATUS           INGRESS HOST                                     NODE COUNT   FLAVOR   CONTROLLER VERSION                     PATCH VE
+RSION   AGE
+adreddy-controller     Ready                           true    CLUSTER_UP_HA_ACTIVE        adreddy-controller.nsbu03.vdp-stg.vmware.com     3            small    30.2.1(7349) 2023-02-22 03:32:45 UTC   -
+        38h
+adreddy-controller-2   Cluster Formation in Progress   false   CLUSTER_FORMATION_FAILURE   adreddy-controller-2.nsbu03.vdp-stg.vmware.com   3            small    23.1.1(5000) 2023-01-23 21:29:04 UTC   -
+        15d
+test-ctrl-harshj       Resources Created               false   CONTROLLERS_NOT_READY       test-ctrl-harshj.nsbu03.vdp-stg.vmware.com       3            small    -                                      -
+        12m
+aviuser:[/home/aviuser]
+ $ kubectl get av^C
+aviuser:[/home/aviuser]
+ $ tmux capture-pane -b temp-capture-buffer -S -
+
