@@ -51,7 +51,7 @@ then
     #mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
 
 else
-    echo "==================git config and bashrc done"q
+    echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
     sudo add-apt-repository ppa:pi-rho/dev -y
     echo "==================add-apt done"
