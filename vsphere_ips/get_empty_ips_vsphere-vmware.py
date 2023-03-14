@@ -30,8 +30,10 @@ import random
 urllib3.disable_warnings()
 from fabric.api import env, put, sudo, cd
 from tabulate import tabulate
+import jinja2
 
 ALL_RESERVED_IPS = ["10.102.96.175","10.102.96.176", "100.65.9.177", "100.65.9.178", "100.65.9.179", "100.65.9.180", "100.65.9.181", "100.65.9.182", "100.65.9.183"]
+DEV_IP = "10.102.96.175"
 VCENTER_IP = "blr-01-vc13.oc.vmware.com"
 VCENTER_USER = "aviuser1"
 VCENTER_PASSWORD = "AviUser1234!."
@@ -59,9 +61,30 @@ VCENTER_NTP = "time.vmware.com"
 VCENTER_PORT_GROUP = "blr-01-avi-66-68"
 VCENTER_SERVER_IP = "100.66.68.22"
 
-
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
+CURRENT_PASSWORD = ""
+
+GLOBAL_LOGIN_HEADERS = None
+GLOBAL_LOGIN_COOKIES = None
+
+if 'help' in sys.argv:
+    print ("options --> delete 'ip'")
+    print ("options --> delete_name 'name'")
+    print ("options --> poweroff 'ip'")
+    print ("options --> rename 'ip' 'newname'")
+    print ("options --> poweron")
+    print ("options --> poweron 'name'")
+    print ("options --> upgrade_ctlr")
+    print ("options --> generate_controller_from_ova")
+    print ("options --> configure_raw_controller")
+    print ("options --> configure_raw_controller_wo_tmux")
+    print ("options --> configure_cloud_vs_se")
+    print ("options --> configure_vs")
+    print ("options --> flush_db_configure_raw_controller_wo_tmux")
+    print ("options --> setup_tmux")
+    
+
 
 def connect(vcenter_ip=VCENTER_IP, user=VCENTER_USER, pwd=VCENTER_PASSWORD ,exit_on_error=True):
     try:
@@ -99,6 +122,14 @@ def fill_vms_table(vms_table,virtual_m):
 
     except:
         raise
+
+def power_on_vm(virtual_machine_obj):
+    vm = virtual_machine_obj
+    task = vm.PowerOn()
+    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+        time.sleep(1)
+    print ("power on task for vm %s = %s"%(vm.name,task.info.state))
+
 
 
 if len(sys.argv)==1:
@@ -164,21 +195,6 @@ if len(sys.argv)==1:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))    
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
         
-
-if 'help' in sys.argv:
-    print ("options --> delete 'ip'")
-    print ("options --> delete_name 'name'")
-    print ("options --> poweroff 'ip'")
-    print ("options --> rename 'ip' 'newname'")
-    print ("options --> poweron")
-    print ("options --> poweron 'name'")
-    print ("options --> generate_controller_from_ova")
-    print ("options --> configure_raw_controller")
-    print ("options --> configure_raw_controller_wo_tmux")
-    print ("options --> configure_cloud_vs_se")
-    print ("options --> configure_vs")
-    print ("options --> flush_db_configure_raw_controller_wo_tmux")
-    print ("options --> setup_tmux")
 
 
 if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
@@ -270,13 +286,6 @@ if len(sys.argv)==4 and sys.argv[1]=='rename':
             time.sleep(1)
         print ("renaming done.",task.info.state)
        
-def power_on_vm(virtual_machine_obj):
-    vm = virtual_machine_obj
-    task = vm.PowerOn()
-    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-        time.sleep(1)
-    print ("power on task for vm %s = %s"%(vm.name,task.info.state))
-
 
 if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
     if len(sys.argv) == 3:
@@ -313,32 +322,17 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
 ##################################################################################
 
 
-def get_headers(controller_ip=None, version="",query_version=False, tenant='admin'):
+def get_headers(tenant='admin'):
     headers = {
         "Content-Type": "application/json",
         "X-Avi-Tenant": tenant,
     }
-    if query_version:
-        # Query the controller version if 'version' is set
-        resp = requests.get('https://%s/api/initial-data' % controller_ip,
-                            headers={
-                                'Content-Type': 'application/json',
-                                'X-Avi-Tenant': 'admin'
-                            },
-                            verify=False)
-        if resp.status_code == 200:
-            version = resp.json()['version']['Version']
-            headers["X-Avi-Version"] = "%s" % version
-    else:
-        if not version:
-            raise Exception("Need controller version")
-        headers["X-Avi-Version"] = "%s" % version
+    # headers["X-Avi-Version"] = "%s" % version
     return headers
 
 
 def wait_until_cluster_ready(c_ip,  timeout=1800):
-    c_uri = c_ip 
-    uri = 'https://' + c_uri + '/api/cluster/runtime'
+    uri = 'https://' + c_ip + '/api/cluster/runtime'
 
     sleep_time = 10
     iters = int(timeout / sleep_time)
@@ -346,11 +340,11 @@ def wait_until_cluster_ready(c_ip,  timeout=1800):
     for i in range(iters):
         try:
             rsp = requests.get(uri, verify=False)
-            print('controller %s' % c_uri)
+            print('controller %s' % c_ip)
             print('rsp_code %s' % rsp.status_code)
             #print('rsp_data %s' % rsp.json())
         except:
-            print('Get for %s fails. Controller %s' % (uri, c_uri))
+            print('Get for %s fails. Controller %s' % (uri, c_ip))
             pass
 
         if rsp and rsp.status_code == 200:
@@ -362,32 +356,46 @@ def wait_until_cluster_ready(c_ip,  timeout=1800):
                 print('cluster state INACTIVE')
         time.sleep(sleep_time)
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
-                    'is still not active. controller %s' % (timeout, c_uri))
+                    'is still not active. controller %s' % (timeout, c_ip))
 
-def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, current_password=DEFAULT_SETUP_PASSWORD):
-    wait_until_cluster_ready(c_ip)
-    c_uri = c_ip 
-    uri_base = 'https://' + c_uri + '/'
-    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
+def login_and_set_global_variables(c_ip,password_arg=None):
+    global GLOBAL_LOGIN_HEADERS
+    global GLOBAL_LOGIN_COOKIES
+    global CURRENT_PASSWORD
+    if GLOBAL_LOGIN_HEADERS is not None and GLOBAL_LOGIN_COOKIES is not None:
+        return
+    uri_base = 'https://' + c_ip + '/'
+    headers = get_headers()
     logged_in = False
-    for password in [current_password,"avi123","avi123$%","admin"]:
+    password_list = [password_arg,"avi123","avi123$%","admin"] if password_arg else ["avi123","avi123$%","admin"]
+    for password in password_list:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
-            current_password = password
             logged_in = True
+            CURRENT_PASSWORD = password
             break
     if not logged_in:
         print("not able to login using various passwords")
         print(login.text)
         exit(1)
     headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base    
+    headers['Referer'] = uri_base
+    GLOBAL_LOGIN_HEADERS = headers
+    GLOBAL_LOGIN_COOKIES = login.cookies
+    set_version_controller(c_ip)
 
+
+
+def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAULT_SETUP_PASSWORD):
+    wait_until_cluster_ready(c_ip)
+    login_and_set_global_variables(c_ip,current_password)
+    
+    uri_base = 'https://' + c_ip + '/'
     time.sleep(1)    
     print("change systemconfiguration settings")
     #import ipdb;ipdb.set_trace()
-    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=headers ,cookies=login.cookies)
+    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=GLOBAL_LOGIN_HEADERS ,cookies=GLOBAL_LOGIN_COOKIES)
     data = r.json()
     data['portal_configuration']['password_strength_check'] = False
     data['portal_configuration']['allow_basic_authentication'] = True
@@ -395,47 +403,47 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
     data['welcome_workflow_complete']=True
     data['default_license_tier']='ENTERPRISE'
-    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("change systemconfiguration settings -- done")
 
     print("setting backup default passphrase")
     time.sleep(1) 
-    r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     data = r.json()
     uuid = data['results'][0]['uuid']
 
     time.sleep(1) 
-    r = requests.get(uri_base+'api/backupconfiguration'+'/'+uuid,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/backupconfiguration'+'/'+uuid,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
     data['backup_passphrase']='avi123'
     
     time.sleep(1) 
-    r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
-    r = requests.get(uri_base+'api/controllerproperties',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/controllerproperties',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
     data['api_idle_timeout']=1400
     
     time.sleep(1) 
-    r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("setting backup default passphrase -- done")
 
     print("changing password to avi123")
-    r = requests.get(uri_base+'api/useraccount',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     data = r.json()
-    data.update({'username':'admin','password':'avi123' ,'old_password':current_password})
+    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':current_password})
     time.sleep(1) 
-    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("changing password to avi123 -- done")
@@ -444,11 +452,12 @@ def set_welcome_password_and_set_systemconfiguration(c_ip, version ,timeout=60, 
    
     
 def setup_tmux(c_ip):
+    login_and_set_global_variables(c_ip,None)
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = DEFAULT_PASSWORD
-    env.sudo_password = DEFAULT_PASSWORD
+    env.password = CURRENT_PASSWORD
+    env.sudo_password = CURRENT_PASSWORD
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
@@ -461,8 +470,9 @@ def setup_tmux(c_ip):
         sudo("ls")
 
 
-def flush_db(c_ip,password=DEFAULT_PASSWORD):
-
+def flush_db(c_ip):
+    login_and_set_global_variables(c_ip)
+    password=CURRENT_PASSWORD
     env.host_string = c_ip
     env.user = "admin"
     env.password = password
@@ -471,12 +481,20 @@ def flush_db(c_ip,password=DEFAULT_PASSWORD):
     with cd("/root/"):
         sudo("sudo systemctl stop process-supervisor.service && rm /var/lib/avi/etc/flushdb.done && /opt/avi/scripts/flushdb.sh && sudo systemctl start process-supervisor.service")
 
-
-def get_version_controller_from_ova(ova_path=None):
-    if not ova_path:
+def set_version_controller(c_ip):
+    global GLOBAL_LOGIN_HEADERS
+    if GLOBAL_LOGIN_HEADERS.get("X-Avi-Version",False):
+        return
+    uri_base = 'https://' + c_ip + '/'
+    resp = requests.get(uri_base+'api/initial-data',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    if resp.status_code == 200:
+        version = resp.json()['version']['Version']
+    else:
         version = input("Please Enter Controller Version ? :")
-        return version
-    
+    GLOBAL_LOGIN_HEADERS["X-Avi-Version"] = "%s" % version
+    print("Controller Version: %s"%(version))
+
+def get_version_controller_from_ova(ova_path):
     print("Getting Controller Version from OVA %s"%(ova_path))
     cmd_ova_spec = '/usr/bin/ovftool --schemaValidate %s'%(ova_path)
     ova_specs = subprocess.check_output(shlex.split(cmd_ova_spec),text=True)
@@ -491,8 +509,7 @@ def get_version_controller_from_ova(ova_path=None):
 
 
 def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
-    c_uri = c_ip
-    uri_base = 'https://' + c_uri + '/'
+    uri_base = 'https://' + c_ip + '/'
 
     sleep_time = 10
     iters = int(timeout / sleep_time)
@@ -502,7 +519,7 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
             uri = uri_base+'api/cloud/%s/runtime'%(cloud_uuid)
             rsp = requests.get(uri,verify=False, headers=headers, cookies=cookies)
         except:
-            print('Get for %s fails. Controller %s' % (uri, c_uri))
+            print('Get for %s fails. Controller %s' % (uri, c_ip))
             pass
 
         if rsp and rsp.status_code == 200:
@@ -517,23 +534,17 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
                     'is still not active. controller %s' % (timeout, uri))
 
 def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
-    c_uri = c_ip
-    uri_base = 'https://' + c_uri + '/'
-    data = {'username':'admin', 'password':current_password}
-    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
-    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-    headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    uri_base = 'https://' + c_ip + '/'
+    login_and_set_global_variables(c_ip, current_password)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     for val in r.json()['results']:
         if val['name'] == 'Default-Cloud':
             data = val
             break
     default_cloud_uuid = data['uuid']
-    cookies=login.cookies
     print("creating a vs")
     # getting dev020 network uuid
-    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=headers, cookies=cookies)
+    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     for val in r.json()['results']:
         if VCENTER_PORT_GROUP in val['name']:
             data = val
@@ -543,7 +554,7 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
     occupied_ips = []
     "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
     while True:
-        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=headers, cookies=cookies)
+        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
         try:
             for val in r.json()['results']:
                 for guest_nic in val['guest_nic']:
@@ -592,21 +603,16 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
         }
     }
 
-    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=headers, cookies=cookies)
+    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
 
 def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
-    c_uri = c_ip 
-    uri_base = 'https://' + c_uri + '/'
-    data = {'username':'admin', 'password':current_password}
-    headers = get_headers(controller_ip=c_ip,version=version, tenant='admin')
-    login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
-    headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
+    uri_base = 'https://' + c_ip + '/'
+    login_and_set_global_variables(c_ip, current_password)
     print("setting up vmware write access cloud")
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     for val in r.json()['results']:
         if val['name'] == 'Default-Cloud':
             data = val
@@ -625,20 +631,20 @@ def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWOR
             "use_content_lib": False
         }
     })
-    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-    wait_until_cloud_ready(c_ip, login.cookies, headers, default_cloud_uuid, timeout=450)
+    wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES, GLOBAL_LOGIN_HEADERS, default_cloud_uuid, timeout=450)
 
     management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     data = r.json()['results'][0]
     data["vcenter_configuration"]["management_network"] = management_network
-    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("changing service engine group settings")
-    r = requests.get(uri_base+'api/serviceenginegroup',verify=False, headers=headers, cookies=login.cookies)
+    r = requests.get(uri_base+'api/serviceenginegroup',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     for val in r.json()['results']:
         if default_cloud_uuid in val['cloud_ref']:
             data = val
@@ -649,7 +655,7 @@ def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWOR
         "vcenter_folder":VCENTER_FOLDER_NAME,
         "max_se":"1"
     })
-    r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=headers, cookies=login.cookies)
+    r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
@@ -683,6 +689,27 @@ def get_folder_obj(datacenter_obj,folder_name):
             return folder
     print ("Folder: %s does not exist"%(folder_name))
     return False
+
+
+def get_index_format_ips_excluding_dev_ip(si,free=True):
+    if free:
+        free_ips = {str(index):val for index,val in enumerate([ip for ip in ALL_RESERVED_IPS if (check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        return free_ips
+    else:
+        used_ips = {str(index):val for index,val in enumerate([ip for ip in ALL_RESERVED_IPS if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        return used_ips
+
+def get_used_controller_ip(si):
+    used_ips_1 = get_index_format_ips_excluding_dev_ip(si,free=False)
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_index = input("Controller IP ? [Enter Index] :")
+    if mgmt_index not in used_ips_1.keys():
+        print("not a valid index ")
+        mgmt_ip = input("Controller IP ? [Enter IP] :")
+    else:
+        mgmt_ip = used_ips_1[mgmt_index]
+    print("Controller IP: %s"%(mgmt_ip))
+    return mgmt_ip
 
 def check_if_ip_is_free(si,ip,only_check=False):
     search = si.RetrieveContent().searchIndex
@@ -764,9 +791,8 @@ def generate_controller_from_ova():
     gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"]
 
     while True:
-        free_ips_1 = {str(index):val for index,val in enumerate([ip for ip in ALL_RESERVED_IPS if check_if_ip_is_free(si,ip,True)]) }
+        free_ips_1 = get_index_format_ips_excluding_dev_ip(si)
         print ("Free IP's : %s"%(free_ips_1))
-
         mgmt_index = input("Management IP ? [Enter Index] :")
         if mgmt_index not in free_ips_1.keys():
             print("not a valid index ")
@@ -834,48 +860,39 @@ def generate_controller_from_ova():
     else:
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
-        set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-        setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
-        setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
+        set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+        setup_cloud_se(mgmt_ip)
+        setup_vs(mgmt_ip)
         setup_tmux(mgmt_ip)
 
     print("================== DONE ==============")
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     si = connect()
-    used_ips_1 = [ip for ip in ALL_RESERVED_IPS if not check_if_ip_is_free(si,ip,True)]
-    print ("Configured IP's : %s"%(used_ips_1))
-    mgmt_ip = input("Management IP ? :")
-    ctlr_version = get_version_controller_from_ova()
-    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
+    mgmt_ip = get_used_controller_ip(si)
+    ctlr_version = get_version_controller(mgmt_ip)
+    setup_cloud_se(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
-    used_ips_1 = [ip for ip in ALL_RESERVED_IPS if not check_if_ip_is_free(si,ip,True)]
-    print ("Configured IP's : %s"%(used_ips_1))
-    mgmt_ip = input("Management IP ? :")
-    ctlr_version = get_version_controller_from_ova()
-    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
+    mgmt_ip = get_used_controller_ip(si)
+    ctlr_version = get_version_controller(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 
 if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
     si = connect()
-    used_ips_1 = [ip for ip in ALL_RESERVED_IPS if not check_if_ip_is_free(si,ip,True)]
-    print ("Configured IP's : %s"%(used_ips_1))
-    mgmt_ip = input("Management IP ? :")
+    mgmt_ip = get_used_controller_ip(si)
     setup_tmux(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
     si = connect()
-    used_ips_1 = [ip for ip in ALL_RESERVED_IPS if not check_if_ip_is_free(si,ip,True)]
-    print ("Configured IP's : %s"%(used_ips_1))
-    mgmt_ip = input("Management IP ? :")
-    ctlr_version = get_version_controller_from_ova()
+    mgmt_ip = get_used_controller_ip(si)
     flush_db(mgmt_ip)
-    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+    setup_cloud_se(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
@@ -883,15 +900,44 @@ if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
 
 if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1] == 'configure_raw_controller_wo_tmux'):
     si = connect()
-    used_ips_1 = [ip for ip in ALL_RESERVED_IPS if not check_if_ip_is_free(si,ip,True)]
-    print ("Configured IP's : %s"%(used_ips_1))
-    mgmt_ip = input("Management IP ? :")
-    ctlr_version = get_version_controller_from_ova()
-    set_welcome_password_and_set_systemconfiguration(mgmt_ip, version=ctlr_version)
-    setup_cloud_se(mgmt_ip, version=ctlr_version ,timeout=60)
-    setup_vs(mgmt_ip, version=ctlr_version ,timeout=60)
+    mgmt_ip = get_used_controller_ip(si)
+    ctlr_version = get_version_controller(mgmt_ip)
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+    setup_cloud_se(mgmt_ip)
+    setup_vs(mgmt_ip)
     if sys.argv[1] != 'configure_raw_controller_wo_tmux':
         setup_tmux(mgmt_ip)
+
+def upload_pkg_to_ctlr(c_ip,source_pkg_path):
+    login_and_set_global_variables(c_ip,None)
+    print("uploading %s"%source_pkg_path)
+    cmd = 'curl -X POST -k  https://%s/api/image  -u "admin:%s"   -F file=@%s'%(c_ip,CURRENT_PASSWORD,source_pkg_path)
+    print("Running Upload Command::: %s"%(cmd))
+    subprocess.run(shlex.split(cmd), check=True)
+    
+
+
+
+if len(sys.argv)==2 and sys.argv[1] == 'upgrade_ctlr':
+    si = connect()
+    mgmt_ip = get_used_controller_ip(si)
+    while True:
+        source_pkg_path = input("Upgrade controller.pkg Path ? :")
+        if os.path.isfile(source_pkg_path):
+            break
+        else:
+            print ("Invalid Path !!!")
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=mgmt_ip,vmSearch=True)))
+    if vms:
+        upgrade_confirm = input("Are you sure you want to upgrade '%s', with '%s' image ?[Y/N] \n"%(vms[0].name,source_pkg_path))
+    if upgrade_confirm.lower() == "n":exit(0)
+    upload_pkg_to_ctlr(mgmt_ip,source_pkg_path)
+    #upgrade_controller()
+    #rename_controller()
+
+        
+
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
 
 
