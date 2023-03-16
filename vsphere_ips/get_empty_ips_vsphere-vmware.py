@@ -31,6 +31,7 @@ urllib3.disable_warnings()
 from fabric.api import env, put, sudo, cd
 from tabulate import tabulate
 import jinja2
+from retry import retry
 
 ALL_RESERVED_IPS = ["10.102.96.175","10.102.96.176", "100.65.9.177", "100.65.9.178", "100.65.9.179", "100.65.9.180", "100.65.9.181", "100.65.9.182", "100.65.9.183"]
 DEV_IP = "10.102.96.175"
@@ -63,7 +64,6 @@ VCENTER_SERVER_IP = "100.66.68.22"
 
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
-CURRENT_PASSWORD = ""
 
 GLOBAL_LOGIN_HEADERS = None
 GLOBAL_LOGIN_COOKIES = None
@@ -358,10 +358,22 @@ def wait_until_cluster_ready(c_ip,  timeout=1800):
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_ip))
 
-def login_and_set_global_variables(c_ip,password_arg=None):
+def change_to_default_password(c_ip,current_password):
+    uri_base = 'https://' + c_ip + '/'
+    print("changing password to avi123")
+    r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    data = r.json()
+    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':current_password})
+    time.sleep(1) 
+    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    print("changing password to avi123 -- done")
+    reset_login(c_ip)
+
+def login_and_set_global_variables(c_ip,password_arg=None,change_password_to_default=True):
     global GLOBAL_LOGIN_HEADERS
     global GLOBAL_LOGIN_COOKIES
-    global CURRENT_PASSWORD
     if GLOBAL_LOGIN_HEADERS is not None and GLOBAL_LOGIN_COOKIES is not None:
         return
     uri_base = 'https://' + c_ip + '/'
@@ -373,7 +385,9 @@ def login_and_set_global_variables(c_ip,password_arg=None):
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
             logged_in = True
-            CURRENT_PASSWORD = password
+            if password != DEFAULT_PASSWORD and change_password_to_default:
+                change_to_default_password(c_ip, password)
+                return
             break
     if not logged_in:
         print("not able to login using various passwords")
@@ -385,11 +399,16 @@ def login_and_set_global_variables(c_ip,password_arg=None):
     GLOBAL_LOGIN_COOKIES = login.cookies
     set_version_controller(c_ip)
 
-
+def reset_login(c_ip):
+    global GLOBAL_LOGIN_COOKIES
+    global GLOBAL_LOGIN_HEADERS
+    GLOBAL_LOGIN_HEADERS = None
+    GLOBAL_LOGIN_COOKIES = None
+    login_and_set_global_variables(c_ip)
 
 def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAULT_SETUP_PASSWORD):
     wait_until_cluster_ready(c_ip)
-    login_and_set_global_variables(c_ip,current_password)
+    login_and_set_global_variables(c_ip,current_password,change_password_to_default=False)
     
     uri_base = 'https://' + c_ip + '/'
     time.sleep(1)    
@@ -438,26 +457,18 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
         raise Exception(r.text)
     print("setting backup default passphrase -- done")
 
-    print("changing password to avi123")
-    r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    data = r.json()
-    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':current_password})
-    time.sleep(1) 
-    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
-    print("changing password to avi123 -- done")
-
+    change_to_default_password(c_ip,current_password)
     print("setting complete")
    
-    
+
+
 def setup_tmux(c_ip):
     login_and_set_global_variables(c_ip,None)
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = CURRENT_PASSWORD
-    env.sudo_password = CURRENT_PASSWORD
+    env.password = DEFAULT_PASSWORD
+    env.sudo_password = DEFAULT_PASSWORD
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
@@ -472,7 +483,7 @@ def setup_tmux(c_ip):
 
 def flush_db(c_ip):
     login_and_set_global_variables(c_ip)
-    password=CURRENT_PASSWORD
+    password=DEFAULT_PASSWORD
     env.host_string = c_ip
     env.user = "admin"
     env.password = password
@@ -911,10 +922,121 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
 def upload_pkg_to_ctlr(c_ip,source_pkg_path):
     login_and_set_global_variables(c_ip,None)
     print("uploading %s"%source_pkg_path)
-    cmd = 'curl -X POST -k  https://%s/api/image  -u "admin:%s"   -F file=@%s'%(c_ip,CURRENT_PASSWORD,source_pkg_path)
+    cmd = 'curl -X POST -k  https://%s/api/image  -u "admin:%s"   -F file=@%s'%(c_ip,DEFAULT_PASSWORD,source_pkg_path)
     print("Running Upload Command::: %s"%(cmd))
-    subprocess.run(shlex.split(cmd), check=True)
+    val = subprocess.run(shlex.split(cmd), capture_output=True, text=True, check=True)
+    res = json.loads(val.stdout)
+    uuid = res.get("uuid",False)
+    print("Upload completed :: image uuid - %s"%(uuid))
+    print("Verifying Image...")
+    state = False
+    @retry(ValueError,delay=5,tries=100)
+    def image_state():
+
+        nonlocal state
+        uri_base = 'https://' + c_ip + '/'
+        resp = requests.get(uri_base+'api/image/%s'%(uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        if resp.status_code != 200:
+            err = "invalid response"
+            print(err)
+            raise ValueError(err)
+        data = resp.json()
+        if str(data['progress']) != '100':
+            err = "Image progress %s "%(data['progress'])
+            print(err)
+            raise ValueError(err)
+        if str(data['progress']) == '100':
+            print("Image progress 100")
+            print("Image Verified")
+            state = True
+    image_state()
+    if not state:
+        print("Image verification failed !!!!")
+        exit(1)
+    return uuid
+
+
+def upgrade_controller(c_ip,uuid):
+    login_and_set_global_variables(c_ip,None)
+    uri_base = 'https://' + c_ip + '/'
+    upgrade_data = {
+            'image_uuid': uuid,
+            'system': True,
+            'skip_warnings': True,
+            'disruptive':True, 
+            }
+    print("Starting Upgrade...")
+    r = requests.post(uri_base+'api/upgrade',data=json.dumps(upgrade_data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    print("Upgrade started")
+
+def check_upgrade_status(c_ip):
+    status = False
+
+    @retry(ValueError,tries=100,delay=20)
+    def _check_upgrade_state():
+        nonlocal status
+        uri_base = 'https://' + c_ip + '/'
+        try:
+            r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        except Exception as e:
+            print("Bad Service")
+            raise ValueError("Bad Service")
+        if r.status_code != 200:
+            err = "Upgrade in Progress"
+            print(err)
+            raise ValueError(err)
+        else:
+            for res in r.json()['results']:
+                if res.get('node_type','') == 'NODE_CONTROLLER_CLUSTER':
+                    if 'completed' in res.get('state',{}).get('state','').lower():
+                        print("Controller Upgrade Complete")
+                        status = True
+                        return
+                    elif 'SE_UPGRADE_IN_PROGRESS' in res.get('state',{}).get('state',''):
+                        print("Controller Upgrade Complete")
+                        status = True
+                        return
+                    else:
+                        err = "Upgrade in progress %s"%(res['progress'])
+                        print(err)
+                        raise ValueError(err)
+    _check_upgrade_state()
+    if not status:
+        print("Upgrade Failed !!!!!!!!!!! ")
+        exit(1)
+
+def rename_controller(c_ip):
+    login_and_set_global_variables(c_ip,None)
+    uri_base = 'https://' + c_ip + '/'
+    version = ''
+    r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    for res in r.json()['results']:
+        if res.get('node_type','') == 'NODE_CONTROLLER_CLUSTER':
+            version = res.get('version','')
+    ctlr_new_name = "ctlr_" + version.split("-")[0] + "-" + version.split("-")[1]
+    si = connect()
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=c_ip,vmSearch=True)))
+    vm_names = {}
+    for vm in vms:
+        vm_names[str(vm.name)] = vm
     
+    for dc in si.content.rootFolder.childEntity:
+        if dc.name == VCENTER_DATACENTER_NAME:
+            datacenter = dc
+    vmfolders = datacenter.vmFolder.childEntity
+    for folder in vmfolders:
+        if folder.name == VCENTER_FOLDER_NAME:
+            for virtual_m in folder.childEntity:
+                if virtual_m.name in vm_names.keys():
+                    old_name = virtual_m.name
+                    task = virtual_m.Rename(ctlr_new_name)
+                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                        time.sleep(1)
+                    print ("renaming vm %s with ip %s to new name %s done !!!"%(old_name,c_ip,ctlr_new_name))
+
 
 
 
@@ -931,10 +1053,12 @@ if len(sys.argv)==2 and sys.argv[1] == 'upgrade_ctlr':
     vms = list(set(search.FindAllByIp(ip=mgmt_ip,vmSearch=True)))
     if vms:
         upgrade_confirm = input("Are you sure you want to upgrade '%s', with '%s' image ?[Y/N] \n"%(vms[0].name,source_pkg_path))
-    if upgrade_confirm.lower() == "n":exit(0)
-    upload_pkg_to_ctlr(mgmt_ip,source_pkg_path)
-    #upgrade_controller()
-    #rename_controller()
+    if upgrade_confirm.lower() != "y":exit(1)
+    img_uuid = upload_pkg_to_ctlr(mgmt_ip,source_pkg_path)
+    upgrade_controller(mgmt_ip,img_uuid)
+    time.sleep(30)
+    check_upgrade_status(mgmt_ip)
+    rename_controller(mgmt_ip)
 
         
 
