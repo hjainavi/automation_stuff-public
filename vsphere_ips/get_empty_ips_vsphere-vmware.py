@@ -1064,23 +1064,9 @@ def look_for_upgrade_pkg_in_mnt_builds(version,build_dir):
 
 def generate_controller_from_ova():
     vm_type = "controller"
-    vcenter_ip = input("Vcenter IP ? [Default: %s] :"%(VCENTER_IP)) or VCENTER_IP
     si = connect()
-    datacenter = input("Datacenter Name ? [Default: %s] :"%(VCENTER_DATACENTER_NAME)) or VCENTER_DATACENTER_NAME
-    datacenter_obj = get_datacenter_obj(si,datacenter)
-    cluster_name = input("Cluster ? [Default: %s] :"%(VCENTER_CLUSTER_NAME)) or VCENTER_CLUSTER_NAME
-    datastore = input("Datastore ? [Default: %s] :"%(VCENTER_DATASTORE_NAME)) or VCENTER_DATASTORE_NAME
-    while True:
-        folder_name = input("Folder Name ? [Default: %s] :"%(VCENTER_FOLDER_NAME)) or VCENTER_FOLDER_NAME
-        if folder_name:
-            folder_obj = get_folder_obj(datacenter_obj,folder_name)
-            if folder_obj:
-                break
-    management_network = input("Management Network ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]
-
-    mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"]
-    gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"]
     custom_version = input("Custom Build [Y/N]? [N]: ")
+    ctlr_name = ""
     if custom_version.lower() == "y":
         default_path = "/home/aviuser/workspace/avi-dev/build/controller.ova"
         source_ova_path = input("Source Ova Path (local/http/ftp) ? [Default: %s] :"%(default_path))
@@ -1104,16 +1090,8 @@ def generate_controller_from_ova():
                 break
         source_ova_path = builds[build_index-1][3]
         print("Source Ova Path = %s"%(source_ova_path))
+        ctlr_name = "ctlr_%s-%s"%(builds[build_index-1][1],builds[build_index-1][2])
 
-    '''
-    ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
-    filter_options = input("type 'Y' if you want to see host,datastore options based on ova specs ; 'N' for all options; [Y/N] :")
-    if filter_options.lower() == 'y' and si:
-        host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB)
-    else:
-        host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB, display_all=True)
-    '''
-    
     while True:
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si)
         print ("Free IP's : %s"%(free_ips_1))
@@ -1132,10 +1110,36 @@ def generate_controller_from_ova():
                     continue
                 print(" %s ip is free"%(mgmt_ip))
                 break
-    
+
+    vcenter_ip = input("Vcenter IP ? [Default: %s] :"%(VCENTER_IP)) or VCENTER_IP
+    datacenter = input("Datacenter Name ? [Default: %s] :"%(VCENTER_DATACENTER_NAME)) or VCENTER_DATACENTER_NAME
+    datacenter_obj = get_datacenter_obj(si,datacenter)
+    cluster_name = input("Cluster ? [Default: %s] :"%(VCENTER_CLUSTER_NAME)) or VCENTER_CLUSTER_NAME
+    datastore = input("Datastore ? [Default: %s] :"%(VCENTER_DATASTORE_NAME)) or VCENTER_DATASTORE_NAME
+    while True:
+        folder_name = input("Folder Name ? [Default: %s] :"%(VCENTER_FOLDER_NAME)) or VCENTER_FOLDER_NAME
+        if folder_name:
+            folder_obj = get_folder_obj(datacenter_obj,folder_name)
+            if folder_obj:
+                break
+    management_network = input("Management Network ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]
+
+    mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"]
+    gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"]
+
+    '''
+    ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
+    filter_options = input("type 'Y' if you want to see host,datastore options based on ova specs ; 'N' for all options; [Y/N] :")
+    if filter_options.lower() == 'y' and si:
+        host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB)
+    else:
+        host_ip, datastore = filter_host_and_datastore_based_on_specs(cluster_obj, ova_memory_spec_in_MB, ova_disk_spec_in_MB, display_all=True)
+    '''
     
     while True:
-        vm_name = input("VM Name ? :")
+        vm_name = input("VM Name ? [%s]:"%(ctlr_name))
+        if not vm_name: vm_name = ctlr_name
+        if not vm_name: continue
         if not check_if_vm_name_exists_in_folder(folder_obj,vm_name) and vm_name:
             break
     power_on = input("Power On VM [Y/N]? [Y] :")
@@ -1178,6 +1182,7 @@ def generate_controller_from_ova():
                 pass
     else:
         print ("Exiting ...")
+        exit(0)
     if set_password_and_sys_config.lower() == 'y':
         configure_raw_controller(mgmt_ip)
 
