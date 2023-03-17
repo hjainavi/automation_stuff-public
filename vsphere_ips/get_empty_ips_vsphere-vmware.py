@@ -21,6 +21,7 @@ import shlex
 #import argparse
 import os
 import requests
+from requests.auth import HTTPBasicAuth
 import time
 import json
 import re
@@ -67,6 +68,7 @@ DEFAULT_PASSWORD = "avi123"
 
 GLOBAL_LOGIN_HEADERS = None
 GLOBAL_LOGIN_COOKIES = None
+GLOBAL_CURRENT_PASSWORD = None
 
 if 'help' in sys.argv:
     print ("options --> delete 'ip'")
@@ -75,10 +77,11 @@ if 'help' in sys.argv:
     print ("options --> rename 'ip' 'newname'")
     print ("options --> poweron")
     print ("options --> poweron 'name'")
-    print ("options --> upgrade_ctlr")
+    print ("options --> reimage_ctlr")
     print ("options --> generate_controller_from_ova")
     print ("options --> configure_raw_controller")
     print ("options --> configure_raw_controller_wo_tmux")
+    print ("options --> configure_raw_controller_after_reimage")
     print ("options --> configure_cloud_vs_se")
     print ("options --> configure_vs")
     print ("options --> flush_db_configure_raw_controller_wo_tmux")
@@ -196,11 +199,9 @@ if len(sys.argv)==1:
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
         
 
-
-if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
-
-    if sys.argv[2]:
-        ips = sys.argv[2:]
+def poweroff_and_delete_vm(argv=[]):
+    if argv[2]:
+        ips = argv[2:]
         si = connect()
         search = si.RetrieveContent().searchIndex
         vms_to_operate_on = []
@@ -208,7 +209,7 @@ if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
             vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
             if vms:
                 for vm in vms:
-                    action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(sys.argv[1],vm.name,ip))
+                    action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(argv[1],vm.name,ip))
                     if action_confirm.lower() == "n":continue
                     if DEV_VM_IP in ip:
                         while True:
@@ -227,12 +228,16 @@ if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
                     time.sleep(1)
                 print ("power is off.",task.info.state)
             
-            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and argv[1]=='delete':
                 print ("deleteing ",vm.name," ",ip)
                 task = vm.Destroy()
                 while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
                     time.sleep(1)
                 print ("vm is deleted.",task.info.state)
+
+if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
+    poweroff_and_delete_vm(sys.argv)
+
 
 if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
@@ -325,7 +330,6 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
 def get_headers(tenant='admin'):
     headers = {
         "Content-Type": "application/json",
-        "X-Avi-Tenant": tenant,
     }
     # headers["X-Avi-Version"] = "%s" % version
     return headers
@@ -358,22 +362,26 @@ def wait_until_cluster_ready(c_ip,  timeout=1800):
     raise Exception('Timeout: waited approximately %s sec. and the cluster '
                     'is still not active. controller %s' % (timeout, c_ip))
 
-def change_to_default_password(c_ip,current_password):
+def change_to_default_password(c_ip):
     uri_base = 'https://' + c_ip + '/'
     print("changing password to avi123")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     data = r.json()
-    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':current_password})
+    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD})
     time.sleep(1) 
-    r = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
+    auth = HTTPBasicAuth('admin', GLOBAL_CURRENT_PASSWORD)
+    resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, auth=auth)
+    if resp.status_code not in [200,201]:
+        raise Exception(resp.text)
     print("changing password to avi123 -- done")
     reset_login(c_ip)
 
 def login_and_set_global_variables(c_ip,password_arg=None,change_password_to_default=True):
+    
+
     global GLOBAL_LOGIN_HEADERS
     global GLOBAL_LOGIN_COOKIES
+    global GLOBAL_CURRENT_PASSWORD
     if GLOBAL_LOGIN_HEADERS is not None and GLOBAL_LOGIN_COOKIES is not None:
         return
     uri_base = 'https://' + c_ip + '/'
@@ -385,25 +393,29 @@ def login_and_set_global_variables(c_ip,password_arg=None,change_password_to_def
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
             logged_in = True
+            headers['X-CSRFToken'] = login.cookies['csrftoken']
+            headers['Referer'] = uri_base
+            GLOBAL_LOGIN_HEADERS = headers
+            GLOBAL_LOGIN_COOKIES = login.cookies
+            GLOBAL_CURRENT_PASSWORD = password
             if password != DEFAULT_PASSWORD and change_password_to_default:
-                change_to_default_password(c_ip, password)
+                change_to_default_password(c_ip)
                 return
             break
     if not logged_in:
         print("not able to login using various passwords")
         print(login.text)
         exit(1)
-    headers['X-CSRFToken'] = login.cookies['csrftoken']
-    headers['Referer'] = uri_base
-    GLOBAL_LOGIN_HEADERS = headers
-    GLOBAL_LOGIN_COOKIES = login.cookies
+    
     set_version_controller(c_ip)
 
 def reset_login(c_ip):
     global GLOBAL_LOGIN_COOKIES
     global GLOBAL_LOGIN_HEADERS
+    global GLOBAL_CURRENT_PASSWORD
     GLOBAL_LOGIN_HEADERS = None
     GLOBAL_LOGIN_COOKIES = None
+    GLOBAL_CURRENT_PASSWORD = None
     login_and_set_global_variables(c_ip)
 
 def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAULT_SETUP_PASSWORD):
@@ -457,10 +469,26 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
         raise Exception(r.text)
     print("setting backup default passphrase -- done")
 
-    change_to_default_password(c_ip,current_password)
+    change_to_default_password(c_ip)
     print("setting complete")
    
-
+def setup_tmux_install_only(c_ip):
+    login_and_set_global_variables(c_ip,None)
+    print("Setting Controller with tmux and other packages")
+    env.host_string = c_ip
+    env.user = "admin"
+    env.password = DEFAULT_PASSWORD
+    env.sudo_password = DEFAULT_PASSWORD
+    env.disable_known_hosts = True
+    put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
+    with cd("/root/"):
+        sudo("tar -xvf ctlr_new.tar.gz")
+    with cd("/root/controller_customization_new/"):
+        sudo("./controller_cust_install_only.sh")
+    with cd("/root/controller_customization_new/other_files"):
+        sudo("./tmux_start_script.sh")
+    with cd("/opt/avi/python"):
+        sudo("ls")
 
 def setup_tmux(c_ip):
     login_and_set_global_variables(c_ip,None)
@@ -497,13 +525,16 @@ def set_version_controller(c_ip):
     if GLOBAL_LOGIN_HEADERS.get("X-Avi-Version",False):
         return
     uri_base = 'https://' + c_ip + '/'
+    build_no = ""
     resp = requests.get(uri_base+'api/initial-data',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if resp.status_code == 200:
-        version = resp.json()['version']['Version']
+        data = resp.json()
+        version = data['version']['Version']
+        build_no = data['version']['build']
     else:
         version = input("Please Enter Controller Version ? :")
     GLOBAL_LOGIN_HEADERS["X-Avi-Version"] = "%s" % version
-    print("Controller Version: %s"%(version))
+    print("Controller Version: %s-%s"%(version,build_no))
 
 def get_version_controller_from_ova(ova_path):
     print("Getting Controller Version from OVA %s"%(ova_path))
@@ -619,9 +650,9 @@ def setup_vs(c_ip, version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
         raise Exception(r.text)
 
 
-def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWORD):
+def setup_cloud_se(c_ip,version=""):
     uri_base = 'https://' + c_ip + '/'
-    login_and_set_global_variables(c_ip, current_password)
+    login_and_set_global_variables(c_ip, None)
     print("setting up vmware write access cloud")
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     for val in r.json()['results']:
@@ -660,7 +691,7 @@ def setup_cloud_se(c_ip,version="" ,timeout=60, current_password=DEFAULT_PASSWOR
         if default_cloud_uuid in val['cloud_ref']:
             data = val
             break
-    se_name_prefix = c_ip.split(".")[-1]+"_"+version.replace(".","")
+    se_name_prefix = c_ip.split(".")[-1]+"_"+GLOBAL_LOGIN_HEADERS["X-Avi-Version"].replace(".","")
     data.update({
         "se_name_prefix":se_name_prefix,
         "vcenter_folder":VCENTER_FOLDER_NAME,
@@ -872,23 +903,21 @@ def generate_controller_from_ova():
         print ("Exiting ...")
     if set_password_and_sys_config.lower() == 'y':
         set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+        setup_tmux(mgmt_ip)
         setup_cloud_se(mgmt_ip)
         setup_vs(mgmt_ip)
-        setup_tmux(mgmt_ip)
 
     print("================== DONE ==============")
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
-    ctlr_version = get_version_controller(mgmt_ip)
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
-    ctlr_version = get_version_controller(mgmt_ip)
     setup_vs(mgmt_ip)
 
 
@@ -909,15 +938,160 @@ if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux'
 if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
     generate_controller_from_ova()
 
-if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1] == 'configure_raw_controller_wo_tmux'):
+if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1] == 'configure_raw_controller_wo_tmux' or sys.argv[1] == 'configure_raw_controller_after_reimage'):
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
-    ctlr_version = get_version_controller(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+    if sys.argv[1] == 'configure_raw_controller':
+        setup_tmux(mgmt_ip)
+    if sys.argv[1] == 'configure_raw_controller_after_reimage':
+        setup_tmux_install_only(mgmt_ip)
+    
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
-    if sys.argv[1] != 'configure_raw_controller_wo_tmux':
-        setup_tmux(mgmt_ip)
+    
+
+def upload_pkg_to_ctlr(c_ip,source_pkg_path):
+    login_and_set_global_variables(c_ip,None)
+    cmd = 'sshpass -p %s scp %s admin@%s:~/'%(DEFAULT_PASSWORD,source_pkg_path,c_ip)
+    print("Running Upload Command::: %s"%(cmd))
+    subprocess.run(shlex.split(cmd), check=True)
+    print("Upload Done")
+
+
+def reimage_controller(c_ip):
+    print("Starting reimage...")
+    env.host_string = c_ip
+    env.user = "admin"
+    env.password = DEFAULT_PASSWORD
+    env.sudo_password = DEFAULT_PASSWORD
+    env.disable_known_hosts = True
+    sudo("/opt/avi/scripts/reimage_system.py --base /home/admin/controller.pkg")
+    print("reimage started")
+
+def check_upgrade_status(c_ip):
+    status = False
+
+    @retry(ValueError,tries=100,delay=20)
+    def _check_upgrade_state():
+        nonlocal status
+        uri_base = 'https://' + c_ip + '/'
+        try:
+            r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        except Exception as e:
+            print("Bad Service")
+            raise ValueError("Bad Service")
+        if r.status_code == 401:
+            login_and_set_global_variables(c_ip)
+            print("login again and change password")
+            ValueError("login again and change password")
+        if r.status_code != 200:
+            err = "Upgrade in Progress"
+            print(err)
+            raise ValueError(err)
+        
+        else:
+            for res in r.json()['results']:
+                if res.get('node_type','') == 'NODE_CONTROLLER_CLUSTER':
+                    for check in res.get('upgrade_readiness',{}).get('checks',[]):
+                        if 'error' in check.get('state','').lower():
+                            print("Upgrade pre check failed !!!")
+                            exit(1)
+                    if 'completed' in res.get('state',{}).get('state','').lower():
+                        print("Controller Upgrade Complete")
+                        status = True
+                        return
+                    elif 'SE_UPGRADE_IN_PROGRESS' in res.get('state',{}).get('state',''):
+                        print("Controller Upgrade Complete")
+                        status = True
+                        return
+                    else:
+                        err = "Upgrade in progress %s"%(res['progress'])
+                        print(err)
+                        raise ValueError(err)
+    _check_upgrade_state()
+    if not status:
+        print("Upgrade Failed !!!!!!!!!!! ")
+        exit(1)
+
+def rename_controller(c_ip):
+    login_and_set_global_variables(c_ip,None)
+    uri_base = 'https://' + c_ip + '/'
+    version = ''
+    r = requests.get(uri_base+'api/initial-data/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    version = r.json().get('version',{}).get('Tag')
+    ctlr_new_name = "ctlr_" + version.split("-")[0] + "-" + version.split("-")[1]
+    si = connect()
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=c_ip,vmSearch=True)))
+    vm_names = {}
+    for vm in vms:
+        vm_names[str(vm.name)] = vm
+    
+    for dc in si.content.rootFolder.childEntity:
+        if dc.name == VCENTER_DATACENTER_NAME:
+            datacenter = dc
+    vmfolders = datacenter.vmFolder.childEntity
+    for folder in vmfolders:
+        if folder.name == VCENTER_FOLDER_NAME:
+            for virtual_m in folder.childEntity:
+                if virtual_m.name in vm_names.keys():
+                    old_name = virtual_m.name
+                    task = virtual_m.Rename(ctlr_new_name)
+                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                        time.sleep(1)
+                    print ("renaming vm %s with ip %s to new name %s done !!!"%(old_name,c_ip,ctlr_new_name))
+
+
+def delete_all_se(c_ip):
+    login_and_set_global_variables(c_ip,None)
+    uri_base = 'https://' + c_ip + '/'
+    version = ''
+    resp = requests.get(uri_base+'api/serviceengine/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    if resp.status_code != 200:
+        raise Exception(resp.text)
+    se_datas = resp.json()
+    si = connect()
+
+
+
+if len(sys.argv)==2 and sys.argv[1] == 'reimage_ctlr':
+    si = connect()
+    mgmt_ip = get_used_controller_ip(si)
+    login_and_set_global_variables(mgmt_ip)
+    '''
+    while True:
+        source_pkg_path = input("Upgrade controller.pkg Path ? :")
+        if os.path.isfile(source_pkg_path):
+            break
+        else:
+            print ("Invalid Path !!!")
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=mgmt_ip,vmSearch=True)))
+    if vms:
+        upgrade_confirm = input("Are you sure you want to reimage '%s', with '%s' image ?[Y/N] \n"%(vms[0].name,source_pkg_path))
+    if upgrade_confirm.lower() != "y":exit(1)
+    upload_pkg_to_ctlr(mgmt_ip,source_pkg_path)
+    reimage_controller(mgmt_ip)
+    '''
+    delete_all_se(mgmt_ip)
+    #check_upgrade_status(mgmt_ip)
+    #rename_controller(mgmt_ip)
+
+        
+
+# https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
+
+
+'''
+parser = argparse.ArgumentParser()
+parser.add_argument('--default_profile', help="Set default profile", action='store_true')
+parser.add_argument('--list_profiles', help="Display the Vsphere static ips and folder configuration", action='store_true')
+parser.add_argument('--create_profile', help="Create vsphere ips and folder configuration", action='store_true')
+args = parser.parse_args()
+'''
+
+'''
 
 def upload_pkg_to_ctlr(c_ip,source_pkg_path):
     login_and_set_global_variables(c_ip,None)
@@ -954,126 +1128,6 @@ def upload_pkg_to_ctlr(c_ip,source_pkg_path):
         print("Image verification failed !!!!")
         exit(1)
     return uuid
-
-
-def upgrade_controller(c_ip,uuid):
-    login_and_set_global_variables(c_ip,None)
-    uri_base = 'https://' + c_ip + '/'
-    upgrade_data = {
-            'image_uuid': uuid,
-            'system': True,
-            'skip_warnings': True,
-            'disruptive':True, 
-            }
-    print("Starting Upgrade...")
-    r = requests.post(uri_base+'api/upgrade',data=json.dumps(upgrade_data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    if r.status_code not in [200,201]:
-        raise Exception(r.text)
-    print("Upgrade started")
-
-def check_upgrade_status(c_ip):
-    status = False
-
-    @retry(ValueError,tries=100,delay=20)
-    def _check_upgrade_state():
-        nonlocal status
-        uri_base = 'https://' + c_ip + '/'
-        try:
-            r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-        except Exception as e:
-            print("Bad Service")
-            raise ValueError("Bad Service")
-        if r.status_code != 200:
-            err = "Upgrade in Progress"
-            print(err)
-            raise ValueError(err)
-        else:
-            for res in r.json()['results']:
-                if res.get('node_type','') == 'NODE_CONTROLLER_CLUSTER':
-                    if 'completed' in res.get('state',{}).get('state','').lower():
-                        print("Controller Upgrade Complete")
-                        status = True
-                        return
-                    elif 'SE_UPGRADE_IN_PROGRESS' in res.get('state',{}).get('state',''):
-                        print("Controller Upgrade Complete")
-                        status = True
-                        return
-                    else:
-                        err = "Upgrade in progress %s"%(res['progress'])
-                        print(err)
-                        raise ValueError(err)
-    _check_upgrade_state()
-    if not status:
-        print("Upgrade Failed !!!!!!!!!!! ")
-        exit(1)
-
-def rename_controller(c_ip):
-    login_and_set_global_variables(c_ip,None)
-    uri_base = 'https://' + c_ip + '/'
-    version = ''
-    r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    for res in r.json()['results']:
-        if res.get('node_type','') == 'NODE_CONTROLLER_CLUSTER':
-            version = res.get('version','')
-    ctlr_new_name = "ctlr_" + version.split("-")[0] + "-" + version.split("-")[1]
-    si = connect()
-    search = si.RetrieveContent().searchIndex
-    vms = list(set(search.FindAllByIp(ip=c_ip,vmSearch=True)))
-    vm_names = {}
-    for vm in vms:
-        vm_names[str(vm.name)] = vm
-    
-    for dc in si.content.rootFolder.childEntity:
-        if dc.name == VCENTER_DATACENTER_NAME:
-            datacenter = dc
-    vmfolders = datacenter.vmFolder.childEntity
-    for folder in vmfolders:
-        if folder.name == VCENTER_FOLDER_NAME:
-            for virtual_m in folder.childEntity:
-                if virtual_m.name in vm_names.keys():
-                    old_name = virtual_m.name
-                    task = virtual_m.Rename(ctlr_new_name)
-                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print ("renaming vm %s with ip %s to new name %s done !!!"%(old_name,c_ip,ctlr_new_name))
-
-
-
-
-if len(sys.argv)==2 and sys.argv[1] == 'upgrade_ctlr':
-    si = connect()
-    mgmt_ip = get_used_controller_ip(si)
-    while True:
-        source_pkg_path = input("Upgrade controller.pkg Path ? :")
-        if os.path.isfile(source_pkg_path):
-            break
-        else:
-            print ("Invalid Path !!!")
-    search = si.RetrieveContent().searchIndex
-    vms = list(set(search.FindAllByIp(ip=mgmt_ip,vmSearch=True)))
-    if vms:
-        upgrade_confirm = input("Are you sure you want to upgrade '%s', with '%s' image ?[Y/N] \n"%(vms[0].name,source_pkg_path))
-    if upgrade_confirm.lower() != "y":exit(1)
-    img_uuid = upload_pkg_to_ctlr(mgmt_ip,source_pkg_path)
-    upgrade_controller(mgmt_ip,img_uuid)
-    time.sleep(30)
-    check_upgrade_status(mgmt_ip)
-    rename_controller(mgmt_ip)
-
-        
-
-# https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
-
-
-'''
-parser = argparse.ArgumentParser()
-parser.add_argument('--default_profile', help="Set default profile", action='store_true')
-parser.add_argument('--list_profiles', help="Display the Vsphere static ips and folder configuration", action='store_true')
-parser.add_argument('--create_profile', help="Create vsphere ips and folder configuration", action='store_true')
-args = parser.parse_args()
-'''
-
-'''
 
 def change_vm_memory(vm,memory):
     if vm.runtime.powerState != 'poweredOff':
