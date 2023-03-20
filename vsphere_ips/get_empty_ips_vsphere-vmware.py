@@ -679,7 +679,6 @@ def setup_cloud_se(c_ip,version=""):
         "vtype":"CLOUD_VCENTER",
         "vcenter_configuration":{
             "privilege": "WRITE_ACCESS",
-            "deactivate_vm_discovery": False,
             "username": VCENTER_USER,
             "vcenter_url": VCENTER_IP,
             "password": VCENTER_PASSWORD,
