@@ -81,6 +81,7 @@ if 'help' in sys.argv:
     print ("options --> poweron")
     print ("options --> poweron 'name'")
     print ("options --> reimage_ctlr")
+    print ("options --> latest_builds")
     print ("options --> generate_controller_from_ova")
     print ("options --> configure_raw_controller")
     print ("options --> configure_raw_controller_wo_tmux")
@@ -1193,6 +1194,26 @@ if len(sys.argv)==2 and sys.argv[1]=='delete_ctlr_se':
     mgmt_ip = get_used_controller_ip(si)
     mgmt_se_ips = get_all_se(mgmt_ip)
     poweroff_and_delete_vm([mgmt_ip] + mgmt_se_ips,delete=True,si=si)
+
+if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
+    all_builds = []
+    while True:
+        versions = input("Versions [comma separated] ?: ")
+        if not versions:
+            continue
+        for version in versions.split(","):
+            builds = list_all_builds_in_mnt_builds(version.strip())
+            if builds:
+                all_builds.append(builds)
+        if all_builds:
+            break
+    final_print_vals = [("Index","Version","Build No", "File", "Date")]
+    for build in all_builds:
+        for value in build:
+            final_print_vals.append((value[0],value[1],value[2],value[3],value[4]))
+        final_print_vals.append(("---","---","---","---","---"))
+
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
     
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
