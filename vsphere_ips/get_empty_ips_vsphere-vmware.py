@@ -600,10 +600,25 @@ def setup_vs(c_ip, version="" ,timeout=60):
     print("creating a vs")
     # getting dev020 network uuid
     r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
-    for val in r.json()['results']:
+    res = r.json()['results']
+    exclude_subnet = []
+
+    for val in res:
+        for subnet in val.get("subnet",[]):
+            if str(subnet.get("prefix").get("ip_addr").get("addr")) == "100.0.0.0" and str(subnet.get("prefix").get("mask")) == "8":
+                exclude_subnet.append(val)
         if VCENTER_PORT_GROUP in val['name']:
             data = val
-            break
+
+    for val in exclude_subnet:
+        r1 = requests.get(uri_base+'api/network/%s'%(val["uuid"]),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        data1 = r1.json()
+        data1["exclude_discovered_subnets"] = True
+        r2 = requests.put(uri_base+'api/network/%s'%(val["uuid"]), data=json.dumps(data1) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        if r2.status_code not in [200,201]:
+            raise Exception(r.text)
+        print("Excluding Subnets %s\n%s\n%s"%(val["uuid"],val["name"],val["subnet"]))
+
     port_group_uuid = data['uuid']
     port_group_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
     occupied_ips = []
