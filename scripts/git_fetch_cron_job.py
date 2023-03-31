@@ -49,7 +49,7 @@ for branch in all_branches:
         pass
     fetched_branches.append(branch)
 
-fetched_branches = ["AV-173613_21.1.7","AV-173613_22.1.4","AV-173613_30.1.1","AV-173613_eng","eng","21.1.7"] + fetched_branches
+fetched_branches = ["eng","21.1.7"] + fetched_branches
 log.info("Fetching Branches: %s"%(fetched_branches))
 for branch in fetched_branches:
     fetch_to_remote(CWD, branch)
