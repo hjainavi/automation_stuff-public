@@ -9,27 +9,34 @@ import threading
 import time
 import logging
 
+
 LOG_FILE_PATH = "/home/aviuser/logfile_git_fetch_cron.txt"
+CWD = "/home/aviuser/workspace/avi-dev"
+
 logging.basicConfig(filename=LOG_FILE_PATH,
                     filemode='a',
-                    format='%(asctime)s.%(msecs)d %(name)s %(levelname)s %(message)s',
+                    format='%(asctime)s.%(msecs)d %(name)s line.%(lineno)d %(levelname)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.DEBUG)
 
 log = logging.getLogger("gitFetch")
 log.info("--------------- Starting Fetch -------------")
+if not os.path.isdir(CWD):
+    log.error("No such directory %s"%(CWD))
+    exit(1)
 main_branch_pattern = re.compile(r"\d+\.\d+\.\d+")
 patch_branch_pattern = re.compile(r"\d+\.\d+\.\d+-\d+p\d+")
 #all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
 all_branches = [i for i in os.listdir("/mnt/builds") if re.fullmatch(main_branch_pattern, i)]
 all_branches = sorted(all_branches, reverse=True)
 
-if os.path.isdir("/home/aviuser/workspace/avi-dev"):
-    CWD = "/home/aviuser/workspace/avi-dev"
+
     
-def fetch_to_remote(CWD_c, branch):
-    #command = "git fetch -v -p -P origin %s"%(branch)
-    command = "git fetch -v origin %s"%(branch)
+def fetch_branch(CWD_c, branch, remote=True):
+    if remote:
+        command = "git fetch -v origin %s"%(branch)
+    else:
+        command = "git fetch -v origin %s:%s"%(branch,branch)        
     log.info("Directory: %s"%(CWD_c))
     log.info("command : %s"%(command))
     try:
@@ -38,6 +45,81 @@ def fetch_to_remote(CWD_c, branch):
         if str(result.stderr) != "": log.info(str(result.stderr))
     except Exception as e:
         log.error(str(e))
+
+def pull_branch_ff(CWD_c, branch):
+    command = "git pull origin %s --ff-only"%(branch)
+    log.info("Directory: %s"%(CWD_c))
+    log.info("command : %s"%(command))
+    try:
+        result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=600)
+        if str(result.stdout) != "": log.info(str(result.stdout))
+        if str(result.stderr) != "": log.info(str(result.stderr))
+    except Exception as e:
+        log.error(str(e))
+
+def get_checked_out_branches(CWD_c):
+    command = "git worktree list --porcelain"
+    log.info("Directory: %s"%(CWD_c))
+    log.info("command : %s"%(command))
+    datas = {} # {'branch':dir}
+    try:
+        result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=10)
+        if str(result.stderr) != "":
+            log.info("error")
+            log.error(str(result.stderr))
+            return datas
+        res_out = result.stdout
+        if str(res_out) != "":
+            output_str = str(res_out)
+            worktree = branch = ""
+            for line in output_str.split("\n"):
+                if 'worktree' in line:
+                    worktree = line.split(" ")[-1]
+                if 'branch' in line:
+                    branch = line.split("/")[-1]
+                if worktree != "" and branch != "":
+                    datas[branch] = worktree
+                    worktree = branch = ""
+            log.info("Checked Out Branches %s"%(datas))
+        
+    except Exception as e:
+        log.error(str(e))
+    return datas
+
+def pull_fetch_or_remote_fetch(checkout_datas, fetched_branches):
+    remote_fetch_only = []
+    pull_ff_only = {}
+    direct_fetch_branches = [branch for branch in fetched_branches if str(branch) not in checkout_datas.keys()]
+    pull_remote_fetch_branches = [branch for branch in fetched_branches if str(branch) in checkout_datas.keys()]
+    if not pull_remote_fetch_branches:
+        return pull_ff_only,direct_fetch_branches,remote_fetch_only
+    command = "git status --porcelain"
+    for branch,dir in checkout_datas.items():
+        if branch not in fetched_branches:
+            continue
+        log.info("Directory: %s"%(dir))
+        log.info("command : %s"%(command))
+        try:
+            result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=dir, check=True, timeout=600)
+            if str(result.stderr) != "":
+                log.info(str(result.stderr))
+                continue
+            res_out = result.stdout
+            if str(res_out) != "":
+                if " M " in res_out or " D " in res_out:
+                    remote_fetch_only.append(branch)
+                else:
+                    pull_ff_only[branch] = dir
+            else:
+                pull_ff_only[branch] = dir
+        except Exception as e:
+            log.error(str(e))
+    log.info("Remote Fetch only %s"%(remote_fetch_only))
+    log.info("Pull only branches %s"%(pull_ff_only.keys()))
+    log.info("Direct fetch branches %s"%(direct_fetch_branches))
+    return pull_ff_only,direct_fetch_branches,remote_fetch_only
+
+
 
 #lock = threading.Lock()
 fetched_branches = []
@@ -51,8 +133,17 @@ for branch in all_branches:
 
 fetched_branches = ["eng","21.1.7"] + fetched_branches
 log.info("Fetching Branches: %s"%(fetched_branches))
-for branch in fetched_branches:
-    fetch_to_remote(CWD, branch)
+checkout_datas = get_checked_out_branches(CWD)
+if not checkout_datas: exit(1)
+pull_ff_only,direct_fetch_branches,remote_fetch_only = pull_fetch_or_remote_fetch(checkout_datas, fetched_branches)
+if not pull_ff_only and not direct_fetch_branches and not remote_fetch_only: exit(1)
+for branch in remote_fetch_only:
+    fetch_branch(CWD, branch)
+for branch,dir in pull_ff_only.items():
+    pull_branch_ff(dir, branch)
+for branch in direct_fetch_branches:
+    fetch_branch(CWD, branch, remote=False)
+
 log.info("--------------- Ending Fetch -------------\n\n\n")
 
 
