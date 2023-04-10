@@ -36,6 +36,8 @@ import jinja2
 from retry import retry
 
 ALL_RESERVED_IPS = ["10.102.96.175","10.102.96.176", "100.65.9.177", "100.65.9.178", "100.65.9.179", "100.65.9.180", "100.65.9.181", "100.65.9.182", "100.65.9.183"]
+SE_IPS = ["100.65.12.177", "100.65.12.178", "100.65.12.179", "100.65.12.180", "100.65.12.181", "100.65.12.182", "100.65.12.183"]
+USE_CTLR_SE_IP_RELATED = True
 DEV_IP = "10.102.96.175"
 VCENTER_IP = "blr-01-vc13.oc.vmware.com"
 VCENTER_USER = "aviuser1"
@@ -72,7 +74,18 @@ GLOBAL_LOGIN_COOKIES = None
 GLOBAL_CURRENT_PASSWORD = None
 GLOBAL_BUILD_NO = None
 
+SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
+
+POWER_OFF_STATE = 'POWER OFF'
+POWER_ON_STATE = 'POWER ON'
+TEMPLATE_STATE = 'TEMPLATE'
+UNKNOWN_STATE = 'UNKNOWN'
+NIL_PRINT_VAL = "------"
+FREE_IP = "--Free IP--"
+
 if 'help' in sys.argv:
+    print ("options --> with_se_ips")
+    print ("options --> free_ip")
     print ("options --> delete_ctlr_se")
     print ("options --> delete 'ip'")
     print ("options --> delete_name 'name'")
@@ -111,9 +124,9 @@ def fill_vms_table(vms_table,virtual_m):
         folder_name = virtual_m.parent.name
         if virtual_m.config and not virtual_m.config.template:
             if virtual_m.runtime.powerState == 'poweredOff':
-                vms_table[(folder_name,virtual_m.name)] = {'state':'POWER OFF','ip_network':[["------","------"]]}
+                vms_table[(folder_name,virtual_m.name)] = {'state':POWER_OFF_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
             else:
-                vms_table[(folder_name,virtual_m.name)] = {'state':'POWER ON','ip_network':[]}
+                vms_table[(folder_name,virtual_m.name)] = {'state':POWER_ON_STATE,'ip_network':[]}
                 if len(virtual_m.guest.net)>0:
                     for ip_net in virtual_m.guest.net:
                         for ip_addr in ip_net.ipAddress:
@@ -123,9 +136,9 @@ def fill_vms_table(vms_table,virtual_m):
                                 vms_table[(folder_name,virtual_m.name)]['ip_network'].append([ip_addr, ip_net.network])
                                 
         elif virtual_m.config and virtual_m.config.template:
-            vms_table[(folder_name,virtual_m.name)] = {'state':'TEMPLATE','ip_network':[["------","------"]]}
+            vms_table[(folder_name,virtual_m.name)] = {'state':TEMPLATE_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
         else:
-            vms_table[(folder_name,virtual_m.name)] = {'state':'UNKNOWN','ip_network':[["------","------"]]}
+            vms_table[(folder_name,virtual_m.name)] = {'state':UNKNOWN_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
 
     except:
         raise
@@ -139,9 +152,13 @@ def power_on_vm(virtual_machine_obj):
 
 
 
-if len(sys.argv)==1:
-    
 
+
+def get_vms_ips_network(with_se_ips=False,free_ips=False):
+    if with_se_ips:
+        all_reserved_ips = ALL_RESERVED_IPS + SE_IPS
+    else:
+        all_reserved_ips = ALL_RESERVED_IPS
     folder_name = VCENTER_FOLDER_NAME
     datacenter_name = VCENTER_DATACENTER_NAME
    
@@ -166,7 +183,7 @@ if len(sys.argv)==1:
             break
     
     reserved_ips_not_found_in_folder = []
-    for val_ip in ALL_RESERVED_IPS:
+    for val_ip in all_reserved_ips:
         found = False
         for folder_name,value in vms_table.items():
             for ip_network_val in value['ip_network']:
@@ -184,7 +201,7 @@ if len(sys.argv)==1:
     ################# FORMING PRINT STRUCTURE #####################
 
     final_print_vals = [("**VM NAME**", "*STATE*", "**IP**", "*NETWORK*")]
-    for val_ip in ALL_RESERVED_IPS:
+    for val_ip in all_reserved_ips:
         found = False
         for folder_name,value in vms_table.items():
             for ip_network_val in value['ip_network']:
@@ -192,16 +209,42 @@ if len(sys.argv)==1:
                     found = True
                     final_print_vals.append((folder_name[1], value['state'], val_ip, ip_network_val[1]))
         if not found:
-            final_print_vals.append(("--Free IP--", "-------", val_ip, "------"))
+            final_print_vals.append((FREE_IP, NIL_PRINT_VAL, val_ip, NIL_PRINT_VAL))
 
     final_print_vals.append(("","","",""))
 
     for folder_name,value in vms_table.items():
         for ip_network_val in value['ip_network']:
-            if ip_network_val[0] not in ALL_RESERVED_IPS:
-                final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))    
-    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
-        
+            if ip_network_val[0] not in all_reserved_ips:
+                final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
+    final_print_vals = remove_se_non_reserved_ips(final_print_vals)
+    if not free_ips: final_print_vals = remove_free_ips(final_print_vals)
+    return final_print_vals
+
+def remove_free_ips(final_print_vals):
+    new_final_print_vals = []
+    for val in final_print_vals:
+        val_name = val[0]
+        if FREE_IP != val_name:
+            new_final_print_vals.append(val)
+    return new_final_print_vals    
+
+def remove_se_non_reserved_ips(final_print_vals):
+    #print(final_print_vals)
+    reserved_se_names = []
+    new_final_print_vals = []
+    for val in final_print_vals:
+        val_name = val[0]
+        val_ip = val[2]
+        if val_ip in SE_IPS and FREE_IP != val_name:
+            reserved_se_names.append(val_name)
+    for val in final_print_vals:
+        val_name = val[0]
+        val_ip = val[2]
+        if val_name in reserved_se_names and val_ip not in SE_IPS:
+            continue
+        new_final_print_vals.append(val)
+    return new_final_print_vals    
 
 def poweroff_and_delete_vm(ips,delete=False,si=None):
     cmd = 'delete' if delete else 'poweroff'
@@ -330,6 +373,19 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
                             executor.submit(power_on_vm,virtual_m)
                         else:
                             print ("vm %s is already ON"%(virtual_m.name))
+
+if len(sys.argv)==1:
+    final_print_vals = get_vms_ips_network(with_se_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+if len(sys.argv)==2 and sys.argv[1]=='with_se_ips':
+    final_print_vals = get_vms_ips_network(with_se_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+if len(sys.argv)==2 and sys.argv[1] in ['free_ip','free_ips']:
+    final_print_vals = get_vms_ips_network(with_se_ips=True,free_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
 
 ##################################################################################
 ##################################################################################
@@ -728,6 +784,80 @@ def setup_cloud_se(c_ip,version=""):
     r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
     if r.status_code not in [200,201]:
         raise Exception(r.text)
+    if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
+        print("Set Static IPs for SE")
+        # set static ips for se
+        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        mgmt_networks = r.json()["results"]
+        for n in mgmt_networks:
+            if default_cloud_uuid in n["cloud_ref"]:
+                mgmt_network = n
+                break
+        static_ip_ranges = []
+        for se_ip in SE_IPS_TO_USE_FOR_CURRENT_CTLR:
+            data = {
+                "range": {
+                    "begin": {
+                        "addr": se_ip,
+                        "type": "V4"
+                    },
+                    "end": {
+                        "addr": se_ip,
+                        "type": "V4"
+                    }
+                },
+                "type": "STATIC_IPS_FOR_SE"
+            }
+            static_ip_ranges.append(data)
+        data_configured_subnets = [
+            {
+                "prefix":{
+                    "mask":VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"],
+                    "ip_addr":{
+                            "addr":VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["subnet"].split("/")[0],
+                            "type":"V4"
+                    }
+                },
+                "static_ip_ranges":static_ip_ranges
+            }
+        ]
+        mgmt_network["configured_subnets"] = data_configured_subnets
+        mgmt_network["dhcp_enabled"] = False
+        r = requests.put(uri_base+"/api/network/%s"%(mgmt_network["uuid"]),data=json.dumps(mgmt_network), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        if r.status_code not in [200,201]:
+            raise Exception(r.text)
+        
+        print("setting default gateway")
+        r = requests.get(uri_base+"/api/vrfcontext",verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        vrf_contexts = r.json()["results"]
+        for i in vrf_contexts:
+            if default_cloud_uuid in i["cloud_ref"] and i["name"] == "management":
+                vrf_context = i
+        static_routes = [
+            {
+                "next_hop":{
+                    "addr": VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"],
+                    "type": "V4"
+                },
+                "prefix":{
+                    "mask":0,
+                    "ip_addr":{
+                            "addr":"0.0.0.0",
+                            "type":"V4"
+                    }
+                },
+                "route_id":1
+            }
+        ]
+        vrf_context["static_routes"] = static_routes
+        r = requests.put(uri_base+"/api/vrfcontext/%s"%(vrf_context["uuid"]),data=json.dumps(vrf_context), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        if r.status_code not in [200,201]:
+            raise Exception(r.text)
+        
+
+        
+
+    
 
 
 def pretty_print(vals,ljust_vals=[],filler=" "):
@@ -761,12 +891,14 @@ def get_folder_obj(datacenter_obj,folder_name):
     return False
 
 
-def get_index_format_ips_excluding_dev_ip(si,free=True):
+def get_index_format_ips_excluding_dev_ip(si,free=True,ips_to_check=[]):
+    if not ips_to_check:
+        ips_to_check = ALL_RESERVED_IPS
     if free:
-        free_ips = {str(index):val for index,val in enumerate([ip for ip in ALL_RESERVED_IPS if (check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        free_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
         return free_ips
     else:
-        used_ips = {str(index):val for index,val in enumerate([ip for ip in ALL_RESERVED_IPS if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        used_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
         return used_ips
 
 def get_used_controller_ip(si):
@@ -781,12 +913,13 @@ def get_used_controller_ip(si):
     print("Controller IP: %s"%(mgmt_ip))
     return mgmt_ip
 
-def check_if_ip_is_free(si,ip,only_check=False):
+def check_if_ip_is_free(si,ip,only_check=False,print_not_free=False):
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
     if not vms:
         return True
     if vms and only_check:
+        if print_not_free: print("IP %s is not free"%(ip))
         return False
     if vms: 
         delete_vm = input("Do you want to delete the vm occupying the ip '%s' ?[Y/N] \n"%(ip))
@@ -835,21 +968,24 @@ def get_own_sysadmin_key():
             return data
     raise Exception('Failed to find sysadmin public key file at %s\n' % (keypath))
 
-def configure_raw_controller_after_reimage(mgmt_ip):
+def configure_raw_controller_after_reimage(si,mgmt_ip):
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
     setup_tmux_install_only(mgmt_ip)
 
 
-def configure_raw_controller(mgmt_ip):
+def configure_raw_controller(si,mgmt_ip):
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
     setup_tmux(mgmt_ip)
 
 
-def configure_raw_controller_wo_tmux(mgmt_ip):
+def configure_raw_controller_wo_tmux(si,mgmt_ip):
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
@@ -1049,7 +1185,40 @@ def list_all_builds_in_mnt_builds(version):
     return all_builds
 
 
+def se_ips_to_use_for_ctlr(si,c_ip):
+    global SE_IPS_TO_USE_FOR_CURRENT_CTLR
+    if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
+        return
+    se_ip = ""
+    if ".9." in c_ip:
+        se_ip = c_ip.replace(".9.",".12.")
+    while True:
+        free_ips_1 = get_index_format_ips_excluding_dev_ip(si,True,SE_IPS)
+        print("SE IPs Configuration")
+        print ("Free SE IP's : %s"%(list(free_ips_1.values())))
+        default_ip = se_ip
+        mgmt_ips = input("Management IP ? [Enter Comma Separated IP] [Default: %s]: "%(default_ip))
+        if not mgmt_ips:
+            mgmt_ips = [default_ip]
+        else:
+            mgmt_ips = mgmt_ips.split(",")
+        for ip in mgmt_ips:
+            mgmt_ip = ip.strip()
+            if mgmt_ip:
+                if check_if_ip_is_free(si,mgmt_ip,print_not_free=True):
+                    try:
+                        mgmt_ip = inet_ntoa(inet_aton(mgmt_ip))
+                    except Exception as e:
+                        print(str(e))
+                        continue
+                    print(" %s ip is free"%(mgmt_ip))
+                    SE_IPS_TO_USE_FOR_CURRENT_CTLR.append(mgmt_ip)
+        if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
+            break
+
+
     
+
 
 def look_for_upgrade_pkg_in_mnt_builds(version,build_dir):
     upgrade_version = False
@@ -1107,17 +1276,18 @@ def generate_controller_from_ova():
         print("Source Ova Path = %s"%(source_ova_path))
         ctlr_name = "ctlr_%s-%s"%(builds[build_index-1][1],builds[build_index-1][2])
 
+    mgmt_ip = ""
     while True:
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si)
         print ("Free IP's : %s"%(free_ips_1))
-        mgmt_index = input("Management IP ? [Enter Index] :")
+        mgmt_index = input("Management IP ? [Enter Index] : ")
         if mgmt_index not in free_ips_1.keys():
             print("not a valid index ")
-            mgmt_ip = input("Management IP ? [Enter IP] :")
+            mgmt_ip = input("Management IP ? [Enter IP] : ")
         else:
             mgmt_ip = free_ips_1[mgmt_index]
         if mgmt_ip:
-            if check_if_ip_is_free(si,mgmt_ip):
+            if check_if_ip_is_free(si,mgmt_ip,print_not_free=True):
                 try:
                     mgmt_ip = inet_ntoa(inet_aton(mgmt_ip))
                 except Exception as e:
@@ -1125,6 +1295,7 @@ def generate_controller_from_ova():
                     continue
                 print(" %s ip is free"%(mgmt_ip))
                 break
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
 
     vcenter_ip = input("Vcenter IP ? [Default: %s] :"%(VCENTER_IP)) or VCENTER_IP
     datacenter = input("Datacenter Name ? [Default: %s] :"%(VCENTER_DATACENTER_NAME)) or VCENTER_DATACENTER_NAME
@@ -1233,12 +1404,14 @@ if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
 if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
     setup_cloud_se(mgmt_ip)
-    setup_vs(mgmt_ip)
+    #setup_vs(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
     setup_vs(mgmt_ip)
 
 
@@ -1250,6 +1423,8 @@ if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
 if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
+    delete_all_se(mgmt_ip)
     flush_db(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
@@ -1264,11 +1439,11 @@ if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     if sys.argv[1] == 'configure_raw_controller':
-        configure_raw_controller(mgmt_ip)
+        configure_raw_controller(si,mgmt_ip)
     if sys.argv[1] == 'configure_raw_controller_after_reimage':
-        configure_raw_controller_after_reimage(mgmt_ip)
+        configure_raw_controller_after_reimage(si,mgmt_ip)
     if sys.argv[1] == 'configure_raw_controller_wo_tmux':
-        configure_raw_controller_wo_tmux(mgmt_ip)
+        configure_raw_controller_wo_tmux(si,mgmt_ip)
     
     
 
