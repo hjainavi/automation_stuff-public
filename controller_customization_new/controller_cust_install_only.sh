@@ -69,6 +69,7 @@ EOL
     git config --global user.email "you@example.com"
     git config --global user.name "Your Name"
     git config --global pull.rebase false
+    git config --global --add safe.directory '*'
     git init
     git add -A > /dev/null 2>&1
     git commit -m "first commit" > /dev/null 2>&1

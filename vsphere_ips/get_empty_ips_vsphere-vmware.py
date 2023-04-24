@@ -1370,7 +1370,7 @@ def generate_controller_from_ova():
         print ("Exiting ...")
         exit(0)
     if set_password_and_sys_config.lower() == 'y':
-        configure_raw_controller(mgmt_ip)
+        configure_raw_controller(si, mgmt_ip)
 
     print("================== DONE ==============")
 
@@ -1404,6 +1404,10 @@ if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
 if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
+    login_and_set_global_variables(mgmt_ip,None)
+    mgmt_se_ips = get_all_se(mgmt_ip)
+    if not mgmt_se_ips:
+        se_ips_to_use_for_ctlr(si,mgmt_ip)
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     setup_cloud_se(mgmt_ip)
     #setup_vs(mgmt_ip)
@@ -1411,7 +1415,6 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
-    se_ips_to_use_for_ctlr(si,mgmt_ip)
     setup_vs(mgmt_ip)
 
 
@@ -1482,7 +1485,7 @@ if len(sys.argv)==2 and sys.argv[1] == 'reimage_ctlr':
     time.sleep(30)
     reset_login(mgmt_ip)
     login_and_set_global_variables(mgmt_ip)
-    configure_raw_controller_after_reimage(mgmt_ip)
+    configure_raw_controller_after_reimage(si, mgmt_ip)
 
 
 END_TIME = time.time()
