@@ -1398,7 +1398,7 @@ if len(sys.argv)==2 and sys.argv[1]=='delete_ctlr_se':
     mgmt_se_ips = []
     for mgmt_ip in mgmt_ips:
         mgmt_se_ips.extend(get_all_se(mgmt_ip))
-    poweroff_and_delete_vm([mgmt_ip] + mgmt_se_ips,delete=True,si=si)
+    poweroff_and_delete_vm(mgmt_ips + mgmt_se_ips,delete=True,si=si)
 
 if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
     all_builds = []
