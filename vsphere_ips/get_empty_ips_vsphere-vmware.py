@@ -69,10 +69,10 @@ VCENTER_SERVER_IP = "100.66.68.22"
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
 
-GLOBAL_LOGIN_HEADERS = None
-GLOBAL_LOGIN_COOKIES = None
-GLOBAL_CURRENT_PASSWORD = None
-GLOBAL_BUILD_NO = None
+GLOBAL_LOGIN_HEADERS = {}
+GLOBAL_LOGIN_COOKIES = {}
+GLOBAL_CURRENT_PASSWORD = {}
+GLOBAL_BUILD_NO = {}
 
 SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
 
@@ -430,12 +430,12 @@ def wait_until_cluster_ready(c_ip,  timeout=1800):
 def change_to_default_password(c_ip):
     uri_base = 'https://' + c_ip + '/'
     print("changing password to avi123")
-    r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
     data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD})
     time.sleep(1) 
     #auth = HTTPBasicAuth('admin', GLOBAL_CURRENT_PASSWORD)
-    resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200,201]:
         raise Exception(resp.text)
     print("changing password to avi123 -- done")
@@ -446,7 +446,7 @@ def login_and_set_global_variables(c_ip,password_arg=None):
     global GLOBAL_LOGIN_HEADERS
     global GLOBAL_LOGIN_COOKIES
     global GLOBAL_CURRENT_PASSWORD
-    if GLOBAL_LOGIN_HEADERS is not None and GLOBAL_LOGIN_COOKIES is not None:
+    if GLOBAL_LOGIN_HEADERS.get(c_ip,False) and GLOBAL_LOGIN_COOKIES.get(c_ip,False):
         #resp = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
         #if resp.status_code == 401:
         #    pass
@@ -462,9 +462,9 @@ def login_and_set_global_variables(c_ip,password_arg=None):
             logged_in = True
             headers['X-CSRFToken'] = login.cookies['csrftoken']
             headers['Referer'] = uri_base
-            GLOBAL_LOGIN_HEADERS = headers
-            GLOBAL_LOGIN_COOKIES = login.cookies
-            GLOBAL_CURRENT_PASSWORD = password
+            GLOBAL_LOGIN_HEADERS[c_ip] = headers
+            GLOBAL_LOGIN_COOKIES[c_ip] = login.cookies
+            GLOBAL_CURRENT_PASSWORD[c_ip] = password
             break
     if not logged_in:
         print("not able to login using various passwords")
@@ -477,9 +477,9 @@ def reset_login(c_ip):
     global GLOBAL_LOGIN_COOKIES
     global GLOBAL_LOGIN_HEADERS
     global GLOBAL_CURRENT_PASSWORD
-    GLOBAL_LOGIN_HEADERS = None
-    GLOBAL_LOGIN_COOKIES = None
-    GLOBAL_CURRENT_PASSWORD = None
+    GLOBAL_LOGIN_HEADERS.pop(c_ip,None)
+    GLOBAL_LOGIN_COOKIES.pop(c_ip,None)
+    GLOBAL_CURRENT_PASSWORD.pop(c_ip,None)
 
 def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAULT_SETUP_PASSWORD):
     wait_until_cluster_ready(c_ip)
@@ -489,7 +489,7 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     time.sleep(1)    
     print("change systemconfiguration settings")
     #import ipdb;ipdb.set_trace()
-    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=GLOBAL_LOGIN_HEADERS ,cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip] ,cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
@@ -499,38 +499,38 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
     data['welcome_workflow_complete']=True
     data['default_license_tier']='ENTERPRISE'
-    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("change systemconfiguration settings -- done")
 
     print("setting backup default passphrase")
-    r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/backupconfiguration',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
     uuid = data['results'][0]['uuid']
 
     time.sleep(1) 
-    r = requests.get(uri_base+'api/backupconfiguration'+'/'+uuid,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/backupconfiguration'+'/'+uuid,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
     data['backup_passphrase']='avi123'
     
     time.sleep(1) 
-    r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
 
-    r = requests.get(uri_base+'api/controllerproperties',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/controllerproperties',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
     data['api_idle_timeout']=1400
     
     time.sleep(1) 
-    r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/controllerproperties', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("setting backup default passphrase -- done")
@@ -594,15 +594,15 @@ def set_version_controller(c_ip):
         return
     uri_base = 'https://' + c_ip + '/'
     build_no = ""
-    resp = requests.get(uri_base+'api/initial-data',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    resp = requests.get(uri_base+'api/initial-data',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code == 200:
         data = resp.json()
         version = data['version']['Version']
         build_no = data['version']['build']
     else:
         version = input("Please Enter Controller Version ? :")
-    GLOBAL_LOGIN_HEADERS["X-Avi-Version"] = "%s" % version
-    GLOBAL_BUILD_NO = build_no
+    GLOBAL_LOGIN_HEADERS[c_ip]["X-Avi-Version"] = "%s" % version
+    GLOBAL_BUILD_NO[c_ip] = build_no
     print("Controller Version: %s-%s"%(version,build_no))
 
 def get_version_controller_from_ova(ova_path):
@@ -647,7 +647,7 @@ def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
 def setup_vs(c_ip, version="" ,timeout=60):
     uri_base = 'https://' + c_ip + '/'
     login_and_set_global_variables(c_ip)
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     for val in r.json()['results']:
         if val['name'] == 'Default-Cloud':
             data = val
@@ -655,7 +655,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
     default_cloud_uuid = data['uuid']
     print("creating a vs")
     # getting dev020 network uuid
-    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     res = r.json()['results']
     exclude_subnet = []
 
@@ -667,10 +667,10 @@ def setup_vs(c_ip, version="" ,timeout=60):
             data = val
 
     for val in exclude_subnet:
-        r1 = requests.get(uri_base+'api/network/%s'%(val["uuid"]),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r1 = requests.get(uri_base+'api/network/%s'%(val["uuid"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         data1 = r1.json()
         data1["exclude_discovered_subnets"] = True
-        r2 = requests.put(uri_base+'api/network/%s'%(val["uuid"]), data=json.dumps(data1) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r2 = requests.put(uri_base+'api/network/%s'%(val["uuid"]), data=json.dumps(data1) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         if r2.status_code not in [200,201]:
             raise Exception(r.text)
         print("Excluding Subnets %s\n%s\n%s"%(val["uuid"],val["name"],val["subnet"]))
@@ -680,7 +680,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
     occupied_ips = []
     "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
     while True:
-        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         try:
             for val in r.json()['results']:
                 for guest_nic in val['guest_nic']:
@@ -729,7 +729,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
         }
     }
 
-    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("VS 'test_vs' Created")
@@ -739,7 +739,7 @@ def setup_cloud_se(c_ip,version=""):
     uri_base = 'https://' + c_ip + '/'
     login_and_set_global_variables(c_ip, None)
     print("setting up vmware write access cloud")
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     for val in r.json()['results']:
         if val['name'] == 'Default-Cloud':
             data = val
@@ -757,37 +757,37 @@ def setup_cloud_se(c_ip,version=""):
             "use_content_lib": False
         }
     })
-    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-    wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES, GLOBAL_LOGIN_HEADERS, default_cloud_uuid, timeout=450)
+    wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES[c_ip], GLOBAL_LOGIN_HEADERS[c_ip], default_cloud_uuid, timeout=450)
 
     management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])
-    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()['results'][0]
     data["vcenter_configuration"]["management_network"] = management_network
-    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     print("changing service engine group settings")
-    r = requests.get(uri_base+'api/serviceenginegroup',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/serviceenginegroup',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     for val in r.json()['results']:
         if default_cloud_uuid in val['cloud_ref']:
             data = val
             break
-    se_name_prefix = c_ip.split(".")[-1]+"_"+GLOBAL_LOGIN_HEADERS["X-Avi-Version"].replace(".","")
+    se_name_prefix = c_ip.split(".")[-1]+"_"+GLOBAL_LOGIN_HEADERS[c_ip]["X-Avi-Version"].replace(".","")
     data.update({
         "se_name_prefix":se_name_prefix,
         "vcenter_folder":VCENTER_FOLDER_NAME,
         "max_se":"1"
     })
-    r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
         print("Set Static IPs for SE")
         # set static ips for se
-        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         mgmt_networks = r.json()["results"]
         for n in mgmt_networks:
             if default_cloud_uuid in n["cloud_ref"]:
@@ -823,12 +823,12 @@ def setup_cloud_se(c_ip,version=""):
         ]
         mgmt_network["configured_subnets"] = data_configured_subnets
         mgmt_network["dhcp_enabled"] = False
-        r = requests.put(uri_base+"/api/network/%s"%(mgmt_network["uuid"]),data=json.dumps(mgmt_network), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r = requests.put(uri_base+"/api/network/%s"%(mgmt_network["uuid"]),data=json.dumps(mgmt_network), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         if r.status_code not in [200,201]:
             raise Exception(r.text)
         
         print("setting default gateway")
-        r = requests.get(uri_base+"/api/vrfcontext",verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r = requests.get(uri_base+"/api/vrfcontext",verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         vrf_contexts = r.json()["results"]
         for i in vrf_contexts:
             if default_cloud_uuid in i["cloud_ref"] and i["name"] == "management":
@@ -850,7 +850,7 @@ def setup_cloud_se(c_ip,version=""):
             }
         ]
         vrf_context["static_routes"] = static_routes
-        r = requests.put(uri_base+"/api/vrfcontext/%s"%(vrf_context["uuid"]),data=json.dumps(vrf_context), verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        r = requests.put(uri_base+"/api/vrfcontext/%s"%(vrf_context["uuid"]),data=json.dumps(vrf_context), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         if r.status_code not in [200,201]:
             raise Exception(r.text)
         
@@ -900,6 +900,24 @@ def get_index_format_ips_excluding_dev_ip(si,free=True,ips_to_check=[]):
     else:
         used_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
         return used_ips
+
+def get_used_controller_ips(si):
+    used_ips_1 = get_index_format_ips_excluding_dev_ip(si,free=False)
+    print ("Configured IP's : %s"%(used_ips_1))
+    mgmt_indexes = input("Controller IP ? [Enter comma separated Indexes] :")
+    mgmt_indexes = [i.strip() for i in mgmt_indexes.split(",") if int(i.strip())]
+    mgmt_ips = []
+    for mgmt_index in mgmt_indexes:
+        if mgmt_index not in used_ips_1.keys():
+            print("not a valid index ")
+            mgmt_ips = input("Controller IP ? [Enter comma separated IPs] :")
+            print("Controller IPs: %s"%(mgmt_ips))
+            return [i.strip() for i in mgmt_ips.split(",")]
+        else:
+            mgmt_ips.append(used_ips_1[mgmt_index])
+    print("Controller IPs: %s"%(mgmt_ips))
+    return mgmt_ips
+
 
 def get_used_controller_ip(si):
     used_ips_1 = get_index_format_ips_excluding_dev_ip(si,free=False)
@@ -1017,7 +1035,7 @@ def check_upgrade_status(c_ip):
         nonlocal status
         uri_base = 'https://' + c_ip + '/'
         try:
-            r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES, timeout=20)
+            r = requests.get(uri_base+'api/upgradestatusinfo/',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip], timeout=20)
         except Exception as e:
             print("Bad Service")
             raise ValueError("Bad Service")
@@ -1060,7 +1078,7 @@ def rename_controller(c_ip):
     login_and_set_global_variables(c_ip,None)
     uri_base = 'https://' + c_ip + '/'
     version = ''
-    r = requests.get(uri_base+'api/initial-data/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    r = requests.get(uri_base+'api/initial-data/',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     version = r.json().get('version',{}).get('Tag')
     ctlr_new_name = "ctlr_" + version.split("-")[0] + "-" + version.split("-")[1]
     si = connect()
@@ -1088,12 +1106,12 @@ def disable_all_vs(c_ip):
     print("disabling all VSs")
     login_and_set_global_variables(c_ip,None)
     uri_base = 'https://' + c_ip + '/'
-    resp = requests.get(uri_base+'api/virtualservice/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    resp = requests.get(uri_base+'api/virtualservice/',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code != 200:
         raise Exception(resp.text)
     for vs in resp.json()["results"]:
         vs.update({"enabled":False})
-        resp = requests.put(uri_base+'api/virtualservice/%s'%(vs['uuid']),data=json.dumps(vs),verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+        resp = requests.put(uri_base+'api/virtualservice/%s'%(vs['uuid']),data=json.dumps(vs),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         if resp.status_code > 299:
             raise Exception(resp.text)
     print("All VSs disabled ")
@@ -1101,7 +1119,7 @@ def disable_all_vs(c_ip):
 def get_all_se(c_ip):
     login_and_set_global_variables(c_ip,None)
     uri_base = 'https://' + c_ip + '/'
-    resp = requests.get(uri_base+'api/serviceengine/',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
+    resp = requests.get(uri_base+'api/serviceengine/',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code != 200:
         raise Exception(resp.text)
     se_datas = resp.json()
@@ -1127,8 +1145,8 @@ def delete_all_se(si,c_ip):
     poweroff_and_delete_vm(mgmt_se_ips,delete=True,si=si)
     print("Deleting SEs from controller")
     for se_uuid in se_uuids:
-        resp = requests.delete(uri_base+'api/serviceengine/%s?force_delete=True'%(se_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS, 
-        cookies=GLOBAL_LOGIN_COOKIES)
+        resp = requests.delete(uri_base+'api/serviceengine/%s?force_delete=True'%(se_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], 
+        cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         if resp.status_code > 299:
             print("Delete of SE %s from controller failed"%(se_uuid))
         else:
@@ -1237,7 +1255,7 @@ def look_for_upgrade_pkg_in_mnt_builds(version,build_dir):
             buildno = re.findall(pattern,file_data)
             if buildno:
                 upgrade_version = version + "-" + buildno[0]
-            if str(buildno[0]) == str(GLOBAL_BUILD_NO):
+            if str(buildno[0]) == str(GLOBAL_BUILD_NO[c_ip]):
                 print("Controller already at last-good-smoke build !!!")
                 return False, False
         
@@ -1376,8 +1394,10 @@ def generate_controller_from_ova():
 
 if len(sys.argv)==2 and sys.argv[1]=='delete_ctlr_se':
     si = connect()
-    mgmt_ip = get_used_controller_ip(si)
-    mgmt_se_ips = get_all_se(mgmt_ip)
+    mgmt_ips = get_used_controller_ips(si)
+    mgmt_se_ips = []
+    for mgmt_ip in mgmt_ips:
+        mgmt_se_ips.extend(get_all_se(mgmt_ip))
     poweroff_and_delete_vm([mgmt_ip] + mgmt_se_ips,delete=True,si=si)
 
 if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
@@ -1410,7 +1430,7 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
         se_ips_to_use_for_ctlr(si,mgmt_ip)
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     setup_cloud_se(mgmt_ip)
-    #setup_vs(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     si = connect()
@@ -1427,7 +1447,7 @@ if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux'
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     se_ips_to_use_for_ctlr(si,mgmt_ip)
-    delete_all_se(mgmt_ip)
+    delete_all_se(si,mgmt_ip)
     flush_db(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
@@ -1455,7 +1475,7 @@ if len(sys.argv)==2 and sys.argv[1] == 'reimage_ctlr':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     login_and_set_global_variables(mgmt_ip)
-    upgrade_version, source_pkg_path = look_for_upgrade_pkg_in_mnt_builds(GLOBAL_LOGIN_HEADERS['X-Avi-Version'],'last-good-smoke')
+    upgrade_version, source_pkg_path = look_for_upgrade_pkg_in_mnt_builds(GLOBAL_LOGIN_HEADERS[c_ip]['X-Avi-Version'],'last-good-smoke')
     manual = True
     if upgrade_version and source_pkg_path:
         path_confirm = input("Would you like to reimage '%s', with '%s' image , version - %s ?[Y/N]: "%(mgmt_ip,source_pkg_path,upgrade_version))
