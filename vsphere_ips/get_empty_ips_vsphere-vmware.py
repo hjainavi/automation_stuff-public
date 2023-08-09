@@ -432,9 +432,9 @@ def change_to_default_password(c_ip):
     print("changing password to avi123")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
-    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD})
+    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD[c_ip]})
     time.sleep(1) 
-    #auth = HTTPBasicAuth('admin', GLOBAL_CURRENT_PASSWORD)
+    #auth = HTTPBasicAuth('admin', GLOBAL_CURRENT_PASSWORD[c_ip])
     resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200,201]:
         raise Exception(resp.text)
@@ -545,8 +545,8 @@ def setup_tmux_install_only(c_ip):
     print("Setting Controller with tmux install only and other packages")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD
+    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
+    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
@@ -563,8 +563,8 @@ def setup_tmux(c_ip):
     print("Setting Controller with tmux and other packages")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD
+    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
+    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
@@ -581,8 +581,8 @@ def flush_db(c_ip):
     login_and_set_global_variables(c_ip)
     env.host_string = c_ip
     env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD
+    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
+    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
     env.disable_known_hosts = True
     with cd("/root/"):
         sudo("sudo systemctl stop process-supervisor.service && rm /var/lib/avi/etc/flushdb.done && /opt/avi/scripts/flushdb.sh && sudo systemctl start process-supervisor.service")
@@ -1011,7 +1011,7 @@ def configure_raw_controller_wo_tmux(si,mgmt_ip):
 
 def upload_pkg_to_ctlr(c_ip,source_pkg_path):
     login_and_set_global_variables(c_ip,None)
-    cmd = 'sshpass -p %s scp %s admin@%s:~/'%(GLOBAL_CURRENT_PASSWORD,source_pkg_path,c_ip)
+    cmd = 'sshpass -p %s scp %s admin@%s:~/'%(GLOBAL_CURRENT_PASSWORD[c_ip],source_pkg_path,c_ip)
     print("Running Upload Command::: %s"%(cmd))
     subprocess.run(shlex.split(cmd), check=True)
     print("Upload Done")
@@ -1021,8 +1021,8 @@ def reimage_controller(c_ip):
     print("Starting reimage...")
     env.host_string = c_ip
     env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD
+    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
+    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
     env.disable_known_hosts = True
     sudo("/opt/avi/scripts/reimage_system.py --base /home/admin/controller.pkg")
     print("reimage started")
@@ -1156,8 +1156,8 @@ def initialize_admin_user_script(mgmt_ip):
     print("Admin User Script password change")
     env.host_string = mgmt_ip
     env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD
+    env.password = GLOBAL_CURRENT_PASSWORD[mgmt_ip]
+    env.sudo_password = GLOBAL_CURRENT_PASSWORD[mgmt_ip]
     env.disable_known_hosts = True
     sudo("/opt/avi/scripts/initialize_admin_user.py --password avi123")
 
