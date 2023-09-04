@@ -5,12 +5,12 @@ from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
-api = ApiSession.get_session("100.65.9.181", "admin", "avi123", tenant="admin")
+api = ApiSession.get_session("localhost", "admin", "avi123", tenant="admin")
 
-data_pool = api.get("pool?page_size=-1")
+data_wafcrs = api.get("wafcrs?page_size=-1")
 #data_pool = api.get("pool")
-for pool in data_pool.json()['results']:
-    print(api.delete("pool/%s"%(pool['uuid'])))
+for d in data_wafcrs.json()['results']:
+    print(d)
 
 
 #api.delete("pool")

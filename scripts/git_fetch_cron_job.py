@@ -134,7 +134,7 @@ for branch in all_branches:
 fetched_branches = ["eng","21.1.7","21.1.6","21.1.5","21.1.4",] + fetched_branches
 log.info("Fetching Branches: %s"%(fetched_branches))
 checkout_datas = get_checked_out_branches(CWD)
-if not checkout_datas: exit(1)
+#if not checkout_datas: exit(1)
 pull_ff_only,direct_fetch_branches,remote_fetch_only = pull_fetch_or_remote_fetch(checkout_datas, fetched_branches)
 if not pull_ff_only and not direct_fetch_branches and not remote_fetch_only: exit(1)
 for branch in remote_fetch_only:
