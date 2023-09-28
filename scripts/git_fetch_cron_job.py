@@ -125,13 +125,13 @@ def pull_fetch_or_remote_fetch(checkout_datas, fetched_branches):
 fetched_branches = []
 for branch in all_branches:
     try:
-        if int(branch[:2])<22:
+        if int(branch[:2])<23:
             continue
     except ValueError:
         pass
     fetched_branches.append(branch)
 
-fetched_branches = ["eng","21.1.7","21.1.6","21.1.5","21.1.4",] + fetched_branches
+fetched_branches = ["eng","22.1.4","22.1.5","avi-photon-alb"] + fetched_branches
 log.info("Fetching Branches: %s"%(fetched_branches))
 checkout_datas = get_checked_out_branches(CWD)
 #if not checkout_datas: exit(1)

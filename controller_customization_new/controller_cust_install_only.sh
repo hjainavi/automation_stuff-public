@@ -78,7 +78,7 @@ EOL
 else
     echo "Not a controller VM setting up git config"
     # run python script to install hook to run flake8 --install-hook git in repo
-    ./install-hook.py
+    #./install-hook.py
     git config --global user.email "harshj@vmware.com"
     git config --global user.name "harsh jain"
     git config --global pull.rebase false

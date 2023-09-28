@@ -7,16 +7,6 @@ case $- in
       *) return;;
 esac
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
-
-# append to the history file, don't overwrite it
-shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=20000
-HISTFILESIZE=50000
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -208,12 +198,28 @@ export -f ws
 export PYTHONPATH=/home/aviuser/workspace/avi-dev/python/lib:/home/aviuser/workspace/avi-dev/python/bin:/home/aviuser/workspace/avi-dev/test/avitest:/home/aviuser/workspace/avi-dev/test/robot/new/lib:/home/aviuser/workspace/avi-dev/thirdparty/ftw:/home/aviuser/workspace/avi-dev/build/python:/home/aviuser/workspace/avi-dev/test/ansible/lib
 export LD_LIBRARY_PATH=/home/aviuser/workspace/avi-dev/build/lib
 
+export GOPATH=$HOME/workspace/avi-dev/go:$HOME/go
+
 alias wsp=ws
 alias r=ranger
 alias vsphere_ips='python3 /home/aviuser/automation_stuff/vsphere_ips/get_empty_ips_vsphere-vmware.py'
 alias vimx='vim -X'
+alias sgpt='sgpt --no-animation'
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=200000
+HISTFILESIZE=500000
 
 ########################################################
 
 
 . $HOME/containerized-testenv/bash_sources/.bashrc-container
+
+export PATH="$PATH:/home/aviuser/bin"
