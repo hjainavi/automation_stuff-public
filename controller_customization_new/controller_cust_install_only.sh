@@ -4,23 +4,39 @@
 set -e
 set -x
 # keep track of the last executed command
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+#trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 # echo an error message before exiting
 trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
+DEV_VM=false
+PHOTON_CTLR=false
+UBUNTU_CTLR=false
+
+if [ -d "/opt/avi/python" ] ; then
+    if ! whoami | grep -q 'root'; then
+        echo "User is not root"
+        exit 1
+    fi
+    if lsb_release -d | grep -q 'Photon'; then
+        PHOTON_CTLR=true
+    fi
+    if lsb_release -d | grep -q 'Ubuntu'; then
+        UBUNTU_CTLR=true
+    fi
+else
+    DEV_VM=true
+fi
 
 
 #release=$(lsb_release -a 2>&1)
 #if [[ $release == *"focal"* ]]
-if false
-then
-    #mv /etc/apt/sources.list /etc/apt/sources_1.list_1
-    #cp -v ./other_files/sources.list /etc/apt/sources.list
-    sudo apt-get update;apt-get install aria2 ranger git mosh -y
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
-    #mv /etc/apt/sources_1.list_1 /etc/apt/sources.list
+if $PHOTON_CTLR ; then
+    tdnf -y install tmux git
+    pip install ranger-fm flake8 ipdb
+    cp ./other_files/aria2c /usr/bin/
+    cp ./other_files/mosh-server /usr/bin/
 
-else
+elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
 
@@ -28,11 +44,12 @@ else
     sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
 
     echo "==================apt-get done"
+    pip3 install flake8
+    pip3 install ipdb
 fi
     
 
-sudo pip3 install flake8
-sudo pip3 install ipdb
+
 echo "===============pip install flake8"
 git config --global --bool http.sslVerify false
 git config --global push.default current
