@@ -48,13 +48,13 @@ VCENTER_DATASTORE_NAME = "blr-01-vc13c01-vsan"
 VCENTER_FOLDER_NAME = "harshj"
 DEV_VM_IP = "10.102.96.175"
 VCENTER_MANAGEMENT_MAP = {
-                            "blr-01-avi-dev-IntMgmt":{
+                            "Internal_Management":{
                                 "name":"blr-01-avi-dev-IntMgmt",
                                 "subnet":"100.65.0.0/20",
                                 "mask":"20",
                                 "gateway":"100.65.15.254"
                             },
-                            "blr-01-nsxt02-avi-mgmt":{
+                            "Management":{
                                 "name":"blr-01-nsxt02-avi-mgmt",
                                 "subnet":"10.102.96.0/22",
                                 "mask":"22",
@@ -65,6 +65,7 @@ VCENTER_DNS_SERVERS = ["10.102.0.193", "10.102.0.195"]
 VCENTER_NTP = "time.vmware.com"
 VCENTER_PORT_GROUP = "blr-01-avi-66-68"
 VCENTER_SERVER_IP = "100.66.68.19"
+SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
@@ -762,7 +763,7 @@ def setup_cloud_se(c_ip,version=""):
         raise Exception(r.text)
     wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES[c_ip], GLOBAL_LOGIN_HEADERS[c_ip], default_cloud_uuid, timeout=450)
 
-    management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])
+    management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"])
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()['results'][0]
     data["vcenter_configuration"]["management_network"] = management_network
@@ -787,7 +788,7 @@ def setup_cloud_se(c_ip,version=""):
     if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
         print("Set Static IPs for SE")
         # set static ips for se
-        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         mgmt_networks = r.json()["results"]
         for n in mgmt_networks:
             if default_cloud_uuid in n["cloud_ref"]:
@@ -812,9 +813,9 @@ def setup_cloud_se(c_ip,version=""):
         data_configured_subnets = [
             {
                 "prefix":{
-                    "mask":VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"],
+                    "mask":VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"],
                     "ip_addr":{
-                            "addr":VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["subnet"].split("/")[0],
+                            "addr":VCENTER_MANAGEMENT_MAP["Internal_Management"]["subnet"].split("/")[0],
                             "type":"V4"
                     }
                 },
@@ -836,7 +837,7 @@ def setup_cloud_se(c_ip,version=""):
         static_routes = [
             {
                 "next_hop":{
-                    "addr": VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"],
+                    "addr": VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"],
                     "type": "V4"
                 },
                 "prefix":{
@@ -979,7 +980,7 @@ def check_if_vm_name_exists_in_folder(folder_obj,vm_name):
     return False
 
 def get_own_sysadmin_key():
-    keypath = "/home/aviuser/.ssh/id_rsa_ctlr.pub"
+    keypath = SYSADMIN_KEYPATH
     if os.path.exists(keypath):
         with open(keypath, 'r') as keyfile:
             data = keyfile.read().rstrip('\n')
@@ -1326,10 +1327,10 @@ def generate_controller_from_ova():
             folder_obj = get_folder_obj(datacenter_obj,folder_name)
             if folder_obj:
                 break
-    management_network = input("Management Network ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["name"]
+    management_network = input("Management Network ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
 
-    mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["mask"]
-    gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"])) or VCENTER_MANAGEMENT_MAP["blr-01-avi-dev-IntMgmt"]["gateway"]
+    mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
+    gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"]
 
     '''
     ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
