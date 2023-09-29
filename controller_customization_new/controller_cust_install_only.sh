@@ -34,8 +34,13 @@ if $PHOTON_CTLR ; then
     tdnf -y install tmux git
     pip install ranger-fm flake8 ipdb
     cp ./other_files/aria2c /usr/bin/
+    chmod o+x /usr/bin/aria2c
     cp ./other_files/mosh-server /usr/bin/
+    chmod o+x /usr/bin/mosh-server
     ./other_files/tmux_start_script.sh
+    iptables -A INPUT -p udp -m multiport --dports 60000:60100 -j ACCEPT
+    iptables-save > /etc/systemd/scripts/ip4save
+
 
 elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
