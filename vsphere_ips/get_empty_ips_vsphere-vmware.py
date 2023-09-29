@@ -554,8 +554,6 @@ def setup_tmux_install_only(c_ip):
         sudo("tar -xvf ctlr_new.tar.gz")
     with cd("/root/controller_customization_new/"):
         sudo("./controller_cust_install_only.sh")
-    with cd("/root/controller_customization_new/other_files"):
-        sudo("./tmux_start_script.sh")
     with cd("/opt/avi/python"):
         sudo("ls")
 
@@ -572,8 +570,6 @@ def setup_tmux(c_ip):
         sudo("tar -xvf ctlr_new.tar.gz")
     with cd("/root/controller_customization_new/"):
         sudo("./controller_cust.sh")
-    with cd("/root/controller_customization_new/other_files"):
-        sudo("./tmux_start_script.sh")
     with cd("/opt/avi/python"):
         sudo("ls")
 

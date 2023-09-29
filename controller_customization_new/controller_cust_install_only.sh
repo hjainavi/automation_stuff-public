@@ -35,6 +35,7 @@ if $PHOTON_CTLR ; then
     pip install ranger-fm flake8 ipdb
     cp ./other_files/aria2c /usr/bin/
     cp ./other_files/mosh-server /usr/bin/
+    ./other_files/tmux_start_script.sh
 
 elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
@@ -46,6 +47,7 @@ elif $UBUNTU_CTLR ; then
     echo "==================apt-get done"
     pip3 install flake8
     pip3 install ipdb
+    ./other_files/tmux_start_script.sh
 fi
     
 
