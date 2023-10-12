@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "avi-dev"
+		}
+	],
+	"settings": {
+		"python.envFile": "/home/aviuser/workspace/avi-dev-env",
+		"go.gopath": "/home/aviuser/workspace/avi-dev/go:/home/aviuser/go",
+		"gopls": {
+
+		},
+		"git.ignoreLimitWarning": true,
+		"editor.stickyScroll.enabled": true,
+		"editor.stickyTabStops": true,
+		"git.allowForcePush": true
+	}
+}
