@@ -1,4 +1,8 @@
-default_resurrect_dir="$HOME/.tmux/resurrect"
+if [ -d "$HOME/.tmux/resurrect" ]; then
+        default_resurrect_dir="$HOME/.tmux/resurrect"
+else
+        default_resurrect_dir="${XDG_DATA_HOME:-$HOME/.local/share}"/tmux/resurrect
+fi
 resurrect_dir_option="@resurrect-dir"
 
 SUPPORTED_VERSION="1.9"
@@ -64,13 +68,6 @@ files_differ() {
 	! cmp -s "$1" "$2"
 }
 
-save_shell_history_option_on() {
-	local option_shell="$(get_tmux_option "$shell_history_option" "off")"
-	local option_bash="$(get_tmux_option "$bash_history_option" "off")"
-
-	[ "$option_shell" == "on" ] || [ "$option_bash" == "on" ]
-}
-
 get_grouped_sessions() {
 	local grouped_sessions_dump="$1"
 	export GROUPED_SESSIONS="${d}$(echo "$grouped_sessions_dump" | cut -f2 -d"$d" | tr "\\n" "$d")"
@@ -112,7 +109,7 @@ _RESURRECT_DIR="$(resurrect_dir)"
 
 resurrect_file_path() {
 	if [ -z "$_RESURRECT_FILE_PATH" ]; then
-		local timestamp="$(date +"%Y-%m-%dT%H:%M:%S")"
+		local timestamp="$(date +"%Y%m%dT%H%M%S")"
 		echo "$(resurrect_dir)/${RESURRECT_FILE_PREFIX}_${timestamp}.${RESURRECT_FILE_EXTENSION}"
 	else
 		echo "$_RESURRECT_FILE_PATH"
@@ -143,8 +140,20 @@ pane_contents_archive_file() {
 	echo "$(resurrect_dir)/pane_contents.tar.gz"
 }
 
-resurrect_history_file() {
-	local pane_id="$1"
-	local shell_name="$2"
-	echo "$(resurrect_dir)/${shell_name}_history-${pane_id}"
+execute_hook() {
+	local kind="$1"
+	shift
+	local args="" hook=""
+
+	hook=$(get_tmux_option "$hook_prefix$kind" "")
+
+	# If there are any args, pass them to the hook (in a way that preserves/copes
+	# with spaces and unusual characters.
+	if [ "$#" -gt 0 ]; then
+		printf -v args "%q " "$@"
+	fi
+
+	if [ -n "$hook" ]; then
+		eval "$hook $args"
+	fi
 }

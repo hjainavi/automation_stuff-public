@@ -33,13 +33,13 @@ pane_format() {
 	format+="${delimiter}"
 	format+="#{window_index}"
 	format+="${delimiter}"
-	format+=":#{window_name}"
-	format+="${delimiter}"
 	format+="#{window_active}"
 	format+="${delimiter}"
 	format+=":#{window_flags}"
 	format+="${delimiter}"
 	format+="#{pane_index}"
+	format+="${delimiter}"
+	format+="#{pane_title}"
 	format+="${delimiter}"
 	format+=":#{pane_current_path}"
 	format+="${delimiter}"
@@ -60,6 +60,8 @@ window_format() {
 	format+="#{session_name}"
 	format+="${delimiter}"
 	format+="#{window_index}"
+	format+="${delimiter}"
+	format+=":#{window_name}"
 	format+="${delimiter}"
 	format+="#{window_active}"
 	format+="${delimiter}"
@@ -142,46 +144,6 @@ capture_pane_contents() {
 	fi
 }
 
-save_shell_history() {
-	if [ "$pane_command" = "bash" ]; then
-		local history_w='history -w'
-		local history_r='history -r'
-		local accept_line='C-m'
-		local end_of_line='C-e'
-		local backward_kill_line='C-u'
-	elif [ "$pane_command" = "zsh" ]; then
-		# fc -W does not work with -L
-		# fc -l format is different from what's written by fc -W
-		# fc -R either reads the format produced by fc -W or considers
-		# the entire line to be a command. That's why we need -n.
-		# fc -l only list the last 16 items by default, I think 64 is more reasonable.
-		local history_w='fc -lLn -64 >'
-		local history_r='fc -R'
-
-		local zsh_bindkey="$(zsh -i -c bindkey)"
-		local accept_line="$(expr "$(echo "$zsh_bindkey" | grep -m1 '\saccept-line$')" : '^"\(.*\)".*')"
-		local end_of_line="$(expr "$(echo "$zsh_bindkey" | grep -m1 '\send-of-line$')" : '^"\(.*\)".*')"
-		local backward_kill_line="$(expr "$(echo "$zsh_bindkey" | grep -m1 '\sbackward-kill-line$')" : '^"\(.*\)".*')"
-	else
-		return
-	fi
-
-	local pane_id="$1"
-	local pane_command="$2"
-	local full_command="$3"
-	if [ "$full_command" = ":" ]; then
-		# leading space prevents the command from being saved to history
-		# (assuming default HISTCONTROL settings)
-		local write_command=" $history_w '$(resurrect_history_file "$pane_id" "$pane_command")'"
-		local read_command=" $history_r '$(resurrect_history_file "$pane_id" "$pane_command")'"
-		# C-e C-u is a Bash shortcut sequence to clear whole line. It is necessary to
-		# delete any pending input so it does not interfere with our history command.
-		tmux send-keys -t "$pane_id" "$end_of_line" "$backward_kill_line" "$write_command" "$accept_line"
-		# Immediately restore after saving
-		tmux send-keys -t "$pane_id" "$end_of_line" "$backward_kill_line" "$read_command" "$accept_line"
-	fi
-}
-
 get_active_window_index() {
 	local session_name="$1"
 	tmux list-windows -t "$session_name" -F "#{window_flags} #{window_index}" |
@@ -227,24 +189,28 @@ fetch_and_dump_grouped_sessions(){
 dump_panes() {
 	local full_command
 	dump_panes_raw |
-		while IFS=$d read line_type session_name window_number window_name window_active window_flags pane_index dir pane_active pane_command pane_pid history_size; do
+		while IFS=$d read line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
 			# not saving panes from grouped sessions
 			if is_session_grouped "$session_name"; then
 				continue
 			fi
 			full_command="$(pane_full_command $pane_pid)"
-			echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_name}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${full_command}"
+			dir=$(echo $dir | sed 's/ /\\ /') # escape all spaces in directory path
+			echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${pane_title}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${full_command}"
 		done
 }
 
 dump_windows() {
 	dump_windows_raw |
-		while IFS=$d read line_type session_name window_index window_active window_flags window_layout; do
+		while IFS=$d read line_type session_name window_index window_name window_active window_flags window_layout; do
 			# not saving windows from grouped sessions
 			if is_session_grouped "$session_name"; then
 				continue
 			fi
-			echo "${line_type}${d}${session_name}${d}${window_index}${d}${window_active}${d}${window_flags}${d}${window_layout}"
+			automatic_rename="$(tmux show-window-options -vt "${session_name}:${window_index}" automatic-rename)"
+			# If the option was unset, use ":" as a placeholder.
+			[ -z "${automatic_rename}" ] && automatic_rename=":"
+			echo "${line_type}${d}${session_name}${d}${window_index}${d}${window_name}${d}${window_active}${d}${window_flags}${d}${window_layout}${d}${automatic_rename}"
 		done
 }
 
@@ -255,24 +221,18 @@ dump_state() {
 dump_pane_contents() {
 	local pane_contents_area="$(get_tmux_option "$pane_contents_area_option" "$default_pane_contents_area")"
 	dump_panes_raw |
-		while IFS=$d read line_type session_name window_number window_name window_active window_flags pane_index dir pane_active pane_command pane_pid history_size; do
+		while IFS=$d read line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
 			capture_pane_contents "${session_name}:${window_number}.${pane_index}" "$history_size" "$pane_contents_area"
 		done
 }
 
-dump_shell_history() {
-	dump_panes |
-		while IFS=$d read line_type session_name window_number window_name window_active window_flags pane_index dir pane_active pane_command full_command; do
-			save_shell_history "$session_name:$window_number.$pane_index" "$pane_command" "$full_command"
-		done
-}
-
 remove_old_backups() {
-	# remove resurrect files older than 30 days, but keep at least 5 copies of backup.
+	# remove resurrect files older than 30 days (default), but keep at least 5 copies of backup.
+	local delete_after="$(get_tmux_option "$delete_backup_after_option" "$default_delete_backup_after")"
 	local -a files
 	files=($(ls -t $(resurrect_dir)/${RESURRECT_FILE_PREFIX}_*.${RESURRECT_FILE_EXTENSION} | tail -n +6))
 	[[ ${#files[@]} -eq 0 ]] ||
-		find "${files[@]}" -type f -mtime +30 -exec rm -v "{}" \;
+		find "${files[@]}" -type f -mtime "+${delete_after}" -exec rm -v "{}" \; > /dev/null
 }
 
 save_all() {
@@ -283,6 +243,7 @@ save_all() {
 	dump_panes   >> "$resurrect_file_path"
 	dump_windows >> "$resurrect_file_path"
 	dump_state   >> "$resurrect_file_path"
+	execute_hook "post-save-layout" "$resurrect_file_path"
 	if files_differ "$resurrect_file_path" "$last_resurrect_file"; then
 		ln -fs "$(basename "$resurrect_file_path")" "$last_resurrect_file"
 	else
@@ -294,10 +255,8 @@ save_all() {
 		pane_contents_create_archive
 		rm "$(pane_contents_dir "save")"/*
 	fi
-	if save_shell_history_option_on; then
-		dump_shell_history
-	fi
 	remove_old_backups
+	execute_hook "post-save-all"
 }
 
 show_output() {

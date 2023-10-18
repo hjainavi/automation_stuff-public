@@ -9,7 +9,7 @@ restore_path_option="@resurrect-restore-script-path"
 
 # default processes that are restored
 default_proc_list_option="@resurrect-default-processes"
-default_proc_list='vi vim nvim emacs man less more tail top htop irssi weechat mutt'
+default_proc_list='vi vim view nvim emacs man less more tail top htop irssi weechat mutt'
 
 # User defined processes that are restored
 #  'false' - nothing is restored
@@ -25,6 +25,7 @@ restore_processes=""
 restore_process_strategy_option="@resurrect-strategy-"
 
 inline_strategy_token="->"
+inline_strategy_arguments_token="*"
 
 save_command_strategy_option="@resurrect-save-command-strategy"
 default_save_command_strategy="ps"
@@ -37,8 +38,11 @@ pane_contents_option="@resurrect-capture-pane-contents"
 pane_contents_area_option="@resurrect-pane-contents-area"
 default_pane_contents_area="full"
 
-bash_history_option="@resurrect-save-bash-history" # deprecated
-shell_history_option="@resurrect-save-shell-history"
-
 # set to 'on' to ensure panes are never ever overwritten
 overwrite_option="@resurrect-never-overwrite"
+
+# Hooks are set via ${hook_prefix}${name}, i.e. "@resurrect-hook-post-save-all"
+hook_prefix="@resurrect-hook-"
+
+delete_backup_after_option="@resurrect-delete-backup-after"
+default_delete_backup_after="30" # days

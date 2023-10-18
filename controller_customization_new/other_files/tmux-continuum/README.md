@@ -6,7 +6,7 @@ Features:
 - automatic tmux start when computer/server is turned on
 - automatic restore when tmux is started
 
-Together these features enable uninterrupted tmux usage. No matter the computer
+Together, these features enable uninterrupted tmux usage. No matter the computer
 or server restarts, if the machine is on, tmux will be there how you left it off
 the last time it was used.
 
@@ -14,16 +14,17 @@ Tested and working on Linux, OSX and Cygwin.
 
 #### Continuous saving
 
-Tmux environment will be saved at the interval of 15 minutes. All the saving
-happens in the background without the impact to your workflow.
+Tmux environment will be saved at an interval of 15 minutes. All the saving
+happens in the background without impact to your workflow.
 
-This action starts automatically when the plugin is installed.
+This action starts automatically when the plugin is installed. Note it requires
+the status line to be `on` to run (since it uses a hook in status-right to run).
 
 #### Automatic tmux start
 
 Tmux is automatically started after the computer/server is turned on.
 
-See the [instructions](docs/automatic_start.md) how to enable this for your
+See the [instructions](docs/automatic_start.md) on how to enable this for your
 system.
 
 #### Automatic restore
@@ -89,8 +90,9 @@ required.
 - [tmux-open](https://github.com/tmux-plugins/tmux-open) - a plugin for quickly
   opening highlighted file or a url
 
-You might want to follow [@brunosutic](https://twitter.com/brunosutic) on
-twitter if you want to hear about new tmux plugins or feature updates.
+### Known Issues
+
+- In order to be executed periodically, the plugin updates the `status-right` tmux variable. In case some plugin (usually themes) overwrites the `status-right` variable, the autosave feature stops working. To fix this issue, place the plugin last in the TPM plugins list. 
 
 ### Reporting bugs and contributing
 

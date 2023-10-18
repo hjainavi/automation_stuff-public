@@ -49,7 +49,7 @@ Optional:
 
 - [restoring vim and neovim sessions](docs/restoring_vim_and_neovim_sessions.md)
 - [restoring pane contents](docs/restoring_pane_contents.md)
-- [restoring shell history](docs/restoring_shell_history.md) (experimental)
+- [restoring a previously saved environment](docs/restoring_previously_saved_environment.md)
 
 Requirements / dependencies: `tmux 1.9` or higher, `bash`.
 
@@ -90,6 +90,7 @@ You should now be able to use the plugin.
 **Configuration**
 
 - [Changing the default key bindings](docs/custom_key_bindings.md).
+- [Setting up hooks on save & restore](docs/hooks.md).
 - Only a conservative list of programs is restored by default:<br/>
   `vi vim nvim emacs man less more tail top htop irssi weechat mutt`.<br/>
   [Restoring programs doc](docs/restoring_programs.md) explains how to restore
@@ -103,10 +104,6 @@ You should now be able to use the plugin.
   is nice if you're a vim/neovim user.
 - [Restoring pane contents](docs/restoring_pane_contents.md) feature.
 
-**Experimental features (also optional)**
-
-- [restoring shell history](docs/restoring_shell_history.md)
-
 ### Other goodies
 
 - [tmux-copycat](https://github.com/tmux-plugins/tmux-copycat) - a plugin for
@@ -117,9 +114,6 @@ You should now be able to use the plugin.
   opening highlighted file or a url
 - [tmux-continuum](https://github.com/tmux-plugins/tmux-continuum) - automatic
   restoring and continuous saving of tmux env
-
-You might want to follow [@brunosutic](https://twitter.com/brunosutic) on
-twitter if you want to hear about new tmux plugins or feature updates.
 
 ### Reporting bugs and contributing
 
