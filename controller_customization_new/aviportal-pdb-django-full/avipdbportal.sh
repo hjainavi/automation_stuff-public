@@ -54,7 +54,7 @@ if [ "$1" = "start" ];then
     fi
     if $UBUNTU_CTLR_CTLR ; then
         exec aviportal-pdb uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
-    ff
+    fi
 
     #./test.py
 elif [ "$1" = "change" ];then
