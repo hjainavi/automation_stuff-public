@@ -50,10 +50,10 @@ if [ "$1" = "start" ];then
         export AVI_PDB_FLAG="none"
     fi
     if $PHOTON_CTLR ; then
-        exec aviportal-pdb uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal --plugin /usr/lib/uwsgi/python_plugin.so
+        exec uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal --plugin /usr/lib/uwsgi/python_plugin.so
     fi
     if $UBUNTU_CTLR ; then
-        exec aviportal-pdb uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
+        exec uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
     fi
 
     #./test.py
