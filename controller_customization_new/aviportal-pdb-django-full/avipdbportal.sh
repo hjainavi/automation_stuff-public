@@ -52,7 +52,7 @@ if [ "$1" = "start" ];then
     if $PHOTON_CTLR ; then
         exec aviportal-pdb uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal --plugin /usr/lib/uwsgi/python_plugin.so
     fi
-    if $UBUNTU_CTLR_CTLR ; then
+    if $UBUNTU_CTLR ; then
         exec aviportal-pdb uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
     fi
 
@@ -61,7 +61,9 @@ elif [ "$1" = "change" ];then
     ./change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
-        systemctl daemon-reload
+        if $UBUNTU_CTLR ; then
+            systemctl daemon-reload
+        fi
         systemctl stop aviportal.service
         sleep 5
         systemctl stop aviportal.service
@@ -74,7 +76,9 @@ elif [ "$1" = "changeback" ];then
     ./change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
-        systemctl daemon-reload
+        if $UBUNTU_CTLR ; then
+            systemctl daemon-reload
+        fi
         systemctl stop aviportal.service
         systemctl start aviportal.service
         sleep 2

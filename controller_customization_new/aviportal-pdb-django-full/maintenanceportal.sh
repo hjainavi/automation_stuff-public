@@ -7,6 +7,20 @@
 # args "stop" will gracefully kill the uwsgi process
 # args "kill" will instantly kill the process
 
+PHOTON_CTLR=false
+UBUNTU_CTLR=false
+if lsb_release -d | grep -q 'Photon'; then
+    PHOTON_CTLR=true
+    echo "Photon Ctlr"
+    echo "Exiting"
+    exit 1
+fi
+if lsb_release -d | grep -q 'Ubuntu'; then
+    UBUNTU_CTLR=true
+    echo "Ubuntu Ctlr"
+fi
+
+
 export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python2.7/dist-packages:$PWD/avipdb
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
