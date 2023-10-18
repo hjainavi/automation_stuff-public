@@ -61,9 +61,8 @@ elif [ "$1" = "change" ];then
     ./change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
-        if $UBUNTU_CTLR ; then
-            systemctl daemon-reload
-        fi
+        systemctl daemon-reload
+        sleep 5
         systemctl stop aviportal.service
         sleep 5
         systemctl stop aviportal.service
@@ -76,9 +75,8 @@ elif [ "$1" = "changeback" ];then
     ./change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
-        if $UBUNTU_CTLR ; then
-            systemctl daemon-reload
-        fi
+        systemctl daemon-reload
+        sleep 2
         systemctl stop aviportal.service
         systemctl start aviportal.service
         sleep 2
