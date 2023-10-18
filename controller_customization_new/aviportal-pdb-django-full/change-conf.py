@@ -6,7 +6,8 @@ if len(sys.argv)>1:
         change="True"
     if sys.argv[1]=='changeback':
         change="False"
-
+else:
+    sys.exit(1)
 data=[]
 filepath = '/etc/systemd/system/'+sys.argv[2]
 if change=="True":
