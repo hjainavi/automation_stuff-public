@@ -39,6 +39,7 @@ if $PHOTON_CTLR ; then
     chmod o+x /usr/bin/mosh-server
     ./other_files/tmux_start_script.sh
     iptables -A INPUT -p udp -m multiport --dports 60000:60100 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 2345 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
     iptables-save > /etc/systemd/scripts/ip4save
 
 
