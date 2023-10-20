@@ -567,7 +567,7 @@ def setup_tmux(c_ip):
     env.disable_known_hosts = True
     put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
     with cd("/root/"):
-        sudo("tar -xvf ctlr_new.tar.gz")
+        sudo("tar -xf ctlr_new.tar.gz")
     with cd("/root/controller_customization_new/"):
         sudo("./controller_cust.sh")
     with cd("/opt/avi/python"):
