@@ -31,8 +31,8 @@ fi
 #release=$(lsb_release -a 2>&1)
 #if [[ $release == *"focal"* ]]
 if $PHOTON_CTLR ; then
-    tdnf -y install tmux git
-    pip install ranger-fm flake8 ipdb
+    tdnf -y -q install tmux git
+    pip -q install ranger-fm flake8 ipdb
     cp ./other_files/aria2c /usr/bin/
     chmod o+x /usr/bin/aria2c
     cp ./other_files/mosh-server /usr/bin/
@@ -47,12 +47,12 @@ elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
 
-    sudo apt-get update;apt-get install aria2 ranger git mosh -y
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -yq install tmux
+    sudo apt-get -q update;apt-get install aria2 ranger git mosh -y -q
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install tmux
 
     echo "==================apt-get done"
-    pip3 install flake8
-    pip3 install ipdb
+    pip3 -q install flake8
+    pip3 -q install ipdb
     ./other_files/tmux_start_script.sh
 fi
     
