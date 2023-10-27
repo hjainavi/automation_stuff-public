@@ -12,8 +12,6 @@ UBUNTU_CTLR=false
 if lsb_release -d | grep -q 'Photon'; then
     PHOTON_CTLR=true
     echo "Photon Ctlr"
-    echo "Exiting"
-    exit 1
 fi
 if lsb_release -d | grep -q 'Ubuntu'; then
     UBUNTU_CTLR=true
@@ -21,9 +19,24 @@ if lsb_release -d | grep -q 'Ubuntu'; then
 fi
 
 
-export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python2.7/dist-packages:$PWD/avipdb
+if $PHOTON_CTLR ; then
+    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.10/dist-packages:/usr/local/lib/python3.10/site-packages:$PWD/avipdb
+fi
+if $UBUNTU_CTLR; then
+    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.8/dist-packages:/usr/local/lib/python3.8/site-packages:$PWD/avipdb
+fi
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
+if $PHOTON_CTLR ; then
+    export XTABLES_LIBDIR=/usr/lib/iptables
+fi
+
+ipdb_str=$(pip3 --disable-pip-version-check list | grep ipdb)
+if [[ $ipdb_str = *ipdb* ]]; then
+    echo "ipdb installed"
+else
+    pip3 install ipdb
+fi
 
 chmod +x ./change-conf.py
 
@@ -41,17 +54,24 @@ if [ "$1" = "start" ];then
     else
         export AVI_PDB_FLAG="none"
     fi
-    exec uwsgi --honour-stdin --ini ./pdb-portal.ini:maintenanceportal
+    if $PHOTON_CTLR ; then
+        exec uwsgi --honour-stdin --ini ./pdb-portal.ini:maintenanceportal --plugin /usr/lib/uwsgi/python_plugin.so
+    fi
+    if $UBUNTU_CTLR ; then
+        exec uwsgi --honour-stdin --ini ./pdb-portal.ini:maintenanceportal
+    fi
+    
     #./test.py
 elif [ "$1" = "change" ];then
     ./change-conf.py $1 maintenanceportal.service
     systemd-analyze verify /etc/systemd/system/maintenanceportal.service
     if [ $? -eq 0 ]; then
         systemctl daemon-reload
-        service maintenanceportal stop
         sleep 5
-        service maintenanceportal stop
-        echo $(service maintenanceportal status | tail -4)
+        systemctl stop maintenanceportal.service
+        sleep 5
+        systemctl stop maintenanceportal.service
+        echo $(systemctl status maintenanceportal.service | tail -8)
     else
         echo FAIL
     fi
@@ -61,13 +81,17 @@ elif [ "$1" = "changeback" ];then
     systemd-analyze verify /etc/systemd/system/maintenanceportal.service
     if [ $? -eq 0 ]; then
         systemctl daemon-reload
-        service maintenanceportal stop
-        service maintenanceportal start
         sleep 2
-        echo $(service maintenanceportal status | tail -8)
+        systemctl stop maintenanceportal.service
+        systemctl start maintenanceportal.service
+        sleep 2
+        echo $(systemctl status maintenanceportal.service | tail -8)
+
     else
         echo FAIL
     fi
 else
     echo 'INVALID ARGS'
 fi
+
+

@@ -19,7 +19,12 @@ if lsb_release -d | grep -q 'Ubuntu'; then
 fi
 
 
-export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.8/dist-packages:/usr/local/lib/python3.8/site-packages:$PWD/avipdb
+if $PHOTON_CTLR ; then
+    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.10/dist-packages:/usr/local/lib/python3.10/site-packages:$PWD/avipdb
+fi
+if $UBUNTU_CTLR; then
+    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.8/dist-packages:/usr/local/lib/python3.8/site-packages:$PWD/avipdb
+fi
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
 if $PHOTON_CTLR ; then
