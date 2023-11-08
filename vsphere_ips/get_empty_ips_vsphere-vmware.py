@@ -1191,9 +1191,9 @@ def list_all_builds_in_mnt_builds(version):
                 pattern = re.compile(r'^build.*(\d{4,5})$', re.MULTILINE)
                 build_regex = re.findall(pattern,file_data)
                 buildno = build_regex[0] if build_regex else ""
-            modified_time = os.path.getmtime(version_file)
-            time_ago = str(timedelta(seconds=time.time()-modified_time)) + " ago"
-            all_builds.append([0 ,version, int(buildno), ova_file, time_ago])
+                modified_time = os.path.getmtime(version_file)
+                time_ago = str(timedelta(seconds=time.time()-modified_time)) + " ago"
+                all_builds.append([0 ,version, int(buildno), ova_file, time_ago])
     all_builds.sort(key=lambda x: x[2])
     for i in range(len(all_builds)):
         all_builds[i][0] = i+1
