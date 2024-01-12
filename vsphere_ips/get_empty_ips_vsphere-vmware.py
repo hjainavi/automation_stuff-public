@@ -36,7 +36,7 @@ import jinja2
 from retry import retry
 
 ALL_RESERVED_IPS = ["10.102.96.175","10.102.96.176", "100.65.9.177", "100.65.9.178", "100.65.9.179", "100.65.9.180", "100.65.9.181", "100.65.9.182", "100.65.9.183"]
-SE_IPS = ["100.65.12.177", "100.65.12.178", "100.65.12.179", "100.65.12.180", "100.65.12.181", "100.65.12.182", "100.65.12.183"]
+SE_IPS = ["100.65.12.177", "100.65.12.178", "100.65.12.179", "100.65.12.180", "100.65.12.181", "100.65.12.182", "100.65.12.183", "100.65.12.184", "100.65.12.185", "100.65.12.186", "100.65.12.187"]
 USE_CTLR_SE_IP_RELATED = True
 DEV_IP = "10.102.96.175"
 VCENTER_IP = "blr-01-vc13.oc.vmware.com"
@@ -776,7 +776,7 @@ def setup_cloud_se(c_ip,version=""):
     data.update({
         "se_name_prefix":se_name_prefix,
         "vcenter_folder":VCENTER_FOLDER_NAME,
-        "max_se":"1"
+        "max_se":"1" if not SE_IPS_TO_USE_FOR_CURRENT_CTLR else str(len(SE_IPS_TO_USE_FOR_CURRENT_CTLR))
     })
     r = requests.put(uri_base+'api/serviceenginegroup/%s'%(data['uuid']), data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
