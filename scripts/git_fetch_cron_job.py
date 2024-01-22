@@ -147,7 +147,7 @@ for branch in direct_fetch_branches:
 log.info("--------------- Ending Fetch -------------\n\n\n")
 
 
-# crontab -e has : 0 */8 * * * /usr/bin/python3 /home/aviuser/automation_stuff/scripts/git_fetch_cron_job.py
+# crontab -e has : 0 */3 * * * /usr/bin/python3 /home/aviuser/automation_stuff/scripts/git_fetch_cron_job.py
 
 
 """
