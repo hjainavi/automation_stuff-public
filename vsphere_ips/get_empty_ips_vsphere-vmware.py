@@ -35,41 +35,42 @@ from tabulate import tabulate
 import jinja2
 from retry import retry
 
-ALL_RESERVED_IPS = ["10.102.96.175","10.102.96.176", "100.65.9.177", "100.65.9.178", "100.65.9.179", "100.65.9.180", "100.65.9.181", "100.65.9.182", "100.65.9.183"]
-SE_IPS = ["100.65.12.177", "100.65.12.178", "100.65.12.179", "100.65.12.180", "100.65.12.181", "100.65.12.182", "100.65.12.183", "100.65.12.184", "100.65.12.185", "100.65.12.186", "100.65.12.187"]
-USE_CTLR_SE_IP_RELATED = True
-DEV_IP = "10.102.96.175"
-VCENTER_IP = "blr-01-vc13.oc.vmware.com"
-VCENTER_USER = "aviuser1"
-VCENTER_PASSWORD = "AviUser1234!."
-VCENTER_DATACENTER_NAME = "blr-01-vc13"
-VCENTER_CLUSTER_NAME = "blr-01-vc13c01"
-VCENTER_DATASTORE_NAME = "blr-01-vc13c01-vsan"
-VCENTER_FOLDER_NAME = "harshj"
-DEV_VM_IP = "10.102.96.175"
-VCENTER_MANAGEMENT_MAP = {
-                            "Internal_Management":{
-                                "name":"blr-01-avi-dev-IntMgmt",
-                                "subnet":"100.65.0.0/20",
-                                "mask":"20",
-                                "gateway":"100.65.15.254"
-                            },
-                            "Management":{
-                                "name":"blr-01-nsxt02-avi-mgmt",
-                                "subnet":"10.102.96.0/22",
-                                "mask":"22",
-                                "gateway":"10.102.99.254"
-                            }
-                        }
-VCENTER_DNS_SERVERS = ["10.102.0.193", "10.102.0.195"]
-VCENTER_NTP = "time.vmware.com"
-VCENTER_PORT_GROUP = "blr-01-avi-66-68"
-VCENTER_SERVER_IP = "100.66.68.19"
-SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
+with open(os.path.dirname(os.path.abspath(__file__))+"/vals.json", "r") as f:
+    config = json.loads(f.read())
 
+VCENTER = config["VCENTER"]
+VCENTER_CHOICES = ["W4-HS11", "BLR13"]
+CURRENT_VCENTER = ""
+
+vcenter_str = ""
+for index,val in enumerate(VCENTER_CHOICES):
+    vcenter_str +="%s:%s, "%(index,val)
+action_confirm = input("Choose the vcenter to operate on [[%s]] [Enter Index] ?: "%(vcenter_str))
+if int(action_confirm.lower()) < len(VCENTER_CHOICES):
+    CURRENT_VCENTER = VCENTER_CHOICES[int(action_confirm.lower())]
+else:
+    raise Exception("Invalid Choice")
+
+ALL_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_RESERVED_IPS"]
+SE_IPS = VCENTER[CURRENT_VCENTER]["SE_IPS"]
+VCENTER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_IP"]
+VCENTER_USER = VCENTER[CURRENT_VCENTER]["VCENTER_USER"]
+VCENTER_PASSWORD = VCENTER[CURRENT_VCENTER]["VCENTER_PASSWORD"]
+VCENTER_DATACENTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_DATACENTER_NAME"]
+VCENTER_CLUSTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_CLUSTER_NAME"]
+VCENTER_DATASTORE_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_DATASTORE_NAME"]
+VCENTER_FOLDER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_FOLDER_NAME"]
+DEV_VM_IP = VCENTER[CURRENT_VCENTER]["DEV_VM_IP"]
+VCENTER_MANAGEMENT_MAP = VCENTER[CURRENT_VCENTER]["VCENTER_MANAGEMENT_MAP"]
+VCENTER_DNS_SERVERS = VCENTER[CURRENT_VCENTER]["VCENTER_DNS_SERVERS"]
+VCENTER_NTP = VCENTER[CURRENT_VCENTER]["VCENTER_NTP"]
+VCENTER_PORT_GROUP = VCENTER[CURRENT_VCENTER]["VCENTER_PORT_GROUP"]
+VCENTER_SERVER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_SERVER_IP"]
+
+SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
-
+DHCP = False
 GLOBAL_LOGIN_HEADERS = {}
 GLOBAL_LOGIN_COOKIES = {}
 GLOBAL_CURRENT_PASSWORD = {}
@@ -892,10 +893,10 @@ def get_index_format_ips_excluding_dev_ip(si,free=True,ips_to_check=[]):
     if not ips_to_check:
         ips_to_check = ALL_RESERVED_IPS
     if free:
-        free_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        free_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (check_if_ip_is_free(si,ip,True) and ip!=DEV_VM_IP)]) }
         return free_ips
     else:
-        used_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_IP)]) }
+        used_ips = {str(index):val for index,val in enumerate([ip for ip in ips_to_check if (not check_if_ip_is_free(si,ip,True) and ip!=DEV_VM_IP)]) }
         return used_ips
 
 def get_used_controller_ips(si):
@@ -1212,11 +1213,15 @@ def se_ips_to_use_for_ctlr(si,c_ip):
         print("SE IPs Configuration")
         print ("Free SE IP's : %s"%(list(free_ips_1.values())))
         default_ip = se_ip
-        mgmt_ips = input("Management IP ? [Enter Comma Separated IP] [Default: %s]: "%(default_ip))
+        mgmt_ips = input("Management IP ? [Enter Comma Separated IP] [Default: %s][or DHCP]: "%(default_ip))
         if not mgmt_ips:
+            if not se_ip: continue
             mgmt_ips = [default_ip]
         else:
             mgmt_ips = mgmt_ips.split(",")
+        if len(mgmt_ips) == 1 and mgmt_ips[0].upper() == "DHCP":
+            SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
+            return
         for ip in mgmt_ips:
             mgmt_ip = ip.strip()
             if mgmt_ip:
@@ -1229,7 +1234,7 @@ def se_ips_to_use_for_ctlr(si,c_ip):
                     print(" %s ip is free"%(mgmt_ip))
                     SE_IPS_TO_USE_FOR_CURRENT_CTLR.append(mgmt_ip)
         if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
-            break
+            return
 
 
     
@@ -1295,7 +1300,11 @@ def generate_controller_from_ova():
     while True:
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si)
         print ("Free IP's : %s"%(free_ips_1))
-        mgmt_index = input("Management IP ? [Enter Index] : ")
+        mgmt_index = input("Management IP ? [Enter Index or DHCP] : ")
+        if mgmt_index.upper() == "DHCP":
+            mgmt_ip = "DHCP"
+            global DHCP
+            DHCP = True
         if mgmt_index not in free_ips_1.keys():
             print("not a valid index ")
             mgmt_ip = input("Management IP ? [Enter IP] : ")
@@ -1323,10 +1332,11 @@ def generate_controller_from_ova():
             folder_obj = get_folder_obj(datacenter_obj,folder_name)
             if folder_obj:
                 break
-    management_network = input("Management Network ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
+    management_network = input("Management Network ? [Default: %s][ or %s ]:"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"], VCENTER_MANAGEMENT_MAP["Management"]["name"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
 
-    mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
-    gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"]
+    if not DHCP:
+        mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
+        gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"]
 
     '''
     ova_memory_spec_in_MB , ova_disk_spec_in_MB = get_memory_and_disk_spec_from_ova(source_ova_path)
@@ -1357,9 +1367,10 @@ def generate_controller_from_ova():
 
     prop = ''
     if vm_type == 'controller':
-        prop = '--prop:avi.mgmt-ip.CONTROLLER=' + mgmt_ip + \
+        if not DHCP:
+            prop = '--prop:avi.mgmt-ip.CONTROLLER=' + mgmt_ip + \
             ' --prop:avi.default-gw.CONTROLLER=' + gw_ip + ' '
-        prop = prop + ' --prop:avi.mgmt-mask.CONTROLLER=' + str(mask) + ' '
+            prop = prop + ' --prop:avi.mgmt-mask.CONTROLLER=' + str(mask) + ' '
         prop = prop + ' --prop:avi.sysadmin-public-key.CONTROLLER="' + get_own_sysadmin_key() + '" '
         prop += '--name="' + vm_name + '" '
         if power_on.lower() == 'y':
@@ -1385,6 +1396,8 @@ def generate_controller_from_ova():
         print ("Exiting ...")
         exit(0)
     if set_password_and_sys_config.lower() == 'y':
+        if DHCP:
+            mgmt_ip = get_ip_from_dhcp_controller(vm_name)
         configure_raw_controller(si, mgmt_ip)
 
     print("================== DONE ==============")
