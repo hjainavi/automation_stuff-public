@@ -1377,7 +1377,7 @@ def generate_controller_from_ova():
             prop += '--powerOn '
         prop += '"--vmFolder='+folder_name+'" ' 
 
-        cmd = '/usr/bin/ovftool --noSSLVerify --X:logLevel=warning --X:logToConsole "--datastore=' + datastore + \
+        cmd = 'ovftool --noSSLVerify --X:logLevel=warning --X:logToConsole "--datastore=' + datastore + \
             '" --net:Management="' + management_network + \
             '" ' + prop + source_ova_path + ' ' + vi 
     print ('\n',cmd,'\n')
