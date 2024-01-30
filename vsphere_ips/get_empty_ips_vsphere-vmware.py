@@ -39,7 +39,7 @@ with open(os.path.dirname(os.path.abspath(__file__))+"/vals.json", "r") as f:
     config = json.loads(f.read())
 
 VCENTER = config["VCENTER"]
-VCENTER_CHOICES = ["W4-HS11", "BLR13"]
+VCENTER_CHOICES = list(VCENTER.keys())
 CURRENT_VCENTER = ""
 
 vcenter_str = ""
