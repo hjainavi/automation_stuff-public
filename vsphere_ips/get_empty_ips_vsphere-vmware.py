@@ -776,6 +776,7 @@ def setup_cloud_se(c_ip,version=""):
     se_name_prefix = c_ip.split(".")[-1]+"_"+GLOBAL_LOGIN_HEADERS[c_ip]["X-Avi-Version"].replace(".","")
     data.update({
         "se_name_prefix":se_name_prefix,
+        "se_deprovision_delay":120000,
         "vcenter_folder":VCENTER_FOLDER_NAME,
         "max_se":"1" if not SE_IPS_TO_USE_FOR_CURRENT_CTLR else str(len(SE_IPS_TO_USE_FOR_CURRENT_CTLR))
     })
