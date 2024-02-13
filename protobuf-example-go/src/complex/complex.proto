@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package example.complex;
+
+option go_package = "complex";
+
+message ComplexMessage {
+  optional DummyMessage one_dummy = 2;
+  repeated DummyMessage multiple_dummy = 3;
+  repeated DummyMessage two_multiple_dummy = 4;
+  optional DummyMessage two_dummy = 5;
+}
+
+message DummyMessage {
+  optional int32 id = 1;
+  optional string name = 2;
+}
