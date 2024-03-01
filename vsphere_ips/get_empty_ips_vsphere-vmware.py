@@ -43,14 +43,18 @@ VCENTER_CHOICES = list(VCENTER.keys())
 CURRENT_VCENTER = ""
 
 vcenter_str = ""
-for index,val in enumerate(VCENTER_CHOICES):
-    vcenter_str +="%s:%s, "%(index,val)
-action_confirm = input("Choose the vcenter to operate on [[%s]] [Enter Index] ?: "%(vcenter_str))
-if int(action_confirm.lower()) < len(VCENTER_CHOICES):
-    CURRENT_VCENTER = VCENTER_CHOICES[int(action_confirm.lower())]
+if len(VCENTER_CHOICES) != 1:
+    for index,val in enumerate(VCENTER_CHOICES):
+        vcenter_str +="%s:%s, "%(index,val)
+    action_confirm = input("Choose the vcenter to operate on [[%s]] [Enter Index] ?: "%(vcenter_str))
+    if int(action_confirm.lower()) < len(VCENTER_CHOICES):
+        CURRENT_VCENTER = VCENTER_CHOICES[int(action_confirm.lower())]
+    else:
+        raise Exception("Invalid Choice")
 else:
-    raise Exception("Invalid Choice")
+    CURRENT_VCENTER = VCENTER_CHOICES[0]
 
+ALL_MGMT_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_MGMT_RESERVED_IPS"]
 ALL_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_RESERVED_IPS"]
 SE_IPS = VCENTER[CURRENT_VCENTER]["SE_IPS"]
 VCENTER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_IP"]
@@ -156,11 +160,13 @@ def power_on_vm(virtual_machine_obj):
 
 
 
-def get_vms_ips_network(with_se_ips=False,free_ips=False):
+def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=False):
     if with_se_ips:
         all_reserved_ips = ALL_RESERVED_IPS + SE_IPS
     else:
         all_reserved_ips = ALL_RESERVED_IPS
+    if with_mgmt_reserved_ips:
+        all_reserved_ips = ALL_MGMT_RESERVED_IPS + all_reserved_ips
     folder_name = VCENTER_FOLDER_NAME
     datacenter_name = VCENTER_DATACENTER_NAME
    
@@ -377,15 +383,15 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
                             print ("vm %s is already ON"%(virtual_m.name))
 
 if len(sys.argv)==1:
-    final_print_vals = get_vms_ips_network(with_se_ips=True)
+    final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
 
 if len(sys.argv)==2 and sys.argv[1]=='with_se_ips':
-    final_print_vals = get_vms_ips_network(with_se_ips=True)
+    final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
 
 if len(sys.argv)==2 and sys.argv[1] in ['free_ip','free_ips']:
-    final_print_vals = get_vms_ips_network(with_se_ips=True,free_ips=True)
+    final_print_vals = get_vms_ips_network(with_se_ips=True,free_ips=True, with_mgmt_reserved_ips=True)
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
 
 
