@@ -910,7 +910,7 @@ def get_used_controller_ips(si):
     used_ips_1 = get_index_format_ips_excluding_dev_ip(si,free=False)
     print ("Configured IP's : %s"%(used_ips_1))
     mgmt_indexes = input("Controller IP ? [Enter comma separated Indexes] :")
-    mgmt_indexes = [i.strip() for i in mgmt_indexes.split(",") if int(i.strip())]
+    mgmt_indexes = [i.strip() for i in mgmt_indexes.split(",") if (int(i.strip()) or i.strip()=="0")]
     mgmt_ips = []
     for mgmt_index in mgmt_indexes:
         if mgmt_index not in used_ips_1.keys():
