@@ -751,6 +751,8 @@ def setup_cloud_se(c_ip,version=""):
     default_cloud_uuid = data['uuid']
     data.update({
         "dhcp_enabled":True,
+        "mgmt_ip_v4_enabled":True,
+        "mgmt_ip_v6_enabled":False,
         "vtype":"CLOUD_VCENTER",
         "vcenter_configuration":{
             "privilege": "WRITE_ACCESS",
@@ -1213,8 +1215,8 @@ def se_ips_to_use_for_ctlr(si,c_ip):
     if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
         return
     se_ip = ""
-    if ".9." in c_ip:
-        se_ip = c_ip.replace(".9.",".12.")
+    if ".32." in c_ip:
+        se_ip = c_ip.replace(".32.",".33.")
     while True:
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si,True,SE_IPS)
         print("SE IPs Configuration")
