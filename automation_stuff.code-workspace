@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"go.gopath": "/home/aviuser/go",
+		"gopls": {
+			
+		},
+		"terminal.integrated.env.linux": {
+			"GOPATH":"/home/aviuser/go"
+		}
+	}
+}

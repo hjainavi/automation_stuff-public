@@ -1,5 +1,14 @@
-module testing
+module main
 
-go 1.16
+go 1.22.2
 
-require github.com/hashicorp/go-version v1.6.0 // indirect
+require (
+	github.com/beego/beego/v2 v2.3.1
+	github.com/hashicorp/go-version v1.7.0
+	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)

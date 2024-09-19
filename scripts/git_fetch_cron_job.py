@@ -131,7 +131,7 @@ for branch in all_branches:
         pass
     fetched_branches.append(branch)
 
-fetched_branches = ["eng","22.1.7"] + fetched_branches
+fetched_branches = ["eng","22.1.7", "webapp_upgrade_2"] + fetched_branches
 log.info("Fetching Branches: %s"%(fetched_branches))
 checkout_datas = get_checked_out_branches(CWD)
 #if not checkout_datas: exit(1)

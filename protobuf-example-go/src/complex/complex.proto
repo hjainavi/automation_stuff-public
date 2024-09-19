@@ -9,6 +9,7 @@ message ComplexMessage {
   repeated DummyMessage multiple_dummy = 3;
   repeated DummyMessage two_multiple_dummy = 4;
   optional DummyMessage two_dummy = 5;
+  map<string, DummyMessage> map_dummy = 6;
 }
 
 message DummyMessage {

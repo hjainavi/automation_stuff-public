@@ -35,19 +35,34 @@ func doComplex() {
 			},
 		},
 		TwoMultipleDummy: []*complex.DummyMessage{},
-		//TwoDummy:         &complex.DummyMessage{},
+		MapDummy: map[string]*complex.DummyMessage{
+			"abc": &complex.DummyMessage{
+				Id:   proto.Int32(2),
+				Name: proto.String("Fourth message"),
+			},
+		},
 	}
-	fmt.Println(cm)
+	//fmt.Println(cm)
 	msg := proto.MessageReflect(&cm)
+
 	msg.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
 		//fmt.Println(fd.Cardinality().GoString(), fd.Name(), fd.Kind().GoString(), v.IsValid())
-		if v.IsValid() && fd.Cardinality().GoString() == "Optional" {
-			fmt.Println(fd.Name())
-			abc := v.Message()
-			fmt.Println(abc.Descriptor())
-			//fmt.Println(convert(dynamicpb.NewMessage(v.Message().Descriptor())))
-		}
+		//fmt.Println(fd.Name())
+		/*
+			if v.IsValid() && fd.Cardinality().GoString() == "Optional" {
+				fmt.Printf("%s\n\n", fd.Name())
+				abc := v.Message()
+				fmt.Println(abc.Descriptor())
+				//fmt.Println(convert(dynamicpb.NewMessage(v.Message().Descriptor())))
+			}
+		*/
 		return true
 	})
+	md := msg.Descriptor()
+	fds := md.Fields()
+	for i := 0; i < fds.Len(); i++ {
+		fd := fds.Get(i)
+		fmt.Println("---",fd.JSONName())
+	}
 
 }
