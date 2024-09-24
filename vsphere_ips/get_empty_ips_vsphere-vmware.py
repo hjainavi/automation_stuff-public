@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+import sys
 try:
-    import pyVim,sys
+    import pyVim
 except ImportError:
     print ("do -->> pip3 install --upgrade pyvmomi")
     sys.exit(1)
@@ -9,7 +10,7 @@ try:
 except ImportError:
     print ("do -->> pip3 install tabulate")
     sys.exit(1)
-from pyVim.connect import Disconnect,SmartConnectNoSSL
+from pyVim.connect import Disconnect,Connect
 from pyVmomi import vim
 from socket import inet_aton, inet_ntoa
 import random,time,atexit
@@ -30,7 +31,7 @@ import urllib3
 import ipaddress
 import random
 urllib3.disable_warnings()
-from fabric.api import env, put, sudo, cd
+import fabric
 from tabulate import tabulate
 import jinja2
 from retry import retry
@@ -114,7 +115,7 @@ START_TIME = time.time()
 
 def connect(vcenter_ip=VCENTER_IP, user=VCENTER_USER, pwd=VCENTER_PASSWORD ,exit_on_error=True):
     try:
-        si= SmartConnectNoSSL(host=vcenter_ip, user=user, pwd=pwd)#, sslContext=s)
+        si= Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
         atexit.register(Disconnect,si)
         return si
     except:
@@ -551,45 +552,31 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
 def setup_tmux_install_only(c_ip):
     login_and_set_global_variables(c_ip,None)
     print("Setting Controller with tmux install only and other packages")
-    env.host_string = c_ip
-    env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.disable_known_hosts = True
-    put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
-    with cd("/root/"):
-        sudo("tar -xf ctlr_new.tar.gz")
-    with cd("/root/controller_customization_new/"):
-        sudo("./controller_cust_install_only.sh")
-    with cd("/opt/avi/python"):
-        sudo("ls")
+    env_sudo = fabric.Config(overrides={'sudo': {'password': GLOBAL_CURRENT_PASSWORD[c_ip]}})
+    conn = fabric.Connection(c_ip, "admin", connect_kwargs={'password':GLOBAL_CURRENT_PASSWORD[c_ip]}, config=env_sudo)
+    conn.put("/var/www/html/ctlr_new.tar.gz","/tmp/")
+    conn.sudo("mv /tmp/ctlr_new.tar.gz /root/")
+    conn.sudo("bash -c 'cd /root/ && tar -xf ctlr_new.tar.gz'")
+    conn.sudo("bash -c 'cd /root/controller_customization_new/ && ./controller_cust_install_only.sh'")
+    conn.sudo("bash -c 'cd /opt/avi/python/ && ls'")
 
 def setup_tmux(c_ip):
     login_and_set_global_variables(c_ip,None)
     print("Setting Controller with tmux and other packages")
-    env.host_string = c_ip
-    env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.disable_known_hosts = True
-    put("/var/www/html/ctlr_new.tar.gz","/root/",use_sudo=True)
-    with cd("/root/"):
-        sudo("tar -xf ctlr_new.tar.gz")
-    with cd("/root/controller_customization_new/"):
-        sudo("./controller_cust.sh")
-    with cd("/opt/avi/python"):
-        sudo("ls")
+    env_sudo = fabric.Config(overrides={'sudo': {'password': GLOBAL_CURRENT_PASSWORD[c_ip]}})
+    conn = fabric.Connection(c_ip, "admin", connect_kwargs={'password':GLOBAL_CURRENT_PASSWORD[c_ip]}, config=env_sudo)
+    conn.put("/var/www/html/ctlr_new.tar.gz","/tmp/")
+    conn.sudo("mv /tmp/ctlr_new.tar.gz /root/")
+    conn.sudo("bash -c 'cd /root/ && tar -xf ctlr_new.tar.gz'")
+    conn.sudo("bash -c 'cd /root/controller_customization_new/ && ./controller_cust.sh'")
+    conn.sudo("bash -c 'cd /opt/avi/python/ && ls'")
 
 
 def flush_db(c_ip):
     login_and_set_global_variables(c_ip)
-    env.host_string = c_ip
-    env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.disable_known_hosts = True
-    with cd("/root/"):
-        sudo("sudo systemctl stop process-supervisor.service && rm /var/lib/avi/etc/flushdb.done && /opt/avi/scripts/flushdb.sh && sudo systemctl start process-supervisor.service")
+    env_sudo = fabric.Config(overrides={'sudo': {'password': GLOBAL_CURRENT_PASSWORD[c_ip]}})
+    conn = fabric.Connection(c_ip, "admin", connect_kwargs={'password':GLOBAL_CURRENT_PASSWORD[c_ip]}, config=env_sudo)
+    conn.sudo("bash -c 'cd /root/ && sudo systemctl stop process-supervisor.service && rm /var/lib/avi/etc/flushdb.done && /opt/avi/scripts/flushdb.sh && sudo systemctl start process-supervisor.service'")
 
 def set_version_controller(c_ip):
     global GLOBAL_LOGIN_HEADERS
@@ -613,7 +600,7 @@ def get_version_controller_from_ova(ova_path):
     print("Getting Controller Version from OVA %s"%(ova_path))
     cmd_ova_spec = '/usr/bin/ovftool --schemaValidate %s'%(ova_path)
     ova_specs = subprocess.check_output(shlex.split(cmd_ova_spec),text=True)
-    pattern = re.compile('\\nVersion:\s*(\d+\.\d+\.\d+)\\n')
+    pattern = re.compile(r'\\nVersion:\s*(\d+\.\d+\.\d+)\\n')
     res = re.findall(pattern,ova_specs)
     if res:
         return res[0]
@@ -1026,12 +1013,9 @@ def upload_pkg_to_ctlr(c_ip,source_pkg_path):
 
 def reimage_controller(c_ip):
     print("Starting reimage...")
-    env.host_string = c_ip
-    env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD[c_ip]
-    env.disable_known_hosts = True
-    sudo("/opt/avi/scripts/reimage_system.py --base /home/admin/controller.pkg")
+    env_sudo = fabric.Config(overrides={'sudo': {'password': GLOBAL_CURRENT_PASSWORD[c_ip]}})
+    conn = fabric.Connection(c_ip, "admin", connect_kwargs={'password':GLOBAL_CURRENT_PASSWORD[c_ip]}, config=env_sudo)
+    conn.sudo("/opt/avi/scripts/reimage_system.py --base /home/admin/controller.pkg")
     print("reimage started")
 
 def check_upgrade_status(c_ip):
@@ -1161,12 +1145,9 @@ def delete_all_se(si,c_ip):
 
 def initialize_admin_user_script(mgmt_ip):
     print("Admin User Script password change")
-    env.host_string = mgmt_ip
-    env.user = "admin"
-    env.password = GLOBAL_CURRENT_PASSWORD[mgmt_ip]
-    env.sudo_password = GLOBAL_CURRENT_PASSWORD[mgmt_ip]
-    env.disable_known_hosts = True
-    sudo("/opt/avi/scripts/initialize_admin_user.py --password avi123")
+    env_sudo = fabric.Config(overrides={'sudo': {'password': GLOBAL_CURRENT_PASSWORD[mgmt_ip]}})
+    conn = fabric.Connection(mgmt_ip, "admin", connect_kwargs={'password':GLOBAL_CURRENT_PASSWORD[mgmt_ip]}, config=env_sudo)
+    conn.sudo("/opt/avi/scripts/initialize_admin_user.py --password avi123")
 
 def is_version_eng(version,build_dir):
     dir = os.path.join("/mnt/builds/eng",build_dir)
@@ -1217,6 +1198,8 @@ def se_ips_to_use_for_ctlr(si,c_ip):
     se_ip = ""
     if ".32." in c_ip:
         se_ip = c_ip.replace(".32.",".33.")
+    if ".11." in c_ip:
+        se_ip = c_ip.replace(".11.",".12.")
     while True:
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si,True,SE_IPS)
         print("SE IPs Configuration")
