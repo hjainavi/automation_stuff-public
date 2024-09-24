@@ -170,13 +170,27 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
         all_reserved_ips = ALL_MGMT_RESERVED_IPS + all_reserved_ips
     folder_name = VCENTER_FOLDER_NAME
     datacenter_name = VCENTER_DATACENTER_NAME
-   
+    datacenter = None
     si = connect()
     vms_table = {} # vms_table[(folder,name)] = {state :template/on/off , ip_network: [[ip,network],]}
 
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
+    if datacenter is None:
+        print("datacenter %s not found"%(datacenter_name))
+        sys.exit(1)
+    search_text = "%s/vm/%s"%(datacenter_name,folder_name)
+    search_folder = si.RetrieveContent().searchIndex.FindByInventoryPath(search_text)
+    if not search_folder:
+        print("folder %s not found"%(folder_name))
+        print("search text = %s"%(search_text))
+        sys.exit(1)
+    for virtual_m in search_folder.childEntity:
+        if vim.Folder == type(virtual_m):
+            continue
+        fill_vms_table(vms_table, virtual_m)
+    """
     vms = datacenter.vmFolder.childEntity
     for vm in vms:
         '''
@@ -190,7 +204,8 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
                     continue
                 fill_vms_table(vms_table, virtual_m)
             break
-    
+    """
+
     reserved_ips_not_found_in_folder = []
     for val_ip in all_reserved_ips:
         found = False
@@ -600,7 +615,7 @@ def get_version_controller_from_ova(ova_path):
     print("Getting Controller Version from OVA %s"%(ova_path))
     cmd_ova_spec = '/usr/bin/ovftool --schemaValidate %s'%(ova_path)
     ova_specs = subprocess.check_output(shlex.split(cmd_ova_spec),text=True)
-    pattern = re.compile(r'\\nVersion:\s*(\d+\.\d+\.\d+)\\n')
+    pattern = re.compile(r'\nVersion:\s*(\d+\.\d+\.\d+)\n')
     res = re.findall(pattern,ova_specs)
     if res:
         return res[0]
@@ -876,13 +891,14 @@ def get_cluster_obj(datacenter_obj,cluster_name):
             return cluster_obj
     return None
 
-def get_folder_obj(datacenter_obj,folder_name):
-    
-    for folder in datacenter_obj.vmFolder.childEntity:
-        if vim.Folder._wsdlName == folder._wsdlName and folder.name == folder_name:
-            return folder
-    print ("Folder: %s does not exist"%(folder_name))
-    return False
+def get_folder_obj(si,datacenter_name, folder_name):
+    search_text = "%s/vm/%s"%(datacenter_name,folder_name)
+    search_folder = si.RetrieveContent().searchIndex.FindByInventoryPath(search_text)
+    if not search_folder:
+        print("folder %s not found"%(folder_name))
+        print("search text = %s"%(search_text))
+        return False
+    return search_folder
 
 
 def get_index_format_ips_excluding_dev_ip(si,free=True,ips_to_check=[]):
@@ -1315,13 +1331,13 @@ def generate_controller_from_ova():
 
     vcenter_ip = input("Vcenter IP ? [Default: %s] :"%(VCENTER_IP)) or VCENTER_IP
     datacenter = input("Datacenter Name ? [Default: %s] :"%(VCENTER_DATACENTER_NAME)) or VCENTER_DATACENTER_NAME
-    datacenter_obj = get_datacenter_obj(si,datacenter)
+    #datacenter_obj = get_datacenter_obj(si,datacenter)
     cluster_name = input("Cluster ? [Default: %s] :"%(VCENTER_CLUSTER_NAME)) or VCENTER_CLUSTER_NAME
     datastore = input("Datastore ? [Default: %s] :"%(VCENTER_DATASTORE_NAME)) or VCENTER_DATASTORE_NAME
     while True:
         folder_name = input("Folder Name ? [Default: %s] :"%(VCENTER_FOLDER_NAME)) or VCENTER_FOLDER_NAME
         if folder_name:
-            folder_obj = get_folder_obj(datacenter_obj,folder_name)
+            folder_obj = get_folder_obj(si, datacenter,folder_name)
             if folder_obj:
                 break
     management_network = input("Management Network ? [Default: %s][ or %s ]:"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"], VCENTER_MANAGEMENT_MAP["Management"]["name"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]

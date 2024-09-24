@@ -47,12 +47,10 @@ elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
 
-    sudo apt-get -q update;apt-get install aria2 ranger git mosh -y -q
+    sudo apt-get -q update;apt-get install aria2 ranger git mosh python3-ipdb -y -q
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install tmux
 
     echo "==================apt-get done"
-    pip3 -q install flake8
-    pip3 -q install ipdb
     ./other_files/tmux_start_script.sh
 fi
     
