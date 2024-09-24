@@ -11,7 +11,7 @@ import logging
 
 
 LOG_FILE_PATH = "/home/aviuser/logfile_git_fetch_cron.txt"
-CWD = "/home/aviuser/workspace/avi-dev"
+CWD = ["/home/aviuser/workspace/avi-dev", "/home/aviuser/workspace/dev-1", "/home/aviuser/workspace/dev-2"]
 
 logging.basicConfig(filename=LOG_FILE_PATH,
                     filemode='a',
@@ -21,9 +21,7 @@ logging.basicConfig(filename=LOG_FILE_PATH,
 
 log = logging.getLogger("gitFetch")
 log.info("--------------- Starting Fetch -------------")
-if not os.path.isdir(CWD):
-    log.error("No such directory %s"%(CWD))
-    exit(1)
+
 main_branch_pattern = re.compile(r"\d+\.\d+\.\d+")
 patch_branch_pattern = re.compile(r"\d+\.\d+\.\d+-\d+p\d+")
 #all_branches = [i for i in os.listdir("/mnt/builds") if (re.fullmatch(main_branch_pattern, i) or re.fullmatch(patch_branch_pattern, i))]
@@ -52,6 +50,17 @@ def pull_branch_ff(CWD_c, branch):
     log.info("command : %s"%(command))
     try:
         result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD_c, check=True, timeout=600)
+        if str(result.stdout) != "": log.info(str(result.stdout))
+        if str(result.stderr) != "": log.info(str(result.stderr))
+    except Exception as e:
+        log.error(str(e))
+
+def git_prune(CWD_c):
+    command = "git prune"
+    log.info("Directory: %s"%(CWD_c))
+    log.info("command : %s"%(command))
+    try:
+        result = subprocess.run(shlex.split(command), capture_output=True, text=True, cwd=CWD_c, check=True)
         if str(result.stdout) != "": log.info(str(result.stdout))
         if str(result.stderr) != "": log.info(str(result.stderr))
     except Exception as e:
@@ -120,29 +129,33 @@ def pull_fetch_or_remote_fetch(checkout_datas, fetched_branches):
     return pull_ff_only,direct_fetch_branches,remote_fetch_only
 
 
-
-#lock = threading.Lock()
-fetched_branches = []
-for branch in all_branches:
-    try:
-        if int(branch[:2])<23:
-            continue
-    except ValueError:
-        pass
-    fetched_branches.append(branch)
-
-fetched_branches = ["eng","22.1.7", "webapp_upgrade_2"] + fetched_branches
-log.info("Fetching Branches: %s"%(fetched_branches))
-checkout_datas = get_checked_out_branches(CWD)
-#if not checkout_datas: exit(1)
-pull_ff_only,direct_fetch_branches,remote_fetch_only = pull_fetch_or_remote_fetch(checkout_datas, fetched_branches)
-if not pull_ff_only and not direct_fetch_branches and not remote_fetch_only: exit(1)
-for branch in remote_fetch_only:
-    fetch_branch(CWD, branch)
-for branch,dir in pull_ff_only.items():
-    pull_branch_ff(dir, branch)
-for branch in direct_fetch_branches:
-    fetch_branch(CWD, branch, remote=False)
+for cwd_dir in CWD:
+    if not os.path.isdir(cwd_dir):
+        log.error("No such directory %s"%(cwd_dir))
+        continue
+    log.info("------ Working Dir ------- %s"%(cwd_dir))
+    #lock = threading.Lock()
+    fetched_branches = []
+    for branch in all_branches:
+        try:
+            if int(branch[:2])<23:
+                continue
+        except ValueError:
+            pass
+        fetched_branches.append(branch)
+    git_prune(cwd_dir)
+    fetched_branches = ["eng","22.1.7", "webapp_upgrade_2"] + fetched_branches
+    log.info("Fetching Branches: %s"%(fetched_branches))
+    checkout_datas = get_checked_out_branches(cwd_dir)
+    #if not checkout_datas: exit(1)
+    pull_ff_only,direct_fetch_branches,remote_fetch_only = pull_fetch_or_remote_fetch(checkout_datas, fetched_branches)
+    if not pull_ff_only and not direct_fetch_branches and not remote_fetch_only: exit(1)
+    for branch in remote_fetch_only:
+        fetch_branch(cwd_dir, branch)
+    for branch,dir in pull_ff_only.items():
+        pull_branch_ff(dir, branch)
+    for branch in direct_fetch_branches:
+        fetch_branch(cwd_dir, branch, remote=False)
 
 log.info("--------------- Ending Fetch -------------\n\n\n")
 
