@@ -8,7 +8,7 @@ if [ "$1" = "change" ]; then
         mv /home/admin/go-controller /opt/avi/bin/go-controller-new && systemctl restart apiserver.service
     fi
 
-    if [ "$1" = "octavius" ];then
+    if [ "$2" = "octavius" ];then
         ./_go-binary.py change octavius
         mv /home/admin/go-controller /opt/avi/bin/go-controller-new && systemctl restart octavius.service
     fi
