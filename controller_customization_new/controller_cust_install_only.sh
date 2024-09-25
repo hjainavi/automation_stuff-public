@@ -27,6 +27,7 @@ else
     DEV_VM=true
 fi
 
+
 #release=$(lsb_release -a 2>&1)
 #if [[ $release == *"focal"* ]]
 if $PHOTON_CTLR ; then
