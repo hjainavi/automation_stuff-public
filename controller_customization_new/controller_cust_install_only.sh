@@ -47,7 +47,8 @@ elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
 
-    sudo apt-get -q update;apt-get install aria2 ranger git mosh python3-ipdb -y -q
+    sudo apt-get -q update || true
+    sudo apt-get install aria2 ranger git mosh python3-ipdb -y -q
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install tmux
 
     echo "==================apt-get done"
