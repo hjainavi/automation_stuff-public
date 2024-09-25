@@ -1000,16 +1000,16 @@ def configure_raw_controller_after_reimage(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
-    setup_vs(mgmt_ip)
     setup_tmux_install_only(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 
 def configure_raw_controller(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
-    setup_vs(mgmt_ip)
     setup_tmux(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 
 def configure_raw_controller_wo_tmux(si,mgmt_ip):
