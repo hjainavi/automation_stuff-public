@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "/home/aviuser/workspace/dev-1"
+		}
+		{
+			"path": "../dev-1/python"
+		}
+	],
+	"settings": {
+		"python.envFile": "/home/aviuser/workspace/envs/dev-1-env",
+		"go.gopath": "/home/aviuser/workspace/dev-1/go",
+        "git.ignoreLimitWarning": true,
+        "editor.stickyScroll.enabled": true,
+        "editor.stickyTabStops": true,
+		"git.allowForcePush": true,
+		"search.maxResults": 200000
+	}
+}

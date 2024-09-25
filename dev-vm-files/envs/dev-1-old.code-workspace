@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "/home/aviuser/workspace/dev-1-old"
+		}
+	],
+	"settings": {
+		"python.envFile": "/home/aviuser/workspace/envs/dev-1-old-env",
+		"git.ignoreLimitWarning": true,
+		"editor.stickyScroll.enabled": true,
+		"editor.stickyTabStops": true,
+		"git.allowForcePush": true,
+		"go.gopath": "/home/aviuser/workspace/dev-1-old/go",
+		"terminal.integrated.env.linux": {
+			
+		},
+	}
+}
