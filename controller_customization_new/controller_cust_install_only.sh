@@ -42,7 +42,6 @@ if $PHOTON_CTLR ; then
     iptables -A INPUT -p tcp --dport 2345 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
     iptables-save > /etc/systemd/scripts/ip4save
 
-
 elif $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
