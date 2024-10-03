@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "/home/aviuser/workspace/dev-2"
+		}
+	],
+	"settings": {
+		"python.envFile": "/home/aviuser/workspace/envs/dev-2-env",
+		"go.gopath": "/home/aviuser/workspace/dev-2/go",
+        "git.ignoreLimitWarning": true,
+        "editor.stickyScroll.enabled": true,
+        "editor.stickyTabStops": true,
+        "git.allowForcePush": true
+	}
+}
