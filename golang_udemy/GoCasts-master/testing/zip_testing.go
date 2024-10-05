@@ -1,8 +1,9 @@
 package main
 
 import (
+	"exec"
 	"fmt"
-	"os/exec"
+	"strings"
 )
 
 func main() {
@@ -25,13 +26,32 @@ func main() {
 			fmt.Println(err)
 		}
 	*/
-	cmd := exec.Command("python3", "/home/aviuser/testing/abc.py")
-	//cmd = exec.Command("ls")
-	//val, err := cmd.CombinedOutput()
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	/*
+		cmd := exec.Command("python3", "/home/aviuser/testing/abc.py")
+		//cmd = exec.Command("ls")
+		//val, err := cmd.CombinedOutput()
+		err := cmd.Run()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	*/
+	//
+	checkConfigcmd := "/opt/avi/scripts/config_checker.py --config config.json --upgrade-log-taskjournal --clean-journal --taskjournal-file journal.json"
+	cmdExec := exec.Command("python3", strings.Split(checkConfigcmd, " ")...)
+	out, errF := cmdExec.CombinedOutput()
+	fmt.Println(out)
+	fmt.Println(errF)
+	/*
+		cmdExec := exec.Command("python3", strings.Split(checkConfigcmd, " ")...)
+		out, errF := cmdExec.CombinedOutput()
+		if errF != nil {
+			avilog.Error(errF)
+			avilog.Error(string(out))
+			if exportCxt.RaiseErrorOnConfigExport() {
+				return weberr.IntegrityError(string(out))
+			}
+		}
+	*/
 	//_ = val
 	//fmt.Printf("--- %s\n", val)
 

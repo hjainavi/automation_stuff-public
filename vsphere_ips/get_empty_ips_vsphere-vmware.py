@@ -625,7 +625,7 @@ def get_version_controller_from_ova(ova_path):
         return version
 
 
-def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=450):
+def wait_until_cloud_ready(c_ip, cookies, headers, cloud_uuid, timeout=850):
     uri_base = 'https://' + c_ip + '/'
 
     sleep_time = 10
@@ -684,6 +684,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
     port_group_uuid = data['uuid']
     port_group_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
     occupied_ips = []
+    count = 0
     "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
     while True:
         r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
@@ -696,6 +697,8 @@ def setup_vs(c_ip, version="" ,timeout=60):
         except:
             print("Error: ",r.json())
             time.sleep(10)
+            count += 1
+            if count == 5: break
 
     ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet.replace("/24","/26"))]))
     ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
@@ -740,11 +743,9 @@ def setup_vs(c_ip, version="" ,timeout=60):
         raise Exception(r.text)
     print("VS 'test_vs' Created")
 
-
-def setup_cloud_se(c_ip,version=""):
-    uri_base = 'https://' + c_ip + '/'
-    login_and_set_global_variables(c_ip, None)
-    print("setting up vmware write access cloud")
+@retry(Exception,tries=30,delay=10)
+def wait_until_cloud_put(c_ip, uri_base):
+    data = {}
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     for val in r.json()['results']:
         if val['name'] == 'Default-Cloud':
@@ -768,7 +769,15 @@ def setup_cloud_se(c_ip,version=""):
     r = requests.put(uri_base+'api/cloud/%s'%(default_cloud_uuid), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
-    wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES[c_ip], GLOBAL_LOGIN_HEADERS[c_ip], default_cloud_uuid, timeout=450)
+    return data
+
+def setup_cloud_se(c_ip,version=""):
+    uri_base = 'https://' + c_ip + '/'
+    login_and_set_global_variables(c_ip, None)
+    print("setting up vmware write access cloud")
+    data = wait_until_cloud_put(c_ip,uri_base)
+    default_cloud_uuid = data['uuid']
+    wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES[c_ip], GLOBAL_LOGIN_HEADERS[c_ip], default_cloud_uuid, timeout=850)
 
     management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"])
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
@@ -796,12 +805,17 @@ def setup_cloud_se(c_ip,version=""):
     if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
         print("Set Static IPs for SE")
         # set static ips for se
-        r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-        mgmt_networks = r.json()["results"]
-        for n in mgmt_networks:
-            if default_cloud_uuid in n["cloud_ref"]:
-                mgmt_network = n
-                break
+        @retry(ValueError, 24, 10)
+        def retry_get():
+            r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+            mgmt_networks = r.json()["results"]
+            for n in mgmt_networks:
+                if default_cloud_uuid in n["cloud_ref"]:
+                    return n
+                print("default cloud not found")
+                raise Exception("not found")
+        mgmt_network = retry_get()
+
         static_ip_ranges = []
         for se_ip in SE_IPS_TO_USE_FOR_CURRENT_CTLR:
             data = {
