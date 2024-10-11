@@ -1,8 +1,8 @@
 package main
 
 import (
-	"exec"
 	"fmt"
+	"os/exec"
 	"strings"
 )
 
@@ -36,11 +36,13 @@ func main() {
 		}
 	*/
 	//
-	checkConfigcmd := "/opt/avi/scripts/config_checker.py --config config.json --upgrade-log-taskjournal --clean-journal --taskjournal-file journal.json"
+	checkConfigcmd := "/opt/avi/scripts/config_checker.py --config /root/config.json --log-taskjournal --clean-journal"
 	cmdExec := exec.Command("python3", strings.Split(checkConfigcmd, " ")...)
 	out, errF := cmdExec.CombinedOutput()
-	fmt.Println(out)
-	fmt.Println(errF)
+	fmt.Println(string(out))
+	if errF != nil {
+		//fmt.Println(errF.Error())
+	}
 	/*
 		cmdExec := exec.Command("python3", strings.Split(checkConfigcmd, " ")...)
 		out, errF := cmdExec.CombinedOutput()

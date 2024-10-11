@@ -27,6 +27,7 @@ import time
 from datetime import timedelta
 import json
 import re
+import datetime
 import urllib3
 import ipaddress
 import random
@@ -660,32 +661,41 @@ def setup_vs(c_ip, version="" ,timeout=60):
             break
     default_cloud_uuid = data['uuid']
     print("creating a vs")
-    # getting dev020 network uuid
-    r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-    res = r.json()['results']
-    exclude_subnet = []
-
-    for val in res:
-        for subnet in val.get("subnet",[]):
-            if str(subnet.get("prefix").get("ip_addr").get("addr")) == "100.0.0.0" and str(subnet.get("prefix").get("mask")) == "8":
-                exclude_subnet.append(val)
-        if VCENTER_PORT_GROUP in val['name']:
-            data = val
-
-    for val in exclude_subnet:
-        r1 = requests.get(uri_base+'api/network/%s'%(val["uuid"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-        data1 = r1.json()
-        data1["exclude_discovered_subnets"] = True
-        r2 = requests.put(uri_base+'api/network/%s'%(val["uuid"]), data=json.dumps(data1) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-        if r2.status_code not in [200,201]:
-            raise Exception(r.text)
-        print("Excluding Subnets %s\n%s\n%s"%(val["uuid"],val["name"],val["subnet"]))
-
-    port_group_uuid = data['uuid']
-    port_group_subnet = data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(data["subnet"][0]["prefix"]["mask"])
-    occupied_ips = []
     count = 0
-    "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
+    while True:
+        try:
+            # getting dev020 network uuid
+            r = requests.get(uri_base+'api/networksubnetlist/?discovered_only=true&page_size=-1&cloud_uuid=%s'%(default_cloud_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+            res = r.json()['results']
+            exclude_subnet = []
+            port_data = False
+            for val in res:
+                for subnet in val.get("subnet",[]):
+                    if str(subnet.get("prefix").get("ip_addr").get("addr")) == "100.0.0.0" and str(subnet.get("prefix").get("mask")) == "8":
+                        exclude_subnet.append(val)
+                if VCENTER_PORT_GROUP in val['name']:
+                    port_data = val
+
+            for val in exclude_subnet:
+                r1 = requests.get(uri_base+'api/network/%s'%(val["uuid"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+                data1 = r1.json()
+                data1["exclude_discovered_subnets"] = True
+                r2 = requests.put(uri_base+'api/network/%s'%(val["uuid"]), data=json.dumps(data1) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+                if r2.status_code not in [200,201]:
+                    raise Exception(r.text)
+                print("Excluding Subnets %s\n%s\n%s"%(val["uuid"],val["name"],val["subnet"]))
+
+            port_group_uuid = port_data['uuid']
+            port_group_subnet = port_data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(port_data["subnet"][0]["prefix"]["mask"])
+            occupied_ips = []
+            "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
+            break
+        except Exception as e:
+            print("Error: %s"%(str(e)))
+            time.sleep(10)
+            count += 1
+            if count == 5: break
+    count = 0
     while True:
         r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         try:
@@ -813,7 +823,7 @@ def setup_cloud_se(c_ip,version=""):
                 if default_cloud_uuid in n["cloud_ref"]:
                     return n
                 print("default cloud not found")
-                raise Exception("not found")
+                raise ValueError("not found")
         mgmt_network = retry_get()
 
         static_ip_ranges = []
@@ -1541,7 +1551,8 @@ if len(sys.argv)==2 and sys.argv[1] == 'reimage_ctlr':
 
 
 END_TIME = time.time()
-print("Time Elapsed %s"%(str(timedelta(seconds=END_TIME-START_TIME))))    
+print("Time Elapsed %s,  Current Time = %s"%(str(timedelta(seconds=END_TIME-START_TIME)), datetime.datetime.now()))
+   
 
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
 
