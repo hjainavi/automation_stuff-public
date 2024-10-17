@@ -111,6 +111,7 @@ if 'help' in sys.argv:
     print ("options --> configure_vs")
     print ("options --> flush_db_configure_raw_controller_wo_tmux")
     print ("options --> setup_tmux")
+    print ("options --> setup_tmux_install_only")
     
 START_TIME = time.time()
 
@@ -815,14 +816,20 @@ def setup_cloud_se(c_ip,version=""):
     if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
         print("Set Static IPs for SE")
         # set static ips for se
-        @retry(ValueError, 24, 10)
+        @retry(ValueError, 240, 10)
         def retry_get():
+            return_network = None
             r = requests.get(uri_base+"/api/network/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
             mgmt_networks = r.json()["results"]
             for n in mgmt_networks:
                 if default_cloud_uuid in n["cloud_ref"]:
-                    return n
-                print("default cloud not found")
+                    print(n)
+                    return_network = n
+                    return return_network
+                print("%s not found"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]))
+                raise ValueError("not found")
+            if not return_network: 
+                print("%s not found"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]))
                 raise ValueError("not found")
         mgmt_network = retry_get()
 
@@ -1023,16 +1030,16 @@ def get_own_sysadmin_key():
 def configure_raw_controller_after_reimage(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
-    setup_cloud_se(mgmt_ip)
     setup_tmux_install_only(mgmt_ip)
+    setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
 
 
 def configure_raw_controller(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
-    setup_cloud_se(mgmt_ip)
     setup_tmux(mgmt_ip)
+    setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
 
 
@@ -1484,6 +1491,12 @@ if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     setup_tmux(mgmt_ip)
+
+if len(sys.argv)==2 and sys.argv[1]=='setup_tmux_install_only':
+    si = connect()
+    mgmt_ip = get_used_controller_ip(si)
+    setup_tmux_install_only(mgmt_ip)
+
 
 if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
     si = connect()
