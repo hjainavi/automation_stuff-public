@@ -72,6 +72,7 @@ VCENTER_DNS_SERVERS = VCENTER[CURRENT_VCENTER]["VCENTER_DNS_SERVERS"]
 VCENTER_NTP = VCENTER[CURRENT_VCENTER]["VCENTER_NTP"]
 VCENTER_PORT_GROUP = VCENTER[CURRENT_VCENTER]["VCENTER_PORT_GROUP"]
 VCENTER_SERVER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_SERVER_IP"]
+VCENTER_SERVER_SUBNET = VCENTER[CURRENT_VCENTER]["VCENTER_SERVER_SUBNET"]
 
 SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
@@ -663,6 +664,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
     default_cloud_uuid = data['uuid']
     print("creating a vs")
     count = 0
+    port_group_subnet = ""
     while True:
         try:
             # getting dev020 network uuid
@@ -710,7 +712,8 @@ def setup_vs(c_ip, version="" ,timeout=60):
             time.sleep(10)
             count += 1
             if count == 5: break
-
+    if not port_group_subnet:
+        port_group_subnet = VCENTER_SERVER_SUBNET
     ip_list = list(set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet)]) - set([str(ip) for ip in ipaddress.IPv4Network(port_group_subnet.replace("/24","/26"))]))
     ip_list = sorted(ip_list ,  key=lambda x:int(x.split(".")[-1]))[:-1]
     while True:
