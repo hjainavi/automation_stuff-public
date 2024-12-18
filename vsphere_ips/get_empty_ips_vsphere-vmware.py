@@ -525,10 +525,18 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     data['dns_configuration']['server_list'] = [{'addr':val , 'type':'V4'} for val in VCENTER_DNS_SERVERS]
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
     data['welcome_workflow_complete']=True
-    data['default_license_tier']='ENTERPRISE'
     r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)
+    r = requests.get(uri_base+'api/systemconfiguration', verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip] ,cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+    if r.status_code not in [200,201]:
+        raise Exception(r.text)
+    data = r.json()
+    data['default_license_tier']='ENTERPRISE'
+    r = requests.put(uri_base+'api/systemconfiguration', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+    if r.status_code not in [200,201]:
+        print(r.text)
+        print("license tier ENTERPRISE failed")
     print("change systemconfiguration settings -- done")
 
     print("setting backup default passphrase")
@@ -665,6 +673,8 @@ def setup_vs(c_ip, version="" ,timeout=60):
     print("creating a vs")
     count = 0
     port_group_subnet = ""
+    port_group_uuid = ""
+    occupied_ips = []
     while True:
         try:
             # getting dev020 network uuid
@@ -690,7 +700,6 @@ def setup_vs(c_ip, version="" ,timeout=60):
 
             port_group_uuid = port_data['uuid']
             port_group_subnet = port_data["subnet"][0]["prefix"]["ip_addr"]["addr"] + "/" + str(port_data["subnet"][0]["prefix"]["mask"])
-            occupied_ips = []
             "https://10.102.65.176/api/cloud/cloud-a1746f89-2f84-4255-9061-8a024d89ca5f/serversbynetwork/?network_uuid=dvportgroup-123-cloud-a1746f89-2f84-4255-9061-8a024d89ca5f&page_size=-1"
             break
         except Exception as e:
@@ -699,7 +708,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
             count += 1
             if count == 5: break
     count = 0
-    while True:
+    while True and port_group_uuid:
         r = requests.get(uri_base+'api/cloud/%s/serversbynetwork/?network_uuid=%s&page_size=-1'%(default_cloud_uuid,port_group_uuid),verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
         try:
             for val in r.json()['results']:

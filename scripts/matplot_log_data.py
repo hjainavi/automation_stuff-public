@@ -14,7 +14,7 @@ data = []
 pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*\s(\".*\")\s(\d{1,2}\.\d{3})\s\d')
 count = 0
 agents = set()
-with open("/home/aviuser/testing/AV-219088/debuglogs.20240927-144416_26f6f713/27_all_logins_all.log", "r") as f:
+with open("/home/aviuser/testing/AV-219088/another_cluster_2/debuglogs.20241021-191222_be2527e6/21_all_logins_all.log", "r") as f:
     for index,line in enumerate(f.readlines()):
         l = re.findall(pattern,line)
         if l:
@@ -63,7 +63,7 @@ agent_summary = df.groupby(['hour', 'agent']).size().unstack(fill_value=0).reset
 
 #fig, ax1 = plt.subplots(figsize=(12, 6))
 fig, ax1 = plt.subplots()
-fig.set_size_inches(50,30)
+fig.set_size_inches(100,50)
 
 bar_width = 0.5
 hours = np.arange(len(hourly_summary))
@@ -93,9 +93,9 @@ lines2, labels2 = ax2.get_legend_handles_labels()
 ax1.legend(lines1 + lines2, labels1 + labels2, bbox_to_anchor=(0.5, -0.15), ncol=2, loc='upper right', prop={'size': 20})
 
 # Adjust title size
-plt.title('Login API Call Performance Over Time ( debuglogs.20240927-144416_26f6f713 )', fontsize=36)
+plt.title('Login API Call Performance Over Time ( debuglogs.20241021-191222_be2527e6 )', fontsize=36)
 fig.tight_layout(rect=[0, 0, 1, 0.95])
-plt.savefig("/home/aviuser/debuglogs.20240927-144416_26f6f713_login_calls.jpg")
+plt.savefig("/home/aviuser/debuglogs.20241021-191222_be2527e6_login_calls.jpg")
 print("Graph saved")
 
 
