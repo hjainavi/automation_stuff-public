@@ -2,15 +2,12 @@ package main
 
 import "fmt"
 
-var i int
-
-func main() {
-	test()
+type RestartNginxReq struct {
+	ForceNginxRestart *bool
 }
 
-// Now, count is evaluated inside `printCount`, so it will
-// only be called when the deferred function executes
-func test() {
-	var abc []string
-	fmt.Println("defer count:", count)
+func main() {
+	abc := new(RestartNginxReq)
+	fmt.Println(abc)
+
 }
