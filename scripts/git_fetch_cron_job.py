@@ -32,9 +32,9 @@ all_branches = sorted(all_branches, reverse=True)
     
 def fetch_branch(CWD_c, branch, remote=True):
     if remote:
-        command = "git fetch -v origin %s"%(branch)
+        command = "git fetch -v origin %s  --tags --force"%(branch)
     else:
-        command = "git fetch -v origin %s:%s"%(branch,branch)        
+        command = "git fetch -v origin %s:%s  --tags --force"%(branch,branch)        
     log.info("Directory: %s"%(CWD_c))
     log.info("command : %s"%(command))
     try:
@@ -45,7 +45,7 @@ def fetch_branch(CWD_c, branch, remote=True):
         log.error(str(e))
 
 def pull_branch_ff(CWD_c, branch):
-    command = "git pull origin %s --ff-only"%(branch)
+    command = "git pull origin %s --ff-only --tags --force"%(branch)
     log.info("Directory: %s"%(CWD_c))
     log.info("command : %s"%(command))
     try:
