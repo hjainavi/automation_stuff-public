@@ -1154,21 +1154,35 @@ def configure_cluster_details(mgmt_leader_ip, mgmt_ips):
     
 
 def configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips):
-    try:
-        configure_raw_controller(si, mgmt_leader_ip)
-    except Exception as e:
-        print(str(e))
     for ip in mgmt_ips:
-        if ip != mgmt_leader_ip:
-            try:
-                configure_password_and_tmux_only(ip)
-            except Exception as e:
-                print(str(e))
+        try:
+            configure_password_only(ip)
+        except Exception as e:
+            print("----------------------",str(e))
+
+
     if len(mgmt_ips)>1:
         try:
+            se_ips_to_use_for_ctlr(si,mgmt_leader_ip)
+            set_welcome_password_and_set_systemconfiguration(mgmt_leader_ip)
+            put_to_cloud(mgmt_leader_ip)
             configure_cluster_details(mgmt_leader_ip, mgmt_ips)
         except Exception as e:
-            print(str(e))
+            print("----------------------",str(e))
+    
+    for ip in mgmt_ips:
+        try:
+            setup_tmux(ip)
+        except Exception as e:
+            print("----------------------",str(e))
+    
+    if len(mgmt_ips)>1:
+        try:
+            wait_until_cluster_ready(mgmt_leader_ip)
+            setup_cloud_se_wo_put_to_cloud(mgmt_leader_ip)
+            setup_vs(mgmt_leader_ip)
+        except Exception as e:
+            print("----------------------",str(e))
 
 def configure_raw_controller(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
@@ -1177,10 +1191,6 @@ def configure_raw_controller(si,mgmt_ip):
     setup_tmux(mgmt_ip)
     setup_cloud_se_wo_put_to_cloud(mgmt_ip)
     setup_vs(mgmt_ip)
-
-def configure_password_and_tmux_only(mgmt_ip):
-    set_password_only_and_set_systemconfiguration(mgmt_ip)
-    setup_tmux(mgmt_ip)
 
 def configure_password_only(mgmt_ip):
     set_password_only_and_set_systemconfiguration(mgmt_ip)
@@ -1492,6 +1502,7 @@ def generate_controller_from_ova():
 
         print ("\nDeploying OVA")
         jobs = []
+        """
         for ip in mgmt_ips:
             p = multiprocessing.Process(target=deploy_ova, args=(cmds[ip],))
             jobs.append(p)
@@ -1499,17 +1510,22 @@ def generate_controller_from_ova():
 
         for proc in jobs:
             proc.join()
-        configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
+        """
+        if len(mgmt_ips)>1:
+            configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
+        elif len(mgmt_ips) == 1:
+            configure_raw_controller(si, mgmt_leader_ip)
+        
 
     print("================== DONE ==============")
 
 if len(sys.argv)==2 and sys.argv[1]=='delete_ctlr_se':
     si = connect()
     mgmt_ips = get_used_controller_ips(si)
-    mgmt_se_ips = []
+    mgmt_se_ips = set()
     for mgmt_ip in mgmt_ips:
-        mgmt_se_ips.extend(get_all_se(mgmt_ip))
-    poweroff_and_delete_vm(mgmt_ips + mgmt_se_ips,delete=True,si=si)
+        mgmt_se_ips.update(set(get_all_se(mgmt_ip)))
+    poweroff_and_delete_vm(mgmt_ips + list(mgmt_se_ips),delete=True,si=si)
 
 if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
     all_builds = []
