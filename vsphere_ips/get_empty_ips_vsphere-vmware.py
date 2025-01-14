@@ -1502,7 +1502,6 @@ def generate_controller_from_ova():
 
         print ("\nDeploying OVA")
         jobs = []
-        """
         for ip in mgmt_ips:
             p = multiprocessing.Process(target=deploy_ova, args=(cmds[ip],))
             jobs.append(p)
@@ -1510,7 +1509,6 @@ def generate_controller_from_ova():
 
         for proc in jobs:
             proc.join()
-        """
         if len(mgmt_ips)>1:
             configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
         elif len(mgmt_ips) == 1:
