@@ -11,7 +11,9 @@ data = []
 #pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*\"LLC\sAgent\"\s(\d{1,2}\.\d{3})')
 #pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*login\sHTTP.*\s(\d{3})\s.*\"LLC\sAgent\"\s(\d{1,2}\.\d{3})')
 #pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*\s(\d{1,2}\.\d{3})\s\d')
-pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*\s(\".*\")\s(\d{1,2}\.\d{3})\s\d')
+pattern = re.compile(r'\[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}).*"\s(\d{1,2}\.\d{3})')
+"""            
+
 count = 0
 agents = set()
 with open("/home/aviuser/testing/AV-219088/another_cluster_2/debuglogs.20241021-191222_be2527e6/21_all_logins_all.log", "r") as f:
@@ -32,8 +34,7 @@ with open("/home/aviuser/testing/AV-219088/another_cluster_2/debuglogs.20241021-
                 data.append((l[0][0], l[0][1], float(l[0][2])))
                 agents.add(l[0][1])
             '''
-            
-            
+        
             
 #print(agents)
 '''
@@ -63,7 +64,7 @@ agent_summary = df.groupby(['hour', 'agent']).size().unstack(fill_value=0).reset
 
 #fig, ax1 = plt.subplots(figsize=(12, 6))
 fig, ax1 = plt.subplots()
-fig.set_size_inches(100,50)
+fig.set_size_inches(200,100)
 
 bar_width = 0.5
 hours = np.arange(len(hourly_summary))
@@ -97,55 +98,65 @@ plt.title('Login API Call Performance Over Time ( debuglogs.20241021-191222_be25
 fig.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig("/home/aviuser/debuglogs.20241021-191222_be2527e6_login_calls.jpg")
 print("Graph saved")
-
-
-
-
-import sys;sys.exit(0)
+"""
+with open("/home/aviuser/testing/AV-227548/debuglogs.20250113-150728_e5a55fdc/nginx_all.log", "r") as f:
+    for line in f.readlines():
+        l = re.findall(pattern,line)
+        if l and ("Dec" in l[0][0] or "Jan" in l[0][0]) and "2024" in l[0][0]: 
+            data.append((datetime.strptime(l[0][0], '%d/%b/%Y:%H:%M:%S'), float(l[0][1])))
 
 # Convert to DataFrame
 df = pd.DataFrame(data, columns=['timestamp', 'time_taken'])
 df['timestamp'] = pd.to_datetime(df['timestamp'], format='%d/%b/%Y:%H:%M:%S')
-df['hour'] = df['timestamp'].dt.floor('H')
+df['20_min_interval'] = df['timestamp'].dt.floor('20T')
 
 # Aggregate data
-hourly_summary = df.groupby('hour').agg(
+min_20_interval_summary = df.groupby('20_min_interval').agg(
     min_time_taken=('time_taken', 'min'),
     avg_time_taken=('time_taken', 'mean'),
     max_time_taken=('time_taken', 'max'),
     total_calls=('time_taken', 'size')
 ).reset_index()
-
+import ipdb;ipdb.set_trace()
 # Plot
 fig, ax1 = plt.subplots()
-fig.set_size_inches(50,30)
+fig.set_size_inches(140,60)
 
 # Stacked bar graph for min, avg, max time taken
 bar_width = 0.5
-hours = np.arange(len(hourly_summary))
-ax1.bar(hours, hourly_summary['min_time_taken'], width=bar_width, label='Min Time Taken', bottom=0)
-ax1.bar(hours, hourly_summary['avg_time_taken'] - hourly_summary['min_time_taken'], width=bar_width, label='Avg Time Taken', bottom=hourly_summary['min_time_taken'])
-ax1.bar(hours, hourly_summary['max_time_taken'] - hourly_summary['avg_time_taken'], width=bar_width, label='Max Time Taken', bottom=hourly_summary['avg_time_taken'])
+min_20_ints = np.arange(len(min_20_interval_summary))
+ax1.bar(min_20_ints, min_20_interval_summary['min_time_taken'], width=bar_width, label='Min Time Taken', bottom=0)
+ax1.bar(min_20_ints, min_20_interval_summary['avg_time_taken'] - min_20_interval_summary['min_time_taken'], width=bar_width, label='Avg Time Taken', bottom=min_20_interval_summary['min_time_taken'])
+ax1.bar(min_20_ints, min_20_interval_summary['max_time_taken'] - min_20_interval_summary['avg_time_taken'], width=bar_width, label='Max Time Taken', bottom=min_20_interval_summary['avg_time_taken'])
 
-
-ax1.set_xlabel('Hour', fontsize=20)
+ax1.set_xlabel('30 min interval', fontsize=20)
 ax1.set_ylabel('Time Taken (seconds)', fontsize=20)
 ax1.yaxis.set_major_locator(MultipleLocator(5))
-ax1.set_xticks(hours)
-ax1.set_xticklabels(hourly_summary['hour'].dt.strftime('%d/%b/%Y:%H:%M'), rotation=90)
+ax1.yaxis.set_tick_params(labelsize=20)
+ax1.set_xticks(min_20_ints)
+ax1.set_xticklabels(min_20_interval_summary['20_min_interval'].dt.strftime('%d/%b/%Y:%H:%M'), rotation=90)
 ax1.legend(loc='upper left', prop={'size': 20})
 
 # Line graph for total calls
 ax2 = ax1.twinx()
-ax2.plot(hours, hourly_summary['total_calls'], color='black', marker='o', label='Total Calls')
+ax2.plot(min_20_ints, min_20_interval_summary['total_calls'], color='black', marker='o', label='Total Calls')
 ax2.set_ylabel('Total Calls', fontsize=20)
+ax2.yaxis.set_major_locator(MultipleLocator(500))
+ax2.yaxis.set_tick_params(labelsize=20)
+
+"""
+yticks = ax2.get_yticks()
+new_yticks = yticks + 1000 
+ax2.set_yticks(new_yticks)
+"""
+
 ax2.legend(loc='upper right', prop={'size': 20})
 
 # Add legends
 fig.tight_layout(rect=[0.0, 0.0, 1.0, 0.95])
 
 # Adjust title size
-plt.title('Login API Call Performance Over Time ( debuglogs.20240922-224616_15c3a956 )', fontsize=36)
+plt.title('API Call Performance Over Time', fontsize=36)
 
-plt.savefig("/home/aviuser/debuglogs.20240922-224616_15c3a956_login_calls.jpg")
+plt.savefig("/home/aviuser/hourly_call_count.jpg")
 print("Graph saved")
