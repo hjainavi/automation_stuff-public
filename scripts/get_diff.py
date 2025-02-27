@@ -194,8 +194,8 @@ import json
 with open("/home/aviuser/automation_stuff/scripts/get_diff_val.json", "r") as f:
     data = json.loads(f.read())
 
-old_value = data["old_value_1"]
-new_value = data["new_value_1"]
+old_value = data["old_value"]
+new_value = data["new_value"]
 deepdiff = DeepDiff(old_value, new_value)
 
 pprint(deepdiff, indent=2)
