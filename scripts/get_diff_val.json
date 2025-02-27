@@ -1,0 +1,666 @@
+{
+    "old_value": {
+        "uuid": "pool-0d6e6551-3071-4a4d-bc0d-0836ca9c7826",
+        "name": "test_pool",
+        "enabled": true,
+        "tenant_uuid": "admin",
+        "cloud_uuid": "cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+        "_last_modified": "1740514422435697",
+        "analytics_profile_uuid": "analyticsprofile-628bf12c-668e-4d48-b264-337ebcd58ddf",
+        "append_port": "NON_DEFAULT_80_443",
+        "capacity_estimation": false,
+        "capacity_estimation_ttfb_thresh": 0,
+        "connection_ramp_duration": 10,
+        "default_server_port": 80,
+        "delete_server_on_dns_refresh": true,
+        "enable_http2": false,
+        "fewest_tasks_feedback_delay": 10,
+        "graceful_disable_timeout": 1,
+        "host_check_enabled": false,
+        "http2_properties": {
+            "max_http2_control_frames_per_connection": 0,
+            "max_http2_header_field_size": 4096
+        },
+        "ignore_server_port": false,
+        "inline_health_monitor": true,
+        "lb_algo_rr_per_se": false,
+        "lb_algorithm": "LB_ALGORITHM_LEAST_CONNECTIONS",
+        "lb_algorithm_core_nonaffinity": 2,
+        "lb_algorithm_hash": "LB_ALGORITHM_CONSISTENT_HASH_SOURCE_IP_ADDRESS",
+        "lookup_server_by_name": false,
+        "max_concurrent_connections_per_server": 0,
+        "pool_type": "POOL_TYPE_GENERIC_APP",
+        "request_queue_depth": 128,
+        "request_queue_enabled": false,
+        "rewrite_host_header_to_server_name": false,
+        "rewrite_host_header_to_sni": false,
+        "routing_pool": false,
+        "server_disable_type": "DISALLOW_NEW_CONNECTION",
+        "server_reselect": {
+            "enabled": false,
+            "num_retries": 4,
+            "retry_nonidempotent": false,
+            "retry_timeout": 0
+        },
+        "server_timeout": 0,
+        "servers": [
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "niveditha.m-server",
+                "ip": {
+                    "addr": "100.66.69.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "satyajit.panda-server",
+                "ip": {
+                    "addr": "100.66.69.36",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.69.28",
+                "ip": {
+                    "addr": "100.66.69.28",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-194-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.224.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.224.18",
+                "ip": {
+                    "addr": "100.66.224.18",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-192-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.222.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.222.18",
+                "ip": {
+                    "addr": "100.66.222.18",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.34",
+                "ip": {
+                    "addr": "100.66.245.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.44",
+                "ip": {
+                    "addr": "100.66.245.44",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.54",
+                "ip": {
+                    "addr": "100.66.245.54",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.64",
+                "ip": {
+                    "addr": "100.66.245.64",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            }
+        ],
+        "sni_enabled": true,
+        "use_service_port": false,
+        "use_service_ssl_mode": false,
+        "vrf_uuid": "vrfcontext-fe6edf52-08a3-4e3a-a1b3-9533210d9954"
+    },
+    "new_value": {
+        "uuid": "pool-0d6e6551-3071-4a4d-bc0d-0836ca9c7826",
+        "name": "test_pool",
+        "enabled": true,
+        "tenant_uuid": "admin",
+        "cloud_uuid": "cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+        "_last_modified": "1740514422435697",
+        "analytics_profile_uuid": "analyticsprofile-628bf12c-668e-4d48-b264-337ebcd58ddf",
+        "append_port": "NON_DEFAULT_80_443",
+        "capacity_estimation": false,
+        "capacity_estimation_ttfb_thresh": 0,
+        "connection_ramp_duration": 10,
+        "default_server_port": 80,
+        "delete_server_on_dns_refresh": true,
+        "enable_http2": false,
+        "fewest_tasks_feedback_delay": 10,
+        "graceful_disable_timeout": 1,
+        "host_check_enabled": false,
+        "http2_properties": {
+            "max_http2_control_frames_per_connection": 0,
+            "max_http2_header_field_size": 4096
+        },
+        "ignore_server_port": false,
+        "inline_health_monitor": true,
+        "lb_algo_rr_per_se": false,
+        "lb_algorithm": "LB_ALGORITHM_LEAST_CONNECTIONS",
+        "lb_algorithm_core_nonaffinity": 2,
+        "lb_algorithm_hash": "LB_ALGORITHM_CONSISTENT_HASH_SOURCE_IP_ADDRESS",
+        "lookup_server_by_name": false,
+        "max_concurrent_connections_per_server": 0,
+        "pool_type": "POOL_TYPE_GENERIC_APP",
+        "request_queue_depth": 128,
+        "request_queue_enabled": false,
+        "rewrite_host_header_to_server_name": false,
+        "rewrite_host_header_to_sni": false,
+        "routing_pool": false,
+        "server_disable_type": "DISALLOW_NEW_CONNECTION",
+        "server_reselect": {
+            "enabled": false,
+            "num_retries": 4,
+            "retry_nonidempotent": false,
+            "retry_timeout": 0
+        },
+        "server_timeout": 0,
+        "servers": [
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "niveditha.m-server",
+                "ip": {
+                    "addr": "100.66.69.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "satyajit.panda-server",
+                "ip": {
+                    "addr": "100.66.69.36",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.69.28",
+                "ip": {
+                    "addr": "100.66.69.28",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-194-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.224.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.224.18",
+                "ip": {
+                    "addr": "100.66.224.18",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-192-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.222.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.222.18",
+                "ip": {
+                    "addr": "100.66.222.18",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.34",
+                "ip": {
+                    "addr": "100.66.245.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.44",
+                "ip": {
+                    "addr": "100.66.245.44",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.54",
+                "ip": {
+                    "addr": "100.66.245.54",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            },
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-217-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.245.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "100.66.245.64",
+                "ip": {
+                    "addr": "100.66.245.64",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            }
+        ],
+        "sni_enabled": true,
+        "use_service_port": false,
+        "use_service_ssl_mode": false,
+        "vrf_uuid": "vrfcontext-fe6edf52-08a3-4e3a-a1b3-9533210d9954"
+    },
+    "old_value_1":{
+        "server_reselect": {
+            "enabled": true,
+            "num_retries": 4,
+            "retry_nonidempotent": false,
+            "retry_timeout": 0
+        },
+        "server_timeout": 0,
+        "servers": [
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "niveditha.m-server",
+                "ip": {
+                    "addr": "100.66.69.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            }
+        ]
+    },
+    "new_value_1":{
+        "server_reselect": {
+            "enabled": true,
+            "num_retries": 4,
+            "retry_nonidempotent": false,
+            "retry_timeout": 0
+        },
+        "server_timeout": 0,
+        "servers": [
+            {
+                "discovered_networks": [
+                    {
+                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
+                        "subnet": [
+                            {
+                                "ip_addr": {
+                                    "addr": "100.66.69.0",
+                                    "type": "V4"
+                                },
+                                "mask": 24
+                            }
+                        ]
+                    }
+                ],
+                "enabled": true,
+                "hostname": "niveditha.m-server",
+                "ip": {
+                    "addr": "100.66.69.34",
+                    "type": "V4"
+                },
+                "ratio": 1,
+                "resolve_server_by_dns": false,
+                "rewrite_host_header": false,
+                "static": false,
+                "verify_network": false
+            }
+        ]
+    }
+}
