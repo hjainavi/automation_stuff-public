@@ -1509,10 +1509,11 @@ def generate_controller_from_ova():
 
         for proc in jobs:
             proc.join()
-        if len(mgmt_ips)>1:
-            configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
-        elif len(mgmt_ips) == 1:
-            configure_raw_controller(si, mgmt_leader_ip)
+        if set_password_and_sys_config.upper() == "Y":
+            if len(mgmt_ips)>1:
+                configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
+            elif len(mgmt_ips) == 1:
+                configure_raw_controller(si, mgmt_leader_ip)
         
 
     print("================== DONE ==============")

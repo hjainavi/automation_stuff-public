@@ -4,6 +4,7 @@
     ],
     "exclude": [
         "bazel*/**",
-        "build/**"
+        "build/**",
+        "buildconfig/**"
     ]
 }
