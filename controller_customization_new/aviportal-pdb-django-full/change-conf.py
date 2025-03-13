@@ -41,6 +41,7 @@ else:
 # adding pythonpath of avipdb in aviportal.sh -- when running via init script     
 lines = []
 current_path = os.path.dirname(sys.argv[0])
+print("change_conf ",current_path)
 with open('/opt/avi/python/bin/aviportal.sh','r') as f:
     for line in f.readlines():
         add_text = False
@@ -58,6 +59,7 @@ with open('/opt/avi/python/bin/aviportal.sh','w') as f:
 # adding pythonpath of avipdb in manage.py shell pythonpath   
 lines = []
 current_path = os.path.dirname(sys.argv[0])
+print("change_conf ",current_path)
 bin_portal_index = False
 avipdb_present = False
 with open('/opt/avi/python/bin/portal/manage.py','r') as f:
