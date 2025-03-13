@@ -49,6 +49,12 @@ elif $UBUNTU_CTLR ; then
     sudo apt-get -q update || true
     sudo apt-get install aria2 ranger git mosh -y -q
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install tmux
+    if pip3 install ipdb; then
+        # Code to execute if the command succeeds (exit status 0)
+        echo "Command succeeded"
+    else
+        apt install python3-ipdb -y
+    fi
 
     echo "==================apt-get done"
     ./other_files/tmux_start_script.sh

@@ -1201,6 +1201,10 @@ def configure_raw_controller_wo_tmux(si,mgmt_ip):
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
 
+def setup_cloud_vs_se(si, mgmt_ip):
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
+    setup_cloud_se(mgmt_ip)
+    setup_vs(mgmt_ip)
 
 def upload_pkg_to_ctlr(c_ip,source_pkg_path):
     login_and_set_global_variables(c_ip,None)
@@ -1547,7 +1551,7 @@ if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
     
 
-if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
+if len(sys.argv)==2 and sys.argv[1]=='  ':
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     login_and_set_global_variables(mgmt_ip,None)
@@ -1563,6 +1567,10 @@ if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
     mgmt_ip = get_used_controller_ip(si)
     setup_vs(mgmt_ip)
 
+if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
+    si = connect()
+    mgmt_ip = get_used_controller_ip(si)
+    setup_cloud_vs_se(si, mgmt_ip)
 
 if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
     si = connect()
