@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import sys,os
 change = "None"
+change_path_only = "False"
 if len(sys.argv)>1:
     if sys.argv[1]=='change':
         change="True"
     if sys.argv[1]=='changeback':
         change="False"
+    if sys.argv[1]=='change_path_only':
+        change_path_only="True"
 else:
     sys.exit(1)
 data=[]
-filepath = '/etc/systemd/system/'+sys.argv[2]
-if change=="True":
+filepath = '/etc/systemd/system/'+sys.argv[2] if not change_path_only else ""
+if change=="True" and not change_path_only:
     with open(filepath,'r') as f:
         for line in f.readlines():
             if 'ExecStopPost' in line and '#' not in line:
@@ -21,7 +24,7 @@ if change=="True":
         for line in data:
             f.write(line)
 
-elif change=="False":
+elif change=="False" and not change_path_only:
     with open(filepath,'r') as f:
         for line in f.readlines():
             if 'ExecStopPost' in line and line[0]=='#':
@@ -55,9 +58,9 @@ with open('/opt/avi/python/bin/aviportal.sh','w') as f:
 # adding pythonpath of avipdb in manage.py shell pythonpath   
 lines = []
 current_path = os.getcwd()
+bin_portal_index = False
+avipdb_present = False
 with open('/opt/avi/python/bin/portal/manage.py','r') as f:
-    bin_portal_index = False
-    avipdb_present = False
     for index,line in enumerate(f.readlines()):
         if '/opt/avi/python/bin/portal' in line:
             bin_portal_index = index

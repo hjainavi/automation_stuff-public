@@ -6,7 +6,7 @@
 # args "reload" gracefully restarts the uwsgi process
 # args "stop" will gracefully kill the uwsgi process
 # args "kill" will instantly kill the process
-
+current_script_path=$(dirname "$0")
 PHOTON_CTLR=false
 UBUNTU_CTLR=false
 if lsb_release -d | grep -q 'Photon'; then
@@ -38,7 +38,7 @@ else
     pip3 install ipdb
 fi
 
-chmod +x ./change-conf.py
+chmod +x ${current_script_path}/change-conf.py
 
 if [ -z "$3" ];then
     export AVI_PDB_KEY='-1'
@@ -63,7 +63,7 @@ if [ "$1" = "start" ];then
 
     #./test.py
 elif [ "$1" = "change" ];then
-    ./change-conf.py $1 aviportal.service
+    ${current_script_path}/change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
         systemctl daemon-reload
@@ -77,7 +77,7 @@ elif [ "$1" = "change" ];then
     fi
 
 elif [ "$1" = "changeback" ];then
-    ./change-conf.py $1 aviportal.service
+    ${current_script_path}/change-conf.py $1 aviportal.service
     systemd-analyze verify /etc/systemd/system/aviportal.service
     if [ $? -eq 0 ]; then
         systemctl daemon-reload
