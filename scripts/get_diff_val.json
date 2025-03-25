@@ -407,7 +407,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.69.28",
                 "ip": {
                     "addr": "100.66.69.28",
@@ -434,7 +434,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.224.18",
                 "ip": {
                     "addr": "100.66.224.18",
@@ -461,7 +461,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.222.18",
                 "ip": {
                     "addr": "100.66.222.18",
@@ -488,7 +488,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.245.34",
                 "ip": {
                     "addr": "100.66.245.34",
@@ -515,7 +515,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.245.44",
                 "ip": {
                     "addr": "100.66.245.44",
@@ -542,7 +542,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.245.54",
                 "ip": {
                     "addr": "100.66.245.54",
@@ -569,7 +569,7 @@
                         ]
                     }
                 ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "100.66.245.64",
                 "ip": {
                     "addr": "100.66.245.64",
@@ -588,79 +588,45 @@
         "vrf_uuid": "vrfcontext-fe6edf52-08a3-4e3a-a1b3-9533210d9954"
     },
     "old_value_1":{
-        "server_reselect": {
-            "enabled": true,
-            "num_retries": 4,
-            "retry_nonidempotent": false,
-            "retry_timeout": 0
-        },
         "server_timeout": 0,
-        "servers": [
+        "servers": 
             {
-                "discovered_networks": [
-                    {
-                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
-                        "subnet": [
-                            {
-                                "ip_addr": {
-                                    "addr": "100.66.69.0",
-                                    "type": "V4"
-                                },
-                                "mask": 24
-                            }
-                        ]
-                    }
-                ],
                 "enabled": true,
                 "hostname": "niveditha.m-server",
-                "ip": {
-                    "addr": "100.66.69.34",
-                    "type": "V4"
-                },
                 "ratio": 1,
                 "resolve_server_by_dns": false,
                 "rewrite_host_header": false,
                 "static": false,
-                "verify_network": false
-            }
-        ]
+                "verify_network": false,
+                "abc": {"def" : "ghi2"}
+            },
+        "check": 1
     },
     "new_value_1":{
-        "server_reselect": {
-            "enabled": true,
-            "num_retries": 4,
-            "retry_nonidempotent": false,
-            "retry_timeout": 0
-        },
         "server_timeout": 0,
-        "servers": [
+        "servers":
             {
-                "discovered_networks": [
-                    {
-                        "network_uuid": "dvportgroup-520-cloud-9762f59a-3ffd-4ca9-a368-850deecf72c8",
-                        "subnet": [
-                            {
-                                "ip_addr": {
-                                    "addr": "100.66.69.0",
-                                    "type": "V4"
-                                },
-                                "mask": 24
-                            }
-                        ]
-                    }
-                ],
-                "enabled": true,
+                "enabled": false,
                 "hostname": "niveditha.m-server",
-                "ip": {
-                    "addr": "100.66.69.34",
-                    "type": "V4"
-                },
                 "ratio": 1,
                 "resolve_server_by_dns": false,
                 "rewrite_host_header": false,
                 "static": false,
-                "verify_network": false
-            }
+                "verify_network": false,
+                "abc": {"def" : "ghi"}
+        },
+        "check": 1
+    },
+    "old_value_2":{
+        "servers":[
+            {"ratio": 1},
+            {"ratio": 2}
+        ]
+    },
+    "new_value_2":{
+        "servers":[
+            {"ratio": 1},
+            {"ratio": 3}
         ]
     }
 }

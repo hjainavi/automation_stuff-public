@@ -23,13 +23,7 @@ def natural_key(string_):
 def sortd(diffs):
     return sorted(diffs, key=lambda diff: natural_key(diff["to"]))
 
-UNKNOWN = 1
-DICT = 2
-LIST = 3
 
-def print_wip(s, wip):
-    recursions, diffs = wip
-    print(s + str(diff_len(diffs)) + ": " + str([("UNKNOWN" if r[0] == UNKNOWN else ("DICT" if r[0] == DICT else "LIST"), r[1], r[2]) for r in recursions]))
 
 def diff_len(elem):
     if elem is None:
@@ -73,7 +67,7 @@ def get_dict_diffs(old_dict, new_dict, i, recursions, path, diffs):
         new_path = path + "." + k
         if k not in old_dict:
             return [(
-                recursions + [(DICT, path, i+1, old_dict, new_dict)],
+                [],
                 diffs + [{
                     "to": new_path,
                     "after": new_dict[k],
@@ -81,7 +75,7 @@ def get_dict_diffs(old_dict, new_dict, i, recursions, path, diffs):
             )]
         elif k not in new_dict:
             return [(
-                recursions + [(DICT, path, i+1, old_dict, new_dict)],
+                [],
                 diffs + [{
                     "to": new_path,
                     "before": old_dict[k],
@@ -89,8 +83,7 @@ def get_dict_diffs(old_dict, new_dict, i, recursions, path, diffs):
             )]
         elif old_dict[k] != new_dict[k]:
             return [(
-                recursions + [
-                    (DICT, path, i+1, old_dict, new_dict),
+                [
                     (UNKNOWN, new_path, None, old_dict[k], new_dict[k])
                 ],
                 diffs
@@ -134,32 +127,84 @@ def get_list_diffs(old_list, new_list, old_i, new_i, recursions, path, diffs):
                     diffs
                 ),
             ]
+        '''
+        return [
+                (
+                    [], # Empty recursions means it will end after this 
+                    diffs + [{"to": new_path, "before": old_val, "after": new_val}]
+                )
+            ]
+        '''
+
+UNKNOWN = 1
+DICT = 2
+LIST = 3
+
+def print1(val):
+    pprint(val, indent=2)
+
+def print_wip(s, wip):
+    recursions, diffs = wip
+    #print(s + str(diff_len(diffs)) + ": " + str([("UNKNOWN" if r[0] == UNKNOWN else ("DICT" if r[0] == DICT else "LIST"), r[1], r[2]) for r in recursions]))
+    print(s)
+    for r in recursions:
+        print(" **Recursions:**" + str(r))
+    for d in diffs:
+        print(" **Diffs:*******" + str(d))
+
 
 def get_diffs(old_value, new_value):
     best = None
+    diff_len_best = None
     # a "wip" consistent of two lists: a list of "stacktraces", and a list of "diffs"
     # a "diff" is just a representation of one change
     # a "stacktrace" is method name, path, args, old_val, new_val
-    wips = [([(UNKNOWN, "root", None, old_value, new_value)], [])]
+    wips = [
+                (
+                    [(UNKNOWN, "root", None, old_value, new_value)], []
+                )
+            ]
     start = datetime.datetime.now()
+    first_run = False
     timed_out = False
+    time_taken = {}
+    count = 1
     while len(wips) > 0:
-        now = datetime.datetime.now()
+        import ipdb;ipdb.set_trace()
+        
         #if now - start > datetime.timedelta(seconds=1):
         #    timed_out = True
         #    break
+        #print("Total WIPS: =========", len(wips))
         wip = wips.pop(0)
-        # print_wip("NEXT: ", wip)
+        #print_wip("NEXT WIP ====================",wip)
         recursions, diffs = wip
-        if best is not None and diff_len(best) <= diff_len(diffs):
-            # print "SKIPPING, TOO LONG"
-            continue
+        if best is not None:
+            #print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            #print(best)
+            #print("DIFF_LEN_BEST: ",str(diff_len_best)," ",len(str(best)))
+
+            #print(diffs)
+            l173 = datetime.datetime.now()
+            diff_len_diffs = diff_len(diffs)
+            count += 1
+            l210 = datetime.datetime.now()
+            time_taken["l210-l173"] = time_taken.get("l210-l173", datetime.timedelta(microseconds=1)) + (l210 - l173)
+            #print("DIFF_LEN_DIFFS: ",str(diff_len_diffs)," ",len(str(diffs)))
+            #print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+            if diff_len_best <= diff_len_diffs:
+                #print("SKIPPING, TOO LONG")
+                continue
         recursions = list(recursions)
+        #print(" **Total Recursions in WIP: =========", len(recursions))
         diffs = list(diffs)
+        
         # DONE
+        #print("======================== ", diffs)
         if len(recursions) == 0:
             best = diffs
-            # print "WINNER: " + str(diff_len(diffs))
+            diff_len_best = diff_len(best)
+            #print("WINNER: " + str(best))
             continue
 
         # NOT DONE
@@ -168,6 +213,7 @@ def get_diffs(old_value, new_value):
         # print "NEW_V: " + str(new_v)
         recursions = recursions[:-1]
         diffs = sortd(diffs)
+        
         if f == UNKNOWN:
             new_wips = get_diffs_unknown(old_v, new_v, recursions, path, diffs)
         elif f == DICT:
@@ -178,26 +224,38 @@ def get_diffs(old_value, new_value):
             new_wips = get_list_diffs(old_v, new_v, i, j, recursions, path, diffs)
         else:
             raise Exception("unknown function " + str(f))
-        # for wip in new_wips:
-            # print_wip("ADDED: ", wip)
+        #for wip in new_wips:
+        #    print_wip("ADDED WIP ===================", wip)
         wips += new_wips
-        # print "new len: " + str(len(wips))
+        first_run = True
+        #l226 = datetime.datetime.now()
+        #time_taken["l226-l210"] = time_taken.get("l226-l210", datetime.timedelta(microseconds=1)) + (l226 - l210)
+
     if timed_out and not best:
         best = [{
             'to': 'root',
             'before': old_value,
             'after': new_value,
         }]
+    for key,value in time_taken.items():
+        time_taken[key] = value.total_seconds()
+    print1(time_taken)
+    print("total time_taken %s"%((datetime.datetime.now()-start).total_seconds()))
+    print("diff_len(diffs) count = ",count)
     return best
 
 import json
 with open("/home/aviuser/automation_stuff/scripts/get_diff_val.json", "r") as f:
     data = json.loads(f.read())
 
-old_value = data["old_value"]
-new_value = data["new_value"]
-deepdiff = DeepDiff(old_value, new_value)
-
-pprint(deepdiff, indent=2)
-
-print(get_diffs(old_value, new_value))
+old_value = data["old_value_2"]
+new_value = data["new_value_2"]
+#deepdiff = DeepDiff(old_value, new_value, ignore_order=True)
+#pprint(deepdiff, indent=2)
+#print(deepdiff.affected_paths)
+#print(deepdiff.affected_root_keys)
+#print(deepdiff.get_stats())
+now = datetime.datetime.now()
+print1("*********************  ")
+print1(get_diffs(old_value, new_value))
+print("**********************  time_taken %s"%(datetime.datetime.now()-now))
