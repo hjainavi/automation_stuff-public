@@ -79,6 +79,8 @@ cp ./other_files/import.py ~/import.py
 cp ./other_files/pool.py ~/pool.py
 cp ./other_files/cluster.py ~/cluster.py
 cp ./other_files/import1.py ~/import1.py
+cp ./other_files/.inputrc ~/.inputrc
+
 
 echo "==================other_files done"
 
