@@ -144,7 +144,7 @@ for cwd_dir in CWD:
             pass
         fetched_branches.append(branch)
     git_prune(cwd_dir)
-    fetched_branches = ["eng","22.1.7", "webapp_upgrade_2"] + fetched_branches
+    fetched_branches = ["eng", "go-build-faster"] + fetched_branches
     log.info("Fetching Branches: %s"%(fetched_branches))
     checkout_datas = get_checked_out_branches(cwd_dir)
     #if not checkout_datas: exit(1)
