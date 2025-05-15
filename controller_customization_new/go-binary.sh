@@ -13,7 +13,6 @@ if [ "$1" = "change" ]; then
             return 1
         fi
     fi
-    mv /home/admin/go-controller /opt/avi/bin/go-controller-new
     if [ "$2" = "apiserver" ];then
         ./_go-binary.py change apiserver
         systemctl restart apiserver.service
