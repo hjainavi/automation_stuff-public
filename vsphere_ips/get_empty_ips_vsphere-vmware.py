@@ -10,7 +10,7 @@ try:
 except ImportError:
     print ("do -->> pip3 install tabulate")
     sys.exit(1)
-from pyVim.connect import Disconnect,Connect
+from pyVim.connect import Disconnect,Connect, SoapStubAdapter
 from pyVmomi import vim
 from socket import inet_aton, inet_ntoa
 import random,time,atexit
@@ -28,6 +28,7 @@ from datetime import timedelta
 import json
 import re
 import datetime
+import ssl
 import urllib3
 import ipaddress
 import random
@@ -61,7 +62,8 @@ ALL_MGMT_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_MGMT_RESERVED_IPS"]
 ALL_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_RESERVED_IPS"]
 SE_IPS = VCENTER[CURRENT_VCENTER]["SE_IPS"]
 VCENTER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_IP"]
-VCENTER_USER = VCENTER[CURRENT_VCENTER]["VCENTER_USER"]
+VCENTER_USERS = VCENTER[CURRENT_VCENTER]["VCENTER_USERS"]
+VCENTER_USER = VCENTER_USERS[0]
 VCENTER_PASSWORD = VCENTER[CURRENT_VCENTER]["VCENTER_PASSWORD"]
 VCENTER_DATACENTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_DATACENTER_NAME"]
 VCENTER_CLUSTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_CLUSTER_NAME"]
@@ -117,18 +119,65 @@ if 'help' in sys.argv:
     
 START_TIME = time.time()
 
-def connect(vcenter_ip=VCENTER_IP, user=VCENTER_USER, pwd=VCENTER_PASSWORD ,exit_on_error=True):
-    try:
-        si= Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
-        atexit.register(Disconnect,si)
-        return si
-    except:
-        print("Unable to connect to %s" % vcenter_ip)
-        raise
-        if exit_on_error:
+def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
+    context = ssl._create_unverified_context()
+    filename = ".vcenter_session_info"
+    session_file = os.path.expanduser("~") + "/" + filename
+    # load session: load in existing session_data
+    if os.path.exists(session_file):
+        with open(session_file, "r") as f:
+            session_data = f.read().strip()
+            session_data = json.loads(session_data) if session_data else None
+    else:
+        session_data = None
+
+    def new_session(data):
+        conn = ""
+        for user in users:
+            try:
+                print("Connecting with user",user)
+                conn = Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
+                break
+            except Exception as e:
+                print("Unable to connect to %s" % vcenter_ip)
+                print(str(e))
+        if not conn:
             sys.exit(1)
+        # save session: update session data to include the latest for this server.
+        if data is None:
+            data = {}
+        data.update({str(VCENTER_IP): {'cookie': conn._stub.cookie, 'time': time.strftime("%Y-%m-%d %H:%M:%S"), 'version': conn._stub.version, 'user':user}})
+        data = json.dumps(data)
+        with open(session_file, "w") as f:
+            f.write(data)
+        return conn
+
+    host_session = session_data[str(VCENTER_IP)] if session_data and str(VCENTER_IP) in session_data else None
+    if not host_session:
+        return new_session(session_data)
+    else:
+        cookie, version, user  = host_session['cookie'], host_session['version'], host_session['user']
+        soapStub = SoapStubAdapter(host=str(VCENTER_IP), sslContext=context, version=version)
+        conn = vim.ServiceInstance("ServiceInstance",soapStub)
+        conn._stub.cookie = cookie
+        if not conn.content.sessionManager.currentSession:
+            return new_session(session_data)
         else:
-            return False
+            return conn
+
+"""
+def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
+    for user in users:
+        try:
+            print("Connecting with user",user)
+            si= Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
+            atexit.register(Disconnect,si)
+            return si
+        except Exception as e:
+            print("Unable to connect to %s" % vcenter_ip)
+            print(str(e))
+    sys.exit(1)
+""" 
 
 def fill_vms_table(vms_table,virtual_m):
     try:
