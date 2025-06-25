@@ -276,7 +276,6 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
             fill_vms_table(vms_table, virtual_m)
 
     ################# FORMING PRINT STRUCTURE #####################
-
     final_print_vals = [("**VM NAME**", "*STATE*", "**IP**", "*NETWORK*")]
     for val_ip in all_reserved_ips:
         found = False
@@ -291,6 +290,9 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
     final_print_vals.append(("","","",""))
 
     for folder_name,value in vms_table.items():
+        if not value['ip_network']:
+            final_print_vals.append((folder_name[1], value['state'], NIL_PRINT_VAL, NIL_PRINT_VAL))
+            continue
         for ip_network_val in value['ip_network']:
             if ip_network_val[0] not in all_reserved_ips:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
