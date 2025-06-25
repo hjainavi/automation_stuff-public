@@ -374,36 +374,50 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
 
     si = connect()
     vm_name = sys.argv[2]
-    folder_name = VCENTER_FOLDER_NAME
     datacenter_name = VCENTER_DATACENTER_NAME
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
-    #print (datacenter,datacenter.name)
-    vmfolders = datacenter.vmFolder.childEntity
-    for folder in vmfolders:
-        if folder.name == folder_name:
-            for virtual_m in folder.childEntity:
-                if virtual_m.name != vm_name:
+    folder_name = VCENTER_FOLDER_NAME
+    search_path = "/%s/vm/%s"%(datacenter.name,folder_name)
+    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+    if not folder_obj:
+        print(f"Folder not found at path: {search_path}")
+        sys.exit(1)
+    for virtual_m in folder_obj.childEntity:
+        if virtual_m.name != vm_name:
+            continue
+        action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
+        if action_confirm.lower() == "n":continue
+        if "harsh" in vm_name and "dev" in vm_name:
+            while True:
+                action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
+                if action_confirm.lower() not in ['confirm','deny']:
                     continue
-                action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
-                if action_confirm.lower() == "n":continue
-                if "harsh" in vm_name and "dev" in vm_name:
-                    while True:
-                        action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
-                        if action_confirm.lower() not in ['confirm','deny']:
-                            continue
-                        break
-                    if action_confirm == 'deny':
-                        continue
-                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-                    print ("deleteing ",virtual_m.name)
-                    task = virtual_m.Destroy()
-                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print ("vm is deleted.",task.info.state)
-                else:
-                    print ("delete the vm using ip")
+                break
+            if action_confirm == 'deny':
+                continue
+        if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+            print ("deleteing ",virtual_m.name)
+            task = virtual_m.Destroy()
+            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                time.sleep(1)
+            print ("vm is deleted.",task.info.state)
+        elif len(virtual_m.guest.net) == 0:
+            if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                print ("powering off ",virtual_m.name)
+                task = virtual_m.PowerOff()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("power is off.",task.info.state)
+            print ("deleteing ",virtual_m.name)
+            task = virtual_m.Destroy()
+            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                time.sleep(1)
+            print ("vm is deleted.",task.info.state)
+
+        else:
+            print ("delete the vm using ip")
 
 
 if len(sys.argv)==4 and sys.argv[1]=='rename':
