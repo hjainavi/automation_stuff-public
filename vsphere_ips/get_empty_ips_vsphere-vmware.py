@@ -442,30 +442,27 @@ if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
         vm_name = sys.argv[2]
     else:
         vm_name = ''
-    folder_name = VCENTER_FOLDER_NAME
-    datacenter_name = VCENTER_DATACENTER_NAME
     si = connect()
-    print ("powering on vm in folder %s , datacenter %s "%(folder_name,datacenter_name))
-    
+    datacenter_name = VCENTER_DATACENTER_NAME
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
-    #print (datacenter,datacenter.name)
-    vms = datacenter.vmFolder.childEntity
-    ip_name_state = {}
-    templates = []
-    for vm in vms:
-        if vm.name == folder_name:
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                for virtual_m in vm.childEntity:
-                    if not virtual_m.config.template:
-                        if vm_name:
-                            if virtual_m.name != vm_name:
-                                continue
-                        if virtual_m.runtime.powerState == 'poweredOff':
-                            executor.submit(power_on_vm,virtual_m)
-                        else:
-                            print ("vm %s is already ON"%(virtual_m.name))
+    folder_name = VCENTER_FOLDER_NAME
+    search_path = "/%s/vm/%s"%(datacenter.name,folder_name)
+    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+    if not folder_obj:
+        print(f"Folder not found at path: {search_path}")
+        sys.exit(1)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for virtual_m in folder_obj.childEntity:
+            if not virtual_m.config.template:
+                if vm_name:
+                    if virtual_m.name != vm_name:
+                        continue
+                if virtual_m.runtime.powerState == 'poweredOff':
+                    executor.submit(power_on_vm,virtual_m)
+                else:
+                    print ("vm %s is already ON"%(virtual_m.name))
 
 if len(sys.argv)==1:
     final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
