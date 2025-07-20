@@ -370,10 +370,11 @@ if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
 
 
 
-if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
+if len(sys.argv)>=3 and sys.argv[1] == 'delete_name':
 
     si = connect()
-    vm_name = sys.argv[2]
+    vm_names = [item.strip() for item in sys.argv[2:]]
+    print(vm_names)
     datacenter_name = VCENTER_DATACENTER_NAME
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
@@ -385,39 +386,40 @@ if len(sys.argv)==3 and sys.argv[1] == 'delete_name':
         print(f"Folder not found at path: {search_path}")
         sys.exit(1)
     for virtual_m in folder_obj.childEntity:
-        if virtual_m.name != vm_name:
-            continue
-        action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
-        if action_confirm.lower() == "n":continue
-        if "harsh" in vm_name and "dev" in vm_name:
-            while True:
-                action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
-                if action_confirm.lower() not in ['confirm','deny']:
-                    continue
-                break
-            if action_confirm == 'deny':
+        for vm_name in vm_names:
+            if virtual_m.name != vm_name:
                 continue
-        if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-            print ("deleteing ",virtual_m.name)
-            task = virtual_m.Destroy()
-            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                time.sleep(1)
-            print ("vm is deleted.",task.info.state)
-        elif len(virtual_m.guest.net) == 0:
-            if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                print ("powering off ",virtual_m.name)
-                task = virtual_m.PowerOff()
+            action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
+            if action_confirm.lower() == "n":continue
+            if "harsh" in vm_name and "dev" in vm_name:
+                while True:
+                    action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
+                    if action_confirm.lower() not in ['confirm','deny']:
+                        continue
+                    break
+                if action_confirm == 'deny':
+                    continue
+            if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+                print ("deleteing ",virtual_m.name)
+                task = virtual_m.Destroy()
                 while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
                     time.sleep(1)
-                print ("power is off.",task.info.state)
-            print ("deleteing ",virtual_m.name)
-            task = virtual_m.Destroy()
-            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                time.sleep(1)
-            print ("vm is deleted.",task.info.state)
+                print ("vm is deleted.",task.info.state)
+            elif len(virtual_m.guest.net) == 0:
+                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                    print ("powering off ",virtual_m.name)
+                    task = virtual_m.PowerOff()
+                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                        time.sleep(1)
+                    print ("power is off.",task.info.state)
+                print ("deleteing ",virtual_m.name)
+                task = virtual_m.Destroy()
+                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print ("vm is deleted.",task.info.state)
 
-        else:
-            print ("delete the vm using ip")
+            else:
+                print ("delete the vm using ip")
 
 
 if len(sys.argv)==4 and sys.argv[1]=='rename':
