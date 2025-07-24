@@ -165,43 +165,29 @@ def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
         else:
             return conn
 
-"""
-def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
-    for user in users:
-        try:
-            print("Connecting with user",user)
-            si= Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
-            atexit.register(Disconnect,si)
-            return si
-        except Exception as e:
-            print("Unable to connect to %s" % vcenter_ip)
-            print(str(e))
-    sys.exit(1)
-""" 
+def fill_vms_table(vms_table, virtual_m):
+    folder_name = virtual_m.parent.name
+    if not virtual_m.config:
+        vms_table[(folder_name, virtual_m.name)] = {'state': UNKNOWN_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+        return
 
-def fill_vms_table(vms_table,virtual_m):
-    try:
-        folder_name = virtual_m.parent.name
-        if virtual_m.config and not virtual_m.config.template:
-            if virtual_m.runtime.powerState == 'poweredOff':
-                vms_table[(folder_name,virtual_m.name)] = {'state':POWER_OFF_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
-            else:
-                vms_table[(folder_name,virtual_m.name)] = {'state':POWER_ON_STATE,'ip_network':[]}
-                if len(virtual_m.guest.net)>0:
-                    for ip_net in virtual_m.guest.net:
-                        for ip_addr in ip_net.ipAddress:
-                            if not ip_addr or ":" in ip_addr:
-                                continue
-                            else:
-                                vms_table[(folder_name,virtual_m.name)]['ip_network'].append([ip_addr, ip_net.network])
-                                
-        elif virtual_m.config and virtual_m.config.template:
-            vms_table[(folder_name,virtual_m.name)] = {'state':TEMPLATE_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
-        else:
-            vms_table[(folder_name,virtual_m.name)] = {'state':UNKNOWN_STATE,'ip_network':[[NIL_PRINT_VAL,NIL_PRINT_VAL]]}
+    if virtual_m.config.template:
+        vms_table[(folder_name, virtual_m.name)] = {'state': TEMPLATE_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+        return
 
-    except:
-        raise
+    if virtual_m.runtime.powerState == 'poweredOff':
+        vms_table[(folder_name, virtual_m.name)] = {'state': POWER_OFF_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+    else:
+        vms_table[(folder_name, virtual_m.name)] = {'state': POWER_ON_STATE, 'ip_network': []}
+        if virtual_m.guest and virtual_m.guest.net:
+            for ip_net in virtual_m.guest.net:
+                if not ip_net.ipAddress:
+                    continue
+                for ip_addr in ip_net.ipAddress:
+                    if ip_addr and ":" not in ip_addr:  # Filter out IPv6 and empty addresses
+                        vms_table[(folder_name, virtual_m.name)]['ip_network'].append([ip_addr, ip_net.network])
+        if not vms_table[(folder_name, virtual_m.name)]['ip_network']:
+            vms_table[(folder_name, virtual_m.name)]['ip_network'].append([NIL_PRINT_VAL, NIL_PRINT_VAL])
 
 def power_on_vm(virtual_machine_obj):
     vm = virtual_machine_obj
@@ -335,15 +321,13 @@ def poweroff_and_delete_vm(ips,delete=False,si=None):
         vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
         if vms:
             for vm in vms:
-                action_confirm = input("Are you sure you want to %s '%s' with ip = %s ?[Y/N] \n"%(cmd,vm.name,ip))
+                action_confirm = input(f"Are you sure you want to {cmd} '{vm.name}' with ip = {ip} ?[Y/N] \n")
                 if action_confirm.lower() == "n":continue
                 if DEV_VM_IP in ip:
-                    while True:
-                        action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(ip))
-                        if action_confirm.lower() not in ['confirm','deny']:
-                            continue
-                        break
-                    if action_confirm == 'deny':
+                    dev_vm_confirm = ""
+                    while dev_vm_confirm not in ['confirm', 'deny']:
+                        dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{ip}'? [confirm/deny] \n").lower()
+                    if dev_vm_confirm == 'deny':
                         continue
                 vms_to_operate_on.append((vm,ip))
     for vm,ip in vms_to_operate_on:
@@ -389,15 +373,13 @@ if len(sys.argv)>=3 and sys.argv[1] == 'delete_name':
         for vm_name in vm_names:
             if virtual_m.name != vm_name:
                 continue
-            action_confirm = input("Are you sure you want to delete '%s'  ?[Y/N] \n"%(vm_name))
+            action_confirm = input(f"Are you sure you want to delete '{vm_name}'? [Y/N] \n")
             if action_confirm.lower() == "n":continue
             if "harsh" in vm_name and "dev" in vm_name:
-                while True:
-                    action_confirm = input("Are you sure you want to delete '%s'  ?[confirm/deny] \n"%(vm_name))
-                    if action_confirm.lower() not in ['confirm','deny']:
-                        continue
-                    break
-                if action_confirm == 'deny':
+                dev_vm_confirm = ""
+                while dev_vm_confirm not in ['confirm', 'deny']:
+                    dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{vm_name}'? [confirm/deny] \n").lower()
+                if dev_vm_confirm == 'deny':
                     continue
             if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
                 print ("deleteing ",virtual_m.name)
@@ -545,22 +527,20 @@ def login_and_set_global_variables(c_ip,password_arg=None):
         return
     uri_base = 'https://' + c_ip + '/'
     headers = get_headers()
-    logged_in = False
     password_list = [password_arg,"avi123","avi123$%","admin"] if password_arg else ["avi123","avi123$%","admin"]
     for password in password_list:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
         if login.status_code in [200, 201]:
-            logged_in = True
             headers['X-CSRFToken'] = login.cookies['csrftoken']
             headers['Referer'] = uri_base
             GLOBAL_LOGIN_HEADERS[c_ip] = headers
             GLOBAL_LOGIN_COOKIES[c_ip] = login.cookies
             GLOBAL_CURRENT_PASSWORD[c_ip] = password
             break
-    if not logged_in:
+    else:
         print("not able to login using various passwords")
-        exit(1)
+        sys.exit(1)
     
     set_version_controller(c_ip)
 
@@ -1457,7 +1437,7 @@ def generate_controller_from_ova():
     ctlr_name = ""
     if custom_version.lower() == "y":
         default_path = "/home/aviuser/workspace/avi-dev/build/controller.ova"
-        source_ova_path = input("Source Ova Path (local/http/ftp) ? [Default: %s] :"%(default_path))
+        source_ova_path = input(f"Source Ova Path (local/http/ftp) ? [Default: {default_path}] :")
         if not source_ova_path:
             source_ova_path = default_path
     else:
@@ -1477,7 +1457,7 @@ def generate_controller_from_ova():
             if int(build_index) <= len(builds) and int(build_index) > 0:
                 break
         source_ova_path = builds[build_index-1][3]
-        print("Source Ova Path = %s"%(source_ova_path))
+        print(f"Source Ova Path = {source_ova_path}")
         ctlr_name = "ctlr_%s-%s"%(builds[build_index-1][1],builds[build_index-1][2])
 
     mgmt_leader_ip = ""
@@ -1486,7 +1466,7 @@ def generate_controller_from_ova():
         mgmt_ips = get_free_controller_ips(si)
         if len(mgmt_ips)==3:
             print("Creating a 3 node cluster")
-            mgmt_ips_leader = {str(index):val for index,val in enumerate(mgmt_ips) }
+            mgmt_ips_leader = {str(index): val for index, val in enumerate(mgmt_ips)}
             print ("Choose Leader IP : %s"%(mgmt_ips_leader))
             mgmt_leader_ip = get_leader_ip_from_index(mgmt_ips_leader)
             break
@@ -1500,25 +1480,25 @@ def generate_controller_from_ova():
     
     se_ips_to_use_for_ctlr(si,mgmt_leader_ip)
 
-    vcenter_ip = input("Vcenter IP ? [Default: %s] :"%(VCENTER_IP)) or VCENTER_IP
-    datacenter = input("Datacenter Name ? [Default: %s] :"%(VCENTER_DATACENTER_NAME)) or VCENTER_DATACENTER_NAME
+    vcenter_ip = input(f"Vcenter IP ? [Default: {VCENTER_IP}] :") or VCENTER_IP
+    datacenter = input(f"Datacenter Name ? [Default: {VCENTER_DATACENTER_NAME}] :") or VCENTER_DATACENTER_NAME
     #datacenter_obj = get_datacenter_obj(si,datacenter)
-    cluster_name = input("Cluster ? [Default: %s] :"%(VCENTER_CLUSTER_NAME)) or VCENTER_CLUSTER_NAME
-    datastore = input("Datastore ? [Default: %s] :"%(VCENTER_DATASTORE_NAME)) or VCENTER_DATASTORE_NAME
+    cluster_name = input(f"Cluster ? [Default: {VCENTER_CLUSTER_NAME}] :") or VCENTER_CLUSTER_NAME
+    datastore = input(f"Datastore ? [Default: {VCENTER_DATASTORE_NAME}] :") or VCENTER_DATASTORE_NAME
     while True:
-        folder_name = input("Folder Name ? [Default: %s] :"%(VCENTER_FOLDER_NAME)) or VCENTER_FOLDER_NAME
+        folder_name = input(f"Folder Name ? [Default: {VCENTER_FOLDER_NAME}] :") or VCENTER_FOLDER_NAME
         if folder_name:
             folder_obj = get_folder_obj(si, datacenter,folder_name)
             if folder_obj:
                 break
-    management_network = input("Management Network ? [Default: %s][ or %s ]:"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"], VCENTER_MANAGEMENT_MAP["Management"]["name"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
+    management_network = input(f"Management Network ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['name']}][ or {VCENTER_MANAGEMENT_MAP['Management']['name']} ]:") or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
 
     if not DHCP:
-        mask = input("Network Mask ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
-        gw_ip = input("Gateway IP ? [Default: %s] :"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"])) or VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"]
+        mask = input(f"Network Mask ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['mask']}] :") or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
+        gw_ip = input(f"Gateway IP ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['gateway']}] :") or VCENTER_MANAGEMENT_MAP["Internal_Management"]["gateway"]
 
     while True:
-        vm_name = input("VM Name ? [%s]:"%(ctlr_name))
+        vm_name = input(f"VM Name ? [{ctlr_name}]:")
         if not vm_name: vm_name = ctlr_name
         if not vm_name: continue
         if not check_if_vm_name_exists_in_folder(folder_obj,vm_name) and vm_name:
