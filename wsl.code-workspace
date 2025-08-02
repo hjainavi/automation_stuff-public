@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../.local/lib/python3.8/site-packages/rest_framework"
+		},
+		{
+			"path": "../.local/lib/python3.8/site-packages/django"
+		}
+	],
+	"settings": {}
+}
