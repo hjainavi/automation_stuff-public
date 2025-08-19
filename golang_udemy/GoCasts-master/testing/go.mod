@@ -1,9 +1,9 @@
 module main
 
-go 1.22.2
+go 1.23.2
 
 require (
-	github.com/beego/beego/v2 v2.3.1
+	github.com/beego/beego/v2 v2.3.4
 	github.com/hashicorp/go-version v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
 )

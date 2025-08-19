@@ -1,5 +1,7 @@
 github.com/beego/beego/v2 v2.3.1 h1:7MUKMpJYzOXtCUsTEoXOxsDV/UcHw6CPbaWMlthVNsc=
 github.com/beego/beego/v2 v2.3.1/go.mod h1:5cqHsOHJIxkq44tBpRvtDe59GuVRVv/9/tyVDxd5ce4=
+github.com/beego/beego/v2 v2.3.4 h1:HurQEOGIEhLlPFCTR6ZDuQkybrUl2Ag2i6CdVD2rGiI=
+github.com/beego/beego/v2 v2.3.4/go.mod h1:5cqHsOHJIxkq44tBpRvtDe59GuVRVv/9/tyVDxd5ce4=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/hashicorp/go-version v1.7.0 h1:5tqGy27NaOTB8yJKUZELlFAS/LTKJkrmONwQKeRZfjY=
