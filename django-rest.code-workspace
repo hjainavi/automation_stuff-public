@@ -1,0 +1,11 @@
+{
+    "folders": [
+		{
+			"path": "../django-rest/lib/python3.12/site-packages/django"
+		},
+		{
+			"path": "../django-rest/lib/python3.12/site-packages/rest_framework"
+		}
+	],
+	"settings": {}
+}
