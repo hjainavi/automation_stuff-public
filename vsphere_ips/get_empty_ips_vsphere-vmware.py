@@ -1,93 +1,64 @@
 #!/usr/bin/env python3
+"""
+VMware vSphere IP Management and Controller Automation Script
+
+This script provides functionality for managing VMware vSphere VMs, IPs, and 
+Avi Networks controllers including deployment, configuration, and monitoring.
+"""
+
+# Standard library imports
+import atexit
+import datetime
+import json
+import multiprocessing
+import os
+import re
+import shlex
+import ssl
+import subprocess
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
+from socket import inet_aton, inet_ntoa
+
+# Third-party imports
+import ipaddress
+import urllib3
+
+# VMware/vSphere imports
 try:
     import pyVim
+    from pyVim.connect import Disconnect, Connect, SoapStubAdapter
+    from pyVmomi import vim
 except ImportError:
-    print ("do -->> pip3 install --upgrade pyvmomi")
+    print("do -->> pip3 install --upgrade pyvmomi")
     sys.exit(1)
+
+# Network and API imports
+import requests
+from requests.auth import HTTPBasicAuth
+
+# Utility imports
 try:
     from tabulate import tabulate
 except ImportError:
-    print ("do -->> pip3 install tabulate")
+    print("do -->> pip3 install tabulate")
     sys.exit(1)
-from pyVim.connect import Disconnect,Connect, SoapStubAdapter
-from pyVmomi import vim
-from socket import inet_aton, inet_ntoa
-import random,time,atexit
-from concurrent.futures import ThreadPoolExecutor
-#import tarfile
-#import xmltodict
-import subprocess, multiprocessing
-import shlex
-#import argparse
-import os
-import requests
-from requests.auth import HTTPBasicAuth
-import time
-from datetime import timedelta
-import json
-import re
-import datetime
-import ssl
-import urllib3
-import ipaddress
-import random
-urllib3.disable_warnings()
+
 import fabric
-from tabulate import tabulate
 import jinja2
 from retry import retry
 
+# Disable SSL warnings
+urllib3.disable_warnings()
 
-with open(os.path.dirname(os.path.abspath(__file__))+"/vals.json", "r") as f:
-    config = json.loads(f.read())
 
-VCENTER = config["VCENTER"]
-VCENTER_CHOICES = list(VCENTER.keys())
-CURRENT_VCENTER = ""
+# =============================================================================
+# CONFIGURATION AND CONSTANTS
+# =============================================================================
 
-vcenter_str = ""
-if len(VCENTER_CHOICES) != 1:
-    for index,val in enumerate(VCENTER_CHOICES):
-        vcenter_str +="%s:%s, "%(index,val)
-    action_confirm = input("Choose the vcenter to operate on [[%s]] [Enter Index] ?: "%(vcenter_str))
-    if int(action_confirm.lower()) < len(VCENTER_CHOICES):
-        CURRENT_VCENTER = VCENTER_CHOICES[int(action_confirm.lower())]
-    else:
-        raise Exception("Invalid Choice")
-else:
-    CURRENT_VCENTER = VCENTER_CHOICES[0]
-
-ALL_MGMT_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_MGMT_RESERVED_IPS"]
-ALL_RESERVED_IPS = VCENTER[CURRENT_VCENTER]["ALL_RESERVED_IPS"]
-SE_IPS = VCENTER[CURRENT_VCENTER]["SE_IPS"]
-VCENTER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_IP"]
-VCENTER_USERS = VCENTER[CURRENT_VCENTER]["VCENTER_USERS"]
-VCENTER_USER = VCENTER_USERS[0]
-VCENTER_PASSWORD = VCENTER[CURRENT_VCENTER]["VCENTER_PASSWORD"]
-VCENTER_DATACENTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_DATACENTER_NAME"]
-VCENTER_CLUSTER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_CLUSTER_NAME"]
-VCENTER_DATASTORE_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_DATASTORE_NAME"]
-VCENTER_FOLDER_NAME = VCENTER[CURRENT_VCENTER]["VCENTER_FOLDER_NAME"]
-DEV_VM_IP = VCENTER[CURRENT_VCENTER]["DEV_VM_IP"]
-VCENTER_MANAGEMENT_MAP = VCENTER[CURRENT_VCENTER]["VCENTER_MANAGEMENT_MAP"]
-VCENTER_DNS_SERVERS = VCENTER[CURRENT_VCENTER]["VCENTER_DNS_SERVERS"]
-VCENTER_NTP = VCENTER[CURRENT_VCENTER]["VCENTER_NTP"]
-VCENTER_PORT_GROUP = VCENTER[CURRENT_VCENTER]["VCENTER_PORT_GROUP"]
-VCENTER_SERVER_IP = VCENTER[CURRENT_VCENTER]["VCENTER_SERVER_IP"]
-VCENTER_SERVER_SUBNET = VCENTER[CURRENT_VCENTER]["VCENTER_SERVER_SUBNET"]
-
-SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
-DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
-DEFAULT_PASSWORD = "avi123"
-DHCP = False
-GLOBAL_LOGIN_HEADERS = {}
-GLOBAL_LOGIN_COOKIES = {}
-GLOBAL_CURRENT_PASSWORD = {}
-GLOBAL_BUILD_NO = {}
-
-SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
-
+# VM State Constants
 POWER_OFF_STATE = 'POWER OFF'
 POWER_ON_STATE = 'POWER ON'
 TEMPLATE_STATE = 'TEMPLATE'
@@ -95,34 +66,152 @@ UNKNOWN_STATE = 'UNKNOWN'
 NIL_PRINT_VAL = "------"
 FREE_IP = "--Free IP--"
 
-if 'help' in sys.argv:
-    print ("options --> with_se_ips")
-    print ("options --> free_ip")
-    print ("options --> delete_ctlr_se")
-    print ("options --> delete 'ip'")
-    print ("options --> delete_name 'name'")
-    print ("options --> poweroff 'ip'")
-    print ("options --> rename 'ip' 'newname'")
-    print ("options --> poweron")
-    print ("options --> poweron 'name'")
-    print ("options --> reimage_ctlr")
-    print ("options --> latest_builds")
-    print ("options --> generate_controller_from_ova")
-    print ("options --> configure_raw_controller")
-    print ("options --> configure_raw_controller_wo_tmux")
-    print ("options --> configure_password_only")
-    print ("options --> configure_cloud_vs_se")
-    print ("options --> configure_vs")
-    print ("options --> flush_db_configure_raw_controller_wo_tmux")
-    print ("options --> setup_tmux")
-    print ("options --> setup_tmux_install_only")
+# Default Configuration Values
+DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
+DEFAULT_PASSWORD = "avi123"
+SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
+DHCP = False
+
+# Global State Variables (consider refactoring these to a class)
+GLOBAL_LOGIN_HEADERS = {}
+GLOBAL_LOGIN_COOKIES = {}
+GLOBAL_CURRENT_PASSWORD = {}
+GLOBAL_BUILD_NO = {}
+SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
+
+# Load Configuration from vals.json
+try:
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vals.json")
+    with open(config_path, "r") as f:
+        config = json.loads(f.read())
+except FileNotFoundError:
+    print(f"Error: Configuration file 'vals.json' not found at {config_path}")
+    sys.exit(1)
+except json.JSONDecodeError as e:
+    print(f"Error: Invalid JSON in configuration file: {e}")
+    sys.exit(1)
+
+# vCenter Configuration Selection
+VCENTER = config["VCENTER"]
+VCENTER_CHOICES = list(VCENTER.keys())
+CURRENT_VCENTER = ""
+
+
+def select_vcenter():
+    """Select vCenter configuration interactively if multiple options exist."""
+    global CURRENT_VCENTER
     
+    if len(VCENTER_CHOICES) == 1:
+        CURRENT_VCENTER = VCENTER_CHOICES[0]
+        return
+    
+    # Multiple vCenter options available
+    vcenter_options = []
+    for index, vcenter_name in enumerate(VCENTER_CHOICES):
+        vcenter_options.append(f"{index}:{vcenter_name}")
+    
+    vcenter_str = ", ".join(vcenter_options)
+    
+    try:
+        action_confirm = input(f"Choose the vcenter to operate on [[{vcenter_str}]] [Enter Index] ?: ")
+        selected_index = int(action_confirm.lower())
+        
+        if 0 <= selected_index < len(VCENTER_CHOICES):
+            CURRENT_VCENTER = VCENTER_CHOICES[selected_index]
+        else:
+            raise ValueError("Invalid choice")
+    except (ValueError, IndexError):
+        raise Exception("Invalid Choice")
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+# Initialize vCenter selection
+select_vcenter()
+
+# Current vCenter Configuration
+current_config = VCENTER[CURRENT_VCENTER]
+ALL_MGMT_RESERVED_IPS = current_config["ALL_MGMT_RESERVED_IPS"]
+ALL_RESERVED_IPS = current_config["ALL_RESERVED_IPS"]
+SE_IPS = current_config["SE_IPS"]
+VCENTER_IP = current_config["VCENTER_IP"]
+VCENTER_USERS = current_config["VCENTER_USERS"]
+VCENTER_USER = VCENTER_USERS[0]
+VCENTER_PASSWORD = current_config["VCENTER_PASSWORD"]
+VCENTER_DATACENTER_NAME = current_config["VCENTER_DATACENTER_NAME"]
+VCENTER_CLUSTER_NAME = current_config["VCENTER_CLUSTER_NAME"]
+VCENTER_DATASTORE_NAME = current_config["VCENTER_DATASTORE_NAME"]
+VCENTER_FOLDER_NAME = current_config["VCENTER_FOLDER_NAME"]
+DEV_VM_IP = current_config["DEV_VM_IP"]
+VCENTER_MANAGEMENT_MAP = current_config["VCENTER_MANAGEMENT_MAP"]
+VCENTER_DNS_SERVERS = current_config["VCENTER_DNS_SERVERS"]
+VCENTER_NTP = current_config["VCENTER_NTP"]
+VCENTER_PORT_GROUP = current_config["VCENTER_PORT_GROUP"]
+VCENTER_SERVER_IP = current_config["VCENTER_SERVER_IP"]
+VCENTER_SERVER_SUBNET = current_config["VCENTER_SERVER_SUBNET"]
+
+
+# =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+def show_help():
+    """Display available command line options."""
+    print("Available options:")
+    print("  with_se_ips                              - Show VMs with SE IPs")
+    print("  free_ip                                  - Show free IPs")
+    print("  delete_ctlr_se                          - Delete controller and SE VMs")
+    print("  delete 'ip'                             - Delete VM by IP")
+    print("  delete_name 'name'                      - Delete VM by name")
+    print("  poweroff 'ip'                           - Power off VM by IP")
+    print("  rename 'ip' 'newname'                   - Rename VM")
+    print("  poweron                                  - Power on all VMs")
+    print("  poweron 'name'                          - Power on specific VM")
+    print("  reimage_ctlr                            - Reimage controller")
+    print("  latest_builds                           - Show latest builds")
+    print("  generate_controller_from_ova            - Generate controller from OVA")
+    print("  configure_raw_controller                - Configure raw controller")
+    print("  configure_raw_controller_wo_tmux        - Configure controller without tmux")
+    print("  configure_password_only                 - Configure password only")
+    print("  configure_cloud_vs_se                   - Configure cloud, VS, and SE")
+    print("  configure_vs                            - Configure virtual service")
+    print("  flush_db_configure_raw_controller_wo_tmux - Flush DB and configure")
+    print("  setup_tmux                              - Setup tmux")
+    print("  setup_tmux_install_only                 - Setup tmux install only")
+
+
+# Check for help request
+if 'help' in sys.argv:
+    show_help()
+    sys.exit(0)
+
+# Track execution time
 START_TIME = time.time()
 
-def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
+
+# =============================================================================
+# VSPHERE CONNECTION AND SESSION MANAGEMENT
+# =============================================================================
+
+def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD):
+    """
+    Connect to vCenter server with session management.
+    
+    Args:
+        vcenter_ip (str): vCenter IP address
+        users (list): List of usernames to try for authentication
+        pwd (str): Password for authentication
+        
+    Returns:
+        vim.ServiceInstance: Connected vCenter service instance
+        
+    Raises:
+        SystemExit: If connection fails for all users
+    """
     context = ssl._create_unverified_context()
     filename = ".vcenter_session_info"
-    session_file = os.path.expanduser("~") + "/" + filename
+    session_file = os.path.join(os.path.expanduser("~"), filename)
     # load session: load in existing session_data
     if os.path.exists(session_file):
         with open(session_file, "r") as f:
@@ -163,38 +252,82 @@ def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD ):
         if not conn.content.sessionManager.currentSession:
             return new_session(session_data)
         else:
+            print("using existing session for connection")
             return conn
 
+
+# =============================================================================
+# VM INFORMATION AND MANAGEMENT FUNCTIONS
+# =============================================================================
+
 def fill_vms_table(vms_table, virtual_m):
+    """
+    Fill VM table with VM information including state and IP addresses.
+    
+    Args:
+        vms_table (dict): Dictionary to store VM information
+        virtual_m: VMware virtual machine object
+    """
     folder_name = virtual_m.parent.name
+    
+    # Handle VMs without configuration
     if not virtual_m.config:
-        vms_table[(folder_name, virtual_m.name)] = {'state': UNKNOWN_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+        vms_table[(folder_name, virtual_m.name)] = {
+            'state': UNKNOWN_STATE, 
+            'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]
+        }
         return
 
+    # Handle template VMs
     if virtual_m.config.template:
-        vms_table[(folder_name, virtual_m.name)] = {'state': TEMPLATE_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+        vms_table[(folder_name, virtual_m.name)] = {
+            'state': TEMPLATE_STATE, 
+            'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]
+        }
         return
 
+    # Handle powered off VMs
     if virtual_m.runtime.powerState == 'poweredOff':
-        vms_table[(folder_name, virtual_m.name)] = {'state': POWER_OFF_STATE, 'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]}
+        vms_table[(folder_name, virtual_m.name)] = {
+            'state': POWER_OFF_STATE, 
+            'ip_network': [[NIL_PRINT_VAL, NIL_PRINT_VAL]]
+        }
     else:
-        vms_table[(folder_name, virtual_m.name)] = {'state': POWER_ON_STATE, 'ip_network': []}
+        # Handle powered on VMs
+        vms_table[(folder_name, virtual_m.name)] = {
+            'state': POWER_ON_STATE, 
+            'ip_network': []
+        }
+        
+        # Extract IP addresses (IPv4 only)
         if virtual_m.guest and virtual_m.guest.net:
             for ip_net in virtual_m.guest.net:
                 if not ip_net.ipAddress:
                     continue
                 for ip_addr in ip_net.ipAddress:
-                    if ip_addr and ":" not in ip_addr:  # Filter out IPv6 and empty addresses
-                        vms_table[(folder_name, virtual_m.name)]['ip_network'].append([ip_addr, ip_net.network])
+                    # Filter out IPv6 and empty addresses
+                    if ip_addr and ":" not in ip_addr:
+                        vms_table[(folder_name, virtual_m.name)]['ip_network'].append(
+                            [ip_addr, ip_net.network]
+                        )
+        
+        # Set placeholder if no IP addresses found
         if not vms_table[(folder_name, virtual_m.name)]['ip_network']:
-            vms_table[(folder_name, virtual_m.name)]['ip_network'].append([NIL_PRINT_VAL, NIL_PRINT_VAL])
+            vms_table[(folder_name, virtual_m.name)]['ip_network'].append(
+                [NIL_PRINT_VAL, NIL_PRINT_VAL]
+            )
 
 def power_on_vm(virtual_machine_obj):
-    vm = virtual_machine_obj
-    task = vm.PowerOn()
-    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+    """
+    Power on a virtual machine and wait for completion.
+    
+    Args:
+        virtual_machine_obj: VMware virtual machine object to power on
+    """
+    task = virtual_machine_obj.PowerOn()
+    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
         time.sleep(1)
-    print ("power on task for vm %s = %s"%(vm.name,task.info.state))
+    print(f"Power on task for VM {virtual_machine_obj.name} = {task.info.state}")
 
 
 
@@ -461,16 +594,24 @@ if len(sys.argv)==2 and sys.argv[1] in ['free_ip','free_ips']:
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
 
 
-##################################################################################
-##################################################################################
-##################################################################################
-
+# =============================================================================
+# AVI CONTROLLER API AND AUTHENTICATION FUNCTIONS
+# =============================================================================
 
 def get_headers(tenant='admin'):
+    """
+    Get standard HTTP headers for API requests.
+    
+    Args:
+        tenant (str): Tenant name (default: 'admin')
+        
+    Returns:
+        dict: HTTP headers for API requests
+    """
     headers = {
         "Content-Type": "application/json",
     }
-    # headers["X-Avi-Version"] = "%s" % version
+    # Note: X-Avi-Version header is set separately when version is known
     return headers
 
 
@@ -1010,20 +1151,43 @@ def setup_cloud_se_wo_put_to_cloud(c_ip,version=""):
         
 
     
+# =============================================================================
+# VSPHERE UTILITY AND HELPER FUNCTIONS
+# =============================================================================
 
-
-def pretty_print(vals,ljust_vals=[],filler=" "):
+def pretty_print(vals, ljust_vals=None, filler=" "):
+    """
+    Print values in a formatted table-like structure.
+    
+    Args:
+        vals (list): Values to print
+        ljust_vals (list): Left justification widths for each value
+        filler (str): Character to use for padding (default: space)
+    """
+    if ljust_vals is None:
+        ljust_vals = []
+    
     line = " "
-    for val,ljust_val in zip(vals,ljust_vals):
-        line += str(val).ljust(ljust_val,filler)
-    print (line)
+    for val, ljust_val in zip(vals, ljust_vals):
+        line += str(val).ljust(ljust_val, filler)
+    print(line)
 
 
-def get_datacenter_obj(si,datacenter_name):
-
+def get_datacenter_obj(si, datacenter_name):
+    """
+    Get datacenter object by name.
+    
+    Args:
+        si: vCenter service instance
+        datacenter_name (str): Name of the datacenter
+        
+    Returns:
+        Datacenter object or None if not found
+    """
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             return dc
+    return None
 
 def get_cluster_obj(datacenter_obj,cluster_name):
     
