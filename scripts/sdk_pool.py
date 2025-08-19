@@ -1,5 +1,6 @@
 from avi.sdk.avi_api import ApiSession
 import argparse, json
+from concurrent.futures import ThreadPoolExecutor
 
 
 if __name__ == '__main__':
@@ -22,12 +23,13 @@ if __name__ == '__main__':
             'name':'test123',
             'servers':[{'ip':{'addr':'0.0.0.0', 'type':'V4'} ,'enabled':True, 'hostname':'abc.def', 'resolve_server_by_dns':True}]
         }
-    '''
     name = "test_"
     for i in range(201):
         name_new = name+str(i)
         post_data = {"name":name_new}
         post_resp = api.post('pool', data=post_data)
         print ("post = %s "%post_resp.status_code)
-        post_resp = api.post('poolgroup', data=post_data)
-        print ("post = %s "%post_resp.status_code)
+    '''
+
+    get_resp = api.get('systemconfiguration')
+    print(json.dumps(get_resp.data,indent=4)
