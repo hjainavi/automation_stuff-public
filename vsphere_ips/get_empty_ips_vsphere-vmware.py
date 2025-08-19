@@ -10,8 +10,10 @@ Avi Networks controllers including deployment, configuration, and monitoring.
 import atexit
 import datetime
 import json
+import logging
 import multiprocessing
 import os
+import random
 import re
 import shlex
 import ssl
@@ -80,16 +82,37 @@ GLOBAL_BUILD_NO = {}
 SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
 
 # Load Configuration from vals.json
-try:
+def load_configuration():
+    """
+    Load and validate configuration from vals.json file.
+    
+    Returns:
+        dict: Parsed configuration data
+        
+    Raises:
+        SystemExit: If configuration cannot be loaded or parsed
+    """
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vals.json")
-    with open(config_path, "r") as f:
-        config = json.loads(f.read())
-except FileNotFoundError:
-    print(f"Error: Configuration file 'vals.json' not found at {config_path}")
-    sys.exit(1)
-except json.JSONDecodeError as e:
-    print(f"Error: Invalid JSON in configuration file: {e}")
-    sys.exit(1)
+    
+    try:
+        with open(config_path, "r") as f:
+            config_data = json.loads(f.read())
+        
+        # Validate required configuration keys
+        required_keys = ["VCENTER"]
+        for key in required_keys:
+            if key not in config_data:
+                raise ValueError(f"Missing required configuration key: {key}")
+        
+        return config_data
+        
+    except Exception as e:
+        error_msg = f"Error loading configuration: {e}"
+        print(f"ERROR: {error_msg}")
+        sys.exit(1)
+
+
+config = load_configuration()
 
 # vCenter Configuration Selection
 VCENTER = config["VCENTER"]
@@ -98,34 +121,107 @@ CURRENT_VCENTER = ""
 
 
 def select_vcenter():
-    """Select vCenter configuration interactively if multiple options exist."""
+    """
+    Select vCenter configuration interactively if multiple options exist.
+    
+    Raises:
+        SystemExit: If vCenter selection fails
+    """
     global CURRENT_VCENTER
     
-    if len(VCENTER_CHOICES) == 1:
-        CURRENT_VCENTER = VCENTER_CHOICES[0]
-        return
-    
-    # Multiple vCenter options available
-    vcenter_options = []
-    for index, vcenter_name in enumerate(VCENTER_CHOICES):
-        vcenter_options.append(f"{index}:{vcenter_name}")
-    
-    vcenter_str = ", ".join(vcenter_options)
-    
     try:
-        action_confirm = input(f"Choose the vcenter to operate on [[{vcenter_str}]] [Enter Index] ?: ")
-        selected_index = int(action_confirm.lower())
+        if len(VCENTER_CHOICES) == 1:
+            CURRENT_VCENTER = VCENTER_CHOICES[0]
+            logger.info(f"Auto-selected single vCenter: {CURRENT_VCENTER}")
+            return
         
-        if 0 <= selected_index < len(VCENTER_CHOICES):
-            CURRENT_VCENTER = VCENTER_CHOICES[selected_index]
-        else:
-            raise ValueError("Invalid choice")
-    except (ValueError, IndexError):
-        raise Exception("Invalid Choice")
+        # Multiple vCenter options available
+        vcenter_options = []
+        for index, vcenter_name in enumerate(VCENTER_CHOICES):
+            vcenter_options.append(f"{index}:{vcenter_name}")
+        
+        vcenter_str = ", ".join(vcenter_options)
+        logger.info(f"Multiple vCenter options available: {vcenter_str}")
+        
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                action_confirm = input(
+                    f"Choose the vcenter to operate on [[{vcenter_str}]] [Enter Index] ?: "
+                )
+                selected_index = int(action_confirm.strip())
+                
+                if 0 <= selected_index < len(VCENTER_CHOICES):
+                    CURRENT_VCENTER = VCENTER_CHOICES[selected_index]
+                    logger.info(f"Selected vCenter: {CURRENT_VCENTER}")
+                    return
+                else:
+                    print(
+                        f"Invalid index. Please enter a number between 0 and {len(VCENTER_CHOICES)-1}"
+                    )
+                    
+            except Exception as e:
+                if "KeyboardInterrupt" in str(type(e)):
+                    print("\nOperation cancelled by user")
+                    sys.exit(1)
+                print("Invalid input. Please enter a numeric index.")
+            
+            if attempt == max_retries - 1:
+                logger.error(f"Failed to select vCenter after {max_retries} attempts")
+                print("Too many invalid attempts. Exiting.")
+                sys.exit(1)
+                
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Unexpected error in vCenter selection: {e}")
+        print(f"Error selecting vCenter: {e}")
         sys.exit(1)
 
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+def setup_logging(log_level=logging.INFO):
+    """
+    Setup logging configuration for the application.
+    
+    Args:
+        log_level: Logging level (default: INFO)
+    """
+    # Create logs directory if it doesn't exist
+    logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    
+    # Configure logging
+    log_file = os.path.join(logs_dir, "vsphere_automation.log")
+    
+    # Create formatter
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+    )
+    
+    # Setup file handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(log_level)
+    
+    # Setup console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.WARNING)  # Only warnings and errors to console
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    return logging.getLogger(__name__)
+
+
+# Initialize logging
+logger = setup_logging()
 
 # Initialize vCenter selection
 select_vcenter()
@@ -159,26 +255,26 @@ VCENTER_SERVER_SUBNET = current_config["VCENTER_SERVER_SUBNET"]
 def show_help():
     """Display available command line options."""
     print("Available options:")
-    print("  with_se_ips                              - Show VMs with SE IPs")
-    print("  free_ip                                  - Show free IPs")
-    print("  delete_ctlr_se                          - Delete controller and SE VMs")
-    print("  delete 'ip'                             - Delete VM by IP")
-    print("  delete_name 'name'                      - Delete VM by name")
-    print("  poweroff 'ip'                           - Power off VM by IP")
-    print("  rename 'ip' 'newname'                   - Rename VM")
-    print("  poweron                                  - Power on all VMs")
-    print("  poweron 'name'                          - Power on specific VM")
-    print("  reimage_ctlr                            - Reimage controller")
-    print("  latest_builds                           - Show latest builds")
-    print("  generate_controller_from_ova            - Generate controller from OVA")
-    print("  configure_raw_controller                - Configure raw controller")
-    print("  configure_raw_controller_wo_tmux        - Configure controller without tmux")
-    print("  configure_password_only                 - Configure password only")
-    print("  configure_cloud_vs_se                   - Configure cloud, VS, and SE")
-    print("  configure_vs                            - Configure virtual service")
+    print("  with_se_ips                               - Show VMs with SE IPs")
+    print("  free_ip                                   - Show free IPs")
+    print("  delete_ctlr_se                            - Delete controller and SE VMs")
+    print("  delete 'ip'                               - Delete VM by IP")
+    print("  delete_name 'name'                        - Delete VM by name")
+    print("  poweroff 'ip'                             - Power off VM by IP")
+    print("  rename 'ip' 'newname'                     - Rename VM")
+    print("  poweron                                   - Power on all VMs")
+    print("  poweron 'name'                            - Power on specific VM")
+    print("  reimage_ctlr                              - Reimage controller")
+    print("  latest_builds                             - Show latest builds")
+    print("  generate_controller_from_ova              - Generate controller from OVA")
+    print("  configure_raw_controller                  - Configure raw controller")
+    print("  configure_raw_controller_wo_tmux          - Configure controller without tmux")
+    print("  configure_password_only                   - Configure password only")
+    print("  configure_cloud_vs_se                     - Configure cloud, VS, and SE")
+    print("  configure_vs                              - Configure virtual service")
     print("  flush_db_configure_raw_controller_wo_tmux - Flush DB and configure")
-    print("  setup_tmux                              - Setup tmux")
-    print("  setup_tmux_install_only                 - Setup tmux install only")
+    print("  setup_tmux                                - Setup tmux")
+    print("  setup_tmux_install_only                   - Setup tmux install only")
 
 
 # Check for help request
@@ -209,51 +305,102 @@ def connect(vcenter_ip=VCENTER_IP, users=VCENTER_USERS, pwd=VCENTER_PASSWORD):
     Raises:
         SystemExit: If connection fails for all users
     """
-    context = ssl._create_unverified_context()
-    filename = ".vcenter_session_info"
-    session_file = os.path.join(os.path.expanduser("~"), filename)
-    # load session: load in existing session_data
-    if os.path.exists(session_file):
-        with open(session_file, "r") as f:
-            session_data = f.read().strip()
-            session_data = json.loads(session_data) if session_data else None
-    else:
+    logger.info(f"Attempting to connect to vCenter: {vcenter_ip}")
+    
+    try:
+        context = ssl._create_unverified_context()
+        filename = ".vcenter_session_info"
+        session_file = os.path.join(os.path.expanduser("~"), filename)
+        
+        # Load existing session data
         session_data = None
-
-    def new_session(data):
-        conn = ""
-        for user in users:
+        if os.path.exists(session_file):
             try:
-                print("Connecting with user",user)
-                conn = Connect(host=vcenter_ip, user=user, pwd=pwd, disableSslCertValidation=True)
-                break
+                with open(session_file, "r") as f:
+                    session_data = f.read().strip()
+                    session_data = json.loads(session_data) if session_data else None
+                logger.debug("Loaded existing session data")
             except Exception as e:
-                print("Unable to connect to %s" % vcenter_ip)
-                print(str(e))
-        if not conn:
-            sys.exit(1)
-        # save session: update session data to include the latest for this server.
-        if data is None:
-            data = {}
-        data.update({str(VCENTER_IP): {'cookie': conn._stub.cookie, 'time': time.strftime("%Y-%m-%d %H:%M:%S"), 'version': conn._stub.version, 'user':user}})
-        data = json.dumps(data)
-        with open(session_file, "w") as f:
-            f.write(data)
-        return conn
+                logger.warning(f"Failed to load session file: {e}")
+                session_data = None
 
-    host_session = session_data[str(VCENTER_IP)] if session_data and str(VCENTER_IP) in session_data else None
-    if not host_session:
-        return new_session(session_data)
-    else:
-        cookie, version, user  = host_session['cookie'], host_session['version'], host_session['user']
-        soapStub = SoapStubAdapter(host=str(VCENTER_IP), sslContext=context, version=version)
-        conn = vim.ServiceInstance("ServiceInstance",soapStub)
-        conn._stub.cookie = cookie
-        if not conn.content.sessionManager.currentSession:
-            return new_session(session_data)
-        else:
-            print("using existing session for connection")
+        def new_session(data):
+            """Create a new vCenter session."""
+            logger.info("Creating new vCenter session")
+            conn = None
+            last_error = None
+            
+            for user in users:
+                try:
+                    logger.info(f"Connecting with user: {user}")
+                    conn = Connect(
+                        host=vcenter_ip, 
+                        user=user, 
+                        pwd=pwd, 
+                        disableSslCertValidation=True
+                    )
+                    logger.info(f"Successfully connected with user: {user}")
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.warning(f"Connection failed for user {user}: {e}")
+                    
+            if not conn:
+                logger.error(f"Failed to connect to vCenter {vcenter_ip} with any user")
+                if last_error:
+                    raise ConnectionError(f"Unable to connect to {vcenter_ip}: {last_error}")
+                
+            
+            # Save session data
+            try:
+                if data is None:
+                    data = {}
+                data.update({
+                    str(vcenter_ip): {
+                        'cookie': conn._stub.cookie, 
+                        'time': time.strftime("%Y-%m-%d %H:%M:%S"), 
+                        'version': conn._stub.version, 
+                        'user': user
+                    }
+                })
+                
+                with open(session_file, "w") as f:
+                    f.write(json.dumps(data))
+                logger.debug("Saved session data to file")
+            except Exception as e:
+                logger.warning(f"Failed to save session data: {e}")
+                
             return conn
+
+        # Try to reuse existing session
+        host_session = session_data.get(str(vcenter_ip)) if session_data else None
+        if host_session:
+            try:
+                logger.debug("Attempting to reuse existing session")
+                cookie = host_session['cookie']
+                version = host_session['version']
+                user = host_session['user']
+                
+                soapStub = SoapStubAdapter(host=str(vcenter_ip), sslContext=context, version=version)
+                conn = vim.ServiceInstance("ServiceInstance", soapStub)
+                conn._stub.cookie = cookie
+                
+                if conn.content.sessionManager.currentSession:
+                    logger.info("Successfully reused existing session")
+                    return conn
+                else:
+                    logger.info("Existing session invalid, creating new session")
+                    return new_session(session_data)
+                    
+            except Exception as e:
+                logger.warning(f"Failed to reuse session: {e}")
+                return new_session(session_data)
+        else:
+            return new_session(session_data)
+            
+    except Exception as e:
+        logger.error(f"Error during vCenter connection: {e}")
+        raise
 
 
 # =============================================================================
@@ -323,17 +470,42 @@ def power_on_vm(virtual_machine_obj):
     
     Args:
         virtual_machine_obj: VMware virtual machine object to power on
+        
+    Raises:
+        Exception: If power on operation fails
     """
-    task = virtual_machine_obj.PowerOn()
-    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+    try:
+        logger.info(f"Powering on VM: {virtual_machine_obj.name}")
+        task = virtual_machine_obj.PowerOn()
+        
+        # Wait for task completion with timeout
+        timeout_seconds = 300  # 5 minutes
+        start_time = time.time()
+        
+        while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+            if time.time() - start_time > timeout_seconds:
+                logger.error(f"Timeout waiting for VM {virtual_machine_obj.name} to power on")
+                raise TimeoutError(f"Timeout powering on VM {virtual_machine_obj.name}")
         time.sleep(1)
-    print(f"Power on task for VM {virtual_machine_obj.name} = {task.info.state}")
+        
+        if task.info.state == vim.TaskInfo.State.success:
+            logger.info(f"Successfully powered on VM: {virtual_machine_obj.name}")
+            print(f"Power on task for VM {virtual_machine_obj.name} = SUCCESS")
+        else:
+            error_msg = f"Failed to power on VM {virtual_machine_obj.name}: {task.info.error}"
+            logger.error(error_msg)
+            print(f"Power on task for VM {virtual_machine_obj.name} = ERROR")
+            raise Exception(error_msg)
+            
+    except Exception as e:
+        logger.error(f"Error powering on VM {virtual_machine_obj.name}: {e}")
+        raise
 
 
 
 
 
-def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=False):
+def get_vms_ips_network(with_se_ips=False, free_ips=False, with_mgmt_reserved_ips=False):
     if with_se_ips:
         all_reserved_ips = ALL_RESERVED_IPS + SE_IPS
     else:
@@ -344,19 +516,20 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
     datacenter_name = VCENTER_DATACENTER_NAME
     datacenter = None
     si = connect()
-    vms_table = {} # vms_table[(folder,name)] = {state :template/on/off , ip_network: [[ip,network],]}
+    # vms_table[(folder,name)] = {state: template/on/off, ip_network: [[ip,network]]}
+    vms_table = {}
 
     for dc in si.content.rootFolder.childEntity:
         if dc.name == datacenter_name:
             datacenter = dc
     if datacenter is None:
-        print("datacenter %s not found"%(datacenter_name))
+        print(f"datacenter {datacenter_name} not found")
         sys.exit(1)
-    search_text = "%s/vm/%s"%(datacenter_name,folder_name)
+    search_text = f"{datacenter_name}/vm/{folder_name}"
     search_folder = si.RetrieveContent().searchIndex.FindByInventoryPath(search_text)
     if not search_folder:
-        print("folder %s not found"%(folder_name))
-        print("search text = %s"%(search_text))
+        print(f"folder {folder_name} not found")
+        print(f"search text = {search_text}")
         sys.exit(1)
     for virtual_m in search_folder.childEntity:
         if vim.Folder == type(virtual_m):
@@ -416,7 +589,8 @@ def get_vms_ips_network(with_se_ips=False,free_ips=False,with_mgmt_reserved_ips=
             if ip_network_val[0] not in all_reserved_ips:
                 final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
     final_print_vals = remove_se_non_reserved_ips(final_print_vals)
-    if not free_ips: final_print_vals = remove_free_ips(final_print_vals)
+    if not free_ips:
+        final_print_vals = remove_free_ips(final_print_vals)
     return final_print_vals
 
 def remove_free_ips(final_print_vals):
@@ -425,10 +599,9 @@ def remove_free_ips(final_print_vals):
         val_name = val[0]
         if FREE_IP != val_name:
             new_final_print_vals.append(val)
-    return new_final_print_vals    
+    return new_final_print_vals
 
 def remove_se_non_reserved_ips(final_print_vals):
-    #print(final_print_vals)
     reserved_se_names = []
     new_final_print_vals = []
     for val in final_print_vals:
@@ -442,9 +615,10 @@ def remove_se_non_reserved_ips(final_print_vals):
         if val_name in reserved_se_names and val_ip not in SE_IPS:
             continue
         new_final_print_vals.append(val)
-    return new_final_print_vals    
+    return new_final_print_vals
 
-def poweroff_and_delete_vm(ips,delete=False,si=None):
+
+def poweroff_and_delete_vm(ips, delete=False, si=None):
     cmd = 'delete' if delete else 'poweroff'
     if not si:
         si = connect()
@@ -478,120 +652,88 @@ def poweroff_and_delete_vm(ips,delete=False,si=None):
                 time.sleep(1)
             print ("vm is deleted.",task.info.state)
 
-if len(sys.argv)>=3 and sys.argv[1] in ('delete','poweroff'):
-    if sys.argv[2]:
-        if sys.argv[1] == 'delete':
-            poweroff_and_delete_vm(sys.argv[2:],True)
-        else:
-            poweroff_and_delete_vm(sys.argv[2:],False)
+# =============================================================================
+# MAIN EXECUTION LOGIC
+# =============================================================================
 
-
-
-if len(sys.argv)>=3 and sys.argv[1] == 'delete_name':
-
-    si = connect()
-    vm_names = [item.strip() for item in sys.argv[2:]]
-    print(vm_names)
-    datacenter_name = VCENTER_DATACENTER_NAME
-    for dc in si.content.rootFolder.childEntity:
-        if dc.name == datacenter_name:
-            datacenter = dc
-    folder_name = VCENTER_FOLDER_NAME
-    search_path = "/%s/vm/%s"%(datacenter.name,folder_name)
-    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
-    if not folder_obj:
-        print(f"Folder not found at path: {search_path}")
-        sys.exit(1)
-    for virtual_m in folder_obj.childEntity:
-        for vm_name in vm_names:
-            if virtual_m.name != vm_name:
-                continue
-            action_confirm = input(f"Are you sure you want to delete '{vm_name}'? [Y/N] \n")
-            if action_confirm.lower() == "n":continue
-            if "harsh" in vm_name and "dev" in vm_name:
-                dev_vm_confirm = ""
-                while dev_vm_confirm not in ['confirm', 'deny']:
-                    dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{vm_name}'? [confirm/deny] \n").lower()
-                if dev_vm_confirm == 'deny':
-                    continue
-            if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-                print ("deleteing ",virtual_m.name)
-                task = virtual_m.Destroy()
-                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                    time.sleep(1)
-                print ("vm is deleted.",task.info.state)
-            elif len(virtual_m.guest.net) == 0:
-                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                    print ("powering off ",virtual_m.name)
-                    task = virtual_m.PowerOff()
-                    while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print ("power is off.",task.info.state)
-                print ("deleteing ",virtual_m.name)
-                task = virtual_m.Destroy()
-                while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-                    time.sleep(1)
-                print ("vm is deleted.",task.info.state)
-
-            else:
-                print ("delete the vm using ip")
-
-
-if len(sys.argv)==4 and sys.argv[1]=='rename':
-    ip = sys.argv[2]
-    newname = sys.argv[3]
-    si = connect()
-    search = si.RetrieveContent().searchIndex
-    vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
-
-    for vm in vms:
-        rename_confirm = input("Are you sure you want to rename '%s', (%s) with '%s'  ?[Y/N] \n"%(vm.name,ip,newname))
-        if rename_confirm.lower() == "n":continue
-        print ("renaming  ",vm.name," ",ip," to ",newname)
-        task = vm.Rename(newname)
-        while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
-            time.sleep(1)
-        print ("renaming done.",task.info.state)
-       
-
-if len(sys.argv) in (2,3) and sys.argv[1]=='poweron':
-    if len(sys.argv) == 3:
-        vm_name = sys.argv[2]
-    else:
-        vm_name = ''
-    si = connect()
-    datacenter_name = VCENTER_DATACENTER_NAME
-    for dc in si.content.rootFolder.childEntity:
-        if dc.name == datacenter_name:
-            datacenter = dc
-    folder_name = VCENTER_FOLDER_NAME
-    search_path = "/%s/vm/%s"%(datacenter.name,folder_name)
-    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
-    if not folder_obj:
-        print(f"Folder not found at path: {search_path}")
-        sys.exit(1)
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for virtual_m in folder_obj.childEntity:
-            if not virtual_m.config.template:
-                if vm_name:
-                    if virtual_m.name != vm_name:
-                        continue
-                if virtual_m.runtime.powerState == 'poweredOff':
-                    executor.submit(power_on_vm,virtual_m)
+def handle_delete_poweroff_commands():
+    """Handle delete and poweroff commands with IP arguments."""
+    try:
+        if len(sys.argv) >= 3 and sys.argv[1] in ('delete', 'poweroff'):
+            if sys.argv[2]:
+                operation = 'delete' if sys.argv[1] == 'delete' else 'poweroff'
+                ip_list = sys.argv[2:]
+                logger.info(f"Executing {operation} operation on IPs: {ip_list}")
+                
+                if sys.argv[1] == 'delete':
+                    poweroff_and_delete_vm(ip_list, True)
                 else:
-                    print ("vm %s is already ON"%(virtual_m.name))
+                    poweroff_and_delete_vm(ip_list, False)
+                    
+                logger.info(f"{operation.capitalize()} operation completed successfully")
+            else:
+                raise ValueError("No IP addresses provided")
+        else:
+            raise ValueError("Invalid command format for delete/poweroff")
+    except Exception as e:
+        logger.error(f"Error in delete/poweroff command: {e}")
+        raise
 
-if len(sys.argv)==1:
-    final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
-    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
 
-if len(sys.argv)==2 and sys.argv[1]=='with_se_ips':
-    final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
-    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+def handle_delete_by_name():
+    """Handle delete by VM name command."""
+    if len(sys.argv) >= 3 and sys.argv[1] == 'delete_name':
+        si = connect()
+        vm_names = [item.strip() for item in sys.argv[2:]]
+        print(vm_names)
+        datacenter_name = VCENTER_DATACENTER_NAME
+        for dc in si.content.rootFolder.childEntity:
+            if dc.name == datacenter_name:
+                datacenter = dc
+        folder_name = VCENTER_FOLDER_NAME
+        search_path = f"/{datacenter.name}/vm/{folder_name}"
+        folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+        if not folder_obj:
+            print(f"Folder not found at path: {search_path}")
+            sys.exit(1)
+        for virtual_m in folder_obj.childEntity:
+            for vm_name in vm_names:
+                if virtual_m.name != vm_name:
+                    continue
+                action_confirm = input(f"Are you sure you want to delete '{vm_name}'? [Y/N] \n")
+                if action_confirm.lower() == "n":
+                    continue
+                if "harsh" in vm_name and "dev" in vm_name:
+                    dev_vm_confirm = ""
+                    while dev_vm_confirm not in ['confirm', 'deny']:
+                        dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{vm_name}'? [confirm/deny] \n").lower()
+                    if dev_vm_confirm == 'deny':
+                        continue
+                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+                    print(f"Deleting {virtual_m.name}")
+                    task = virtual_m.Destroy()
+                    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+                        time.sleep(1)
+                    print(f"VM is deleted. {task.info.state}")
+                elif len(virtual_m.guest.net) == 0:
+                    if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                        print(f"Powering off {virtual_m.name}")
+                        task = virtual_m.PowerOff()
+                        while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+                            time.sleep(1)
+                        print(f"Power is off. {task.info.state}")
+                    print(f"Deleting {virtual_m.name}")
+                    task = virtual_m.Destroy()
+                    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+                        time.sleep(1)
+                    print(f"VM is deleted. {task.info.state}")
+                else:
+                    print("Delete the VM using IP")
 
-if len(sys.argv)==2 and sys.argv[1] in ['free_ip','free_ips']:
-    final_print_vals = get_vms_ips_network(with_se_ips=True,free_ips=True, with_mgmt_reserved_ips=True)
-    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+# Old command handlers removed - now handled by main() function
+
+# Command handling moved to main() function
 
 
 # =============================================================================
@@ -615,32 +757,56 @@ def get_headers(tenant='admin'):
     return headers
 
 
-def wait_until_cluster_ready(c_ip,  timeout=1800):
-    uri = 'https://' + c_ip + '/api/cluster/runtime'
-
+def wait_until_cluster_ready(c_ip, timeout=1800):
+    """
+    Wait until controller cluster is ready.
+    
+    Args:
+        c_ip (str): Controller IP address
+        timeout (int): Timeout in seconds (default: 1800)
+        
+    Returns:
+        bool: True if cluster is ready
+        
+    Raises:
+        TimeoutError: If cluster is not ready within timeout
+        ConnectionError: If unable to connect to controller
+    """
+    uri = f'https://{c_ip}/api/cluster/runtime'
     sleep_time = 10
     iters = int(timeout / sleep_time)
-    rsp = ''
+    
+    logger.info(f"Waiting for cluster ready on controller {c_ip} (timeout: {timeout}s)")
+    
     for i in range(iters):
         try:
-            rsp = requests.get(uri, verify=False)
-            print('controller %s' % c_ip)
-            print('rsp_code %s' % rsp.status_code)
-            #print('rsp_data %s' % rsp.json())
-        except:
-            print('Get for %s fails. Controller %s' % (uri, c_ip))
-            pass
-
-        if rsp and rsp.status_code == 200:
-            cluster_state = rsp.json().get('cluster_state', {})
-            if cluster_state.get('state') in ['CLUSTER_UP_HA_ACTIVE', 'CLUSTER_UP_NO_HA']:
-                print('Found cluster state ACTIVE')
-                return True
+            rsp = requests.get(uri, verify=False, timeout=30)
+            logger.debug(f"Controller {c_ip} response code: {rsp.status_code}")
+            
+            if rsp.status_code == 200:
+                cluster_state = rsp.json().get('cluster_state', {})
+                state = cluster_state.get('state', 'UNKNOWN')
+                
+                if state in ['CLUSTER_UP_HA_ACTIVE', 'CLUSTER_UP_NO_HA']:
+                    logger.info(f"Cluster state ACTIVE on controller {c_ip}")
+                    print(f'Found cluster state ACTIVE on {c_ip}')
+                    return True
+                else:
+                    logger.debug(f"Cluster state INACTIVE on controller {c_ip}: {state}")
+                    print(f'Cluster state INACTIVE on {c_ip}: {state}')
             else:
-                print('cluster state INACTIVE')
-        time.sleep(sleep_time)
-    raise Exception('Timeout: waited approximately %s sec. and the cluster '
-                    'is still not active. controller %s' % (timeout, c_ip))
+                logger.warning(f"Non-200 response from controller {c_ip}: {rsp.status_code}")
+                
+        except Exception as e:
+            logger.warning(f"Request failed for {uri}: {e}")
+            print(f'Connection attempt {i+1}/{iters} failed for controller {c_ip}')
+            
+        if i < iters - 1:  # Don't sleep on the last iteration
+            time.sleep(sleep_time)
+    
+    error_msg = f'Timeout: waited approximately {timeout} sec. and the cluster is still not active. controller {c_ip}'
+    logger.error(error_msg)
+    raise TimeoutError(error_msg)
 
 def change_to_default_password(c_ip):
     uri_base = 'https://' + c_ip + '/'
@@ -1730,15 +1896,67 @@ def generate_controller_from_ova():
 
     print("================== DONE ==============")
 
-if len(sys.argv)==2 and sys.argv[1]=='delete_ctlr_se':
+# All old command handlers removed - functionality moved to organized handler functions
+
+
+# All command handling moved to main() function
+def handle_rename_vm():
+    """Handle VM rename command."""
+    ip = sys.argv[2]
+    newname = sys.argv[3]
+    si = connect()
+    search = si.RetrieveContent().searchIndex
+    vms = list(set(search.FindAllByIp(ip=ip, vmSearch=True)))
+
+    for vm in vms:
+        rename_confirm = input(f"Are you sure you want to rename '{vm.name}', ({ip}) with '{newname}'? [Y/N] \n")
+        if rename_confirm.lower() == "n":
+            continue
+        print(f"Renaming {vm.name} {ip} to {newname}")
+        task = vm.Rename(newname)
+        while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+            time.sleep(1)
+        print(f"Renaming done. {task.info.state}")
+
+
+def handle_poweron_vm():
+    """Handle power on VM command."""
+    vm_name = sys.argv[2] if len(sys.argv) == 3 else ''
+    si = connect()
+    datacenter_name = VCENTER_DATACENTER_NAME
+    for dc in si.content.rootFolder.childEntity:
+        if dc.name == datacenter_name:
+            datacenter = dc
+    folder_name = VCENTER_FOLDER_NAME
+    search_path = f"/{datacenter.name}/vm/{folder_name}"
+    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+    if not folder_obj:
+        print(f"Folder not found at path: {search_path}")
+        sys.exit(1)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for virtual_m in folder_obj.childEntity:
+            if not virtual_m.config.template:
+                if vm_name:
+                    if virtual_m.name != vm_name:
+                        continue
+                if virtual_m.runtime.powerState == 'poweredOff':
+                    executor.submit(power_on_vm, virtual_m)
+                else:
+                    print(f"VM {virtual_m.name} is already ON")
+
+
+def handle_delete_ctlr_se():
+    """Handle delete controller and SE command."""
     si = connect()
     mgmt_ips = get_used_controller_ips(si)
     mgmt_se_ips = set()
     for mgmt_ip in mgmt_ips:
         mgmt_se_ips.update(set(get_all_se(mgmt_ip)))
-    poweroff_and_delete_vm(mgmt_ips + list(mgmt_se_ips),delete=True,si=si)
+    poweroff_and_delete_vm(mgmt_ips + list(mgmt_se_ips), delete=True, si=si)
 
-if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
+
+def handle_latest_builds():
+    """Handle latest builds command."""
     all_builds = []
     while True:
         versions = input("Versions [comma separated] ?: ")
@@ -1750,76 +1968,175 @@ if len(sys.argv)==2 and sys.argv[1]=='latest_builds':
                 all_builds.append(builds)
         if all_builds:
             break
-    final_print_vals = [("Index","Version","Build No", "File", "Date")]
+    final_print_vals = [("Index", "Version", "Build No", "File", "Date")]
     for build in all_builds:
         for value in build:
-            final_print_vals.append((value[0],value[1],value[2],value[3],value[4]))
-        final_print_vals.append(("---","---","---","---","---"))
+            final_print_vals.append((value[0], value[1], value[2], value[3], value[4]))
+        final_print_vals.append(("---", "---", "---", "---", "---"))
 
     print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
     
 
-if len(sys.argv)==2 and sys.argv[1]=='  ':
-    si = connect()
-    mgmt_ip = get_used_controller_ip(si)
-    login_and_set_global_variables(mgmt_ip,None)
-    mgmt_se_ips = get_all_se(mgmt_ip)
-    if not mgmt_se_ips:
-        se_ips_to_use_for_ctlr(si,mgmt_ip)
-    se_ips_to_use_for_ctlr(si,mgmt_ip)
-    setup_cloud_se(mgmt_ip)
-    setup_vs(mgmt_ip)
-
-if len(sys.argv)==2 and sys.argv[1]=='configure_vs':
+def handle_configure_vs():
+    """Handle configure VS command."""
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     setup_vs(mgmt_ip)
 
-if len(sys.argv)==2 and sys.argv[1]=='configure_cloud_vs_se':
+
+def handle_configure_cloud_vs_se():
+    """Handle configure cloud VS SE command."""
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     setup_cloud_vs_se(si, mgmt_ip)
 
-if len(sys.argv)==2 and sys.argv[1]=='setup_tmux':
+
+def handle_setup_tmux():
+    """Handle setup tmux command."""
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     setup_tmux(mgmt_ip)
 
-if len(sys.argv)==2 and sys.argv[1]=='setup_tmux_install_only':
+
+def handle_setup_tmux_install_only():
+    """Handle setup tmux install only command."""
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
     setup_tmux_install_only(mgmt_ip)
 
 
-if len(sys.argv)==2 and sys.argv[1]=='flush_db_configure_raw_controller_wo_tmux':
+def handle_flush_db_configure():
+    """Handle flush DB configure command."""
     si = connect()
     mgmt_ip = get_used_controller_ip(si)
-    se_ips_to_use_for_ctlr(si,mgmt_ip)
-    delete_all_se(si,mgmt_ip)
+    se_ips_to_use_for_ctlr(si, mgmt_ip)
+    delete_all_se(si, mgmt_ip)
     flush_db(mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     setup_cloud_se(mgmt_ip)
     setup_vs(mgmt_ip)
 
 
-if len(sys.argv)==2 and sys.argv[1] == 'generate_controller_from_ova':
-    generate_controller_from_ova()
-
-
-if len(sys.argv)==2 and (sys.argv[1] == 'configure_raw_controller' or sys.argv[1] == 'configure_raw_controller_wo_tmux' or sys.argv[1] == 'configure_password_only'):
+def handle_configure_controller(command):
+    """Handle configure controller commands."""
     si = connect()
     mgmt_ips = get_used_controller_ips(si)
     for mgmt_ip in mgmt_ips:
-        if sys.argv[1] == 'configure_raw_controller':
-            configure_raw_controller(si,mgmt_ip)
-        if sys.argv[1] == 'configure_raw_controller_wo_tmux':
-            configure_raw_controller_wo_tmux(si,mgmt_ip)
-        if sys.argv[1] == 'configure_password_only':
+        if command == 'configure_raw_controller':
+            configure_raw_controller(si, mgmt_ip)
+        elif command == 'configure_raw_controller_wo_tmux':
+            configure_raw_controller_wo_tmux(si, mgmt_ip)
+        elif command == 'configure_password_only':
             configure_password_only(mgmt_ip)
     
 
-END_TIME = time.time()
-print("Time Elapsed %s,  Current Time = %s"%(str(timedelta(seconds=END_TIME-START_TIME)), datetime.datetime.now()))
+def main():
+    """Main execution function to handle command-line arguments and dispatch commands."""
+    try:
+        logger.info("Starting vSphere automation script")
+        logger.info(f"Command line arguments: {sys.argv}")
+        
+        # Handle command-line arguments
+        if len(sys.argv) == 1:
+            # Default: Show VMs with SE IPs and management reserved IPs
+            logger.info("Executing default command: showing VM information")
+            final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
+            print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+            
+        elif len(sys.argv) == 2:
+            logger.info(f"Executing single argument command: {sys.argv[1]}")
+            handle_single_argument_commands()
+            
+        elif len(sys.argv) >= 3:
+            logger.info(f"Executing multi-argument command: {sys.argv[1]} with {len(sys.argv)-2} arguments")
+            handle_multi_argument_commands()
+            
+        logger.info("Script execution completed successfully")
+            
+    except Exception as e:
+        if "KeyboardInterrupt" in str(type(e)):
+            logger.warning("Operation cancelled by user")
+            print("\nOperation cancelled by user")
+        else:
+            logger.error(f"Error: {e}", exc_info=True)
+            print(f"Error: {e}")
+        sys.exit(1)
+    finally:
+        # Print execution time
+        end_time = time.time()
+        elapsed_time = str(timedelta(seconds=end_time - START_TIME))
+        current_time = datetime.datetime.now()
+        execution_summary = f"Time Elapsed {elapsed_time}, Current Time = {current_time}"
+        logger.info(execution_summary)
+        print(execution_summary)
+
+
+def handle_single_argument_commands():
+    """Handle commands with single arguments."""
+    command = sys.argv[1]
+    
+    if command == 'with_se_ips':
+        final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
+        print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+        
+    elif command in ['free_ip', 'free_ips']:
+        final_print_vals = get_vms_ips_network(with_se_ips=True, free_ips=True, with_mgmt_reserved_ips=True)
+        print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+        
+    elif command == 'delete_ctlr_se':
+        handle_delete_ctlr_se()
+        
+    elif command == 'latest_builds':
+        handle_latest_builds()
+        
+    elif command == 'configure_vs':
+        handle_configure_vs()
+        
+    elif command == 'configure_cloud_vs_se':
+        handle_configure_cloud_vs_se()
+        
+    elif command == 'setup_tmux':
+        handle_setup_tmux()
+        
+    elif command == 'setup_tmux_install_only':
+        handle_setup_tmux_install_only()
+        
+    elif command == 'flush_db_configure_raw_controller_wo_tmux':
+        handle_flush_db_configure()
+        
+    elif command == 'generate_controller_from_ova':
+        generate_controller_from_ova()
+        
+    elif command in ['configure_raw_controller', 'configure_raw_controller_wo_tmux', 'configure_password_only']:
+        handle_configure_controller(command)
+        
+    else:
+        print(f"Unknown command: {command}")
+        show_help()
+        sys.exit(1)
+
+
+def handle_multi_argument_commands():
+    """Handle commands with multiple arguments."""
+    command = sys.argv[1]
+    
+    if command in ('delete', 'poweroff'):
+        handle_delete_poweroff_commands()
+    elif command == 'delete_name':
+        handle_delete_by_name()
+    elif command == 'rename' and len(sys.argv) == 4:
+        handle_rename_vm()
+    elif command == 'poweron':
+        handle_poweron_vm()
+    else:
+        print(f"Unknown command or incorrect arguments: {command}")
+        show_help()
+        sys.exit(1)
+
+
+# Execute main function if script is run directly
+if __name__ == "__main__":
+    main()
    
 
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
