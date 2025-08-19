@@ -138,13 +138,13 @@ for cwd_dir in CWD:
     fetched_branches = []
     for branch in all_branches:
         try:
-            if int(branch[:2])<23:
+            if int(branch[:2])<29:
                 continue
         except ValueError:
             pass
         fetched_branches.append(branch)
     git_prune(cwd_dir)
-    fetched_branches = ["eng", "go-build-faster", "go-debug-build-faster"] + fetched_branches
+    fetched_branches = ["eng"] + fetched_branches
     log.info("Fetching Branches: %s"%(fetched_branches))
     checkout_datas = get_checked_out_branches(cwd_dir)
     #if not checkout_datas: exit(1)
