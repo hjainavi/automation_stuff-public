@@ -453,7 +453,7 @@ def fill_vms_table(vms_table, virtual_m):
                     continue
                 for ip_addr in ip_net.ipAddress:
                     # Filter out IPv6 and empty addresses
-                    if ip_addr and ":" not in ip_addr:
+                    if (ip_addr and ":" not in ip_addr) or ("v6" in str(ip_net.network) and "fe80" not in ip_addr):
                         vms_table[(folder_name, virtual_m.name)]['ip_network'].append(
                             [ip_addr, ip_net.network]
                         )
@@ -1445,12 +1445,14 @@ def get_used_controller_ip(si):
     return mgmt_ip
 
 def check_if_ip_is_valid_and_free(si,ip,only_check=False,print_not_free=False):
+    
     try:
         mgmt_ip = inet_ntoa(inet_aton(ip))
     except Exception as e:
         print(str(e))
         print("Ip %s is not valid"%(ip))
         return False
+    
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip,vmSearch=True)))
     if not vms:
