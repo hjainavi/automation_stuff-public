@@ -637,21 +637,24 @@ def poweroff_and_delete_vm(ips, delete=False, si=None):
                     if dev_vm_confirm == 'deny':
                         continue
                 vms_to_operate_on.append((vm,ip))
-    for vm,ip in vms_to_operate_on:
-        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-            print ("powering off ",vm.name," ",ip)
+    def process_vm_operation(vm_ip_tuple):
+        vm, ip = vm_ip_tuple
+        if vm.runtime.powerState == 'poweredOn':
+            print ("powering off ",vm.name,ip)
             task = vm.PowerOff()
-            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+            while task.info.state not in ['success','error']:
                 time.sleep(1)
-            print ("power is off.",task.info.state)
+            print ("power is off.",vm.name,ip,task.info.state)
         
-        if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and cmd=='delete':
-            print ("deleteing ",vm.name," ",ip)
+        if vm.runtime.powerState == 'poweredOff' and cmd=='delete':
+            print ("deleteing ",vm.name,ip)
             task = vm.Destroy()
-            while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
+            while task.info.state not in ['success','error']:
                 time.sleep(1)
-            print ("vm is deleted.",task.info.state)
+            print ("vm is deleted.",vm.name,ip,task.info.state)
 
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(process_vm_operation, vms_to_operate_on)
 # =============================================================================
 # MAIN EXECUTION LOGIC
 # =============================================================================
