@@ -1151,7 +1151,7 @@ def setup_vs(c_ip, version="" ,timeout=60):
 
         }
     }
-
+    time.sleep(3)
     r = requests.post(uri_base+'api/macro', data=json.dumps(data_macro), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if r.status_code not in [200,201]:
         raise Exception(r.text)

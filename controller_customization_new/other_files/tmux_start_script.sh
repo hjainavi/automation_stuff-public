@@ -35,4 +35,9 @@ if [ -f "/opt/avi/log/apiserver.DEBUG" ]; then
     tmux send-keys -t $TMUX_SESSION_NAME:7 'tail -f /opt/avi/log/apiserver.DEBUG' Enter
 fi
 
+if [ -f "/var/log/nginx/portal.access.log" ]; then
+    tmux new-window -t $TMUX_SESSION_NAME -n 'nginx'
+    tmux send-keys -t $TMUX_SESSION_NAME:7 'tail -f /var/log/nginx/portal.access.log' Enter
+fi
+
 cd ~/
