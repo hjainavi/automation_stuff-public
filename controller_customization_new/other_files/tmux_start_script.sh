@@ -40,4 +40,6 @@ if [ -f "/var/log/nginx/portal.access.log" ]; then
     tmux send-keys -t $TMUX_SESSION_NAME:7 'tail -f /var/log/nginx/portal.access.log' Enter
 fi
 
+tmux new-window -t $TMUX_SESSION_NAME 
+
 cd ~/
