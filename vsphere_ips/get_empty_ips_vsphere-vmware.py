@@ -80,6 +80,7 @@ GLOBAL_LOGIN_COOKIES = {}
 GLOBAL_CURRENT_PASSWORD = {}
 GLOBAL_BUILD_NO = {}
 SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
+CONTROLLER_NAME = ""
 
 # Load Configuration from vals.json
 def load_configuration():
@@ -534,6 +535,7 @@ def get_vms_ips_network(with_se_ips=False, free_ips=False, with_mgmt_reserved_ip
     for virtual_m in search_folder.childEntity:
         if vim.Folder == type(virtual_m):
             continue
+        #import ipdb;ipdb.set_trace()
         fill_vms_table(vms_table, virtual_m)
     """
     vms = datacenter.vmFolder.childEntity
@@ -806,10 +808,104 @@ def wait_until_cluster_ready(c_ip, timeout=1800):
             
         if i < iters - 1:  # Don't sleep on the last iteration
             time.sleep(sleep_time)
-    
+        if i == 50 and CONTROLLER_NAME:
+            si = connect()
+            virtual_m = find_vm_by_name(si,CONTROLLER_NAME)
+            if virtual_m:
+                if len(virtual_m.guest.net) == 0:
+                    #change network adapter
+                    change_network_adapter(virtual_m)
+
     error_msg = f'Timeout: waited approximately {timeout} sec. and the cluster is still not active. controller {c_ip}'
     logger.error(error_msg)
     raise TimeoutError(error_msg)
+
+def find_vm_by_name(si,vm_name):
+    search_path = f"/{VCENTER_DATACENTER_NAME}/vm/{VCENTER_FOLDER_NAME}"
+    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+    if not folder_obj:
+        print(f"Folder not found at path: {search_path}")
+        sys.exit(1)
+    for virtual_m in folder_obj.childEntity:
+        if virtual_m.name == vm_name:
+            return virtual_m
+    return None
+
+def change_network_adapter(virtual_m):
+    #power off vm
+    task = virtual_m.PowerOff()
+    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+        time.sleep(1)
+    print(f"Power is off. {task.info.state}")
+
+    
+    # Find the network adapter device
+    network_adapter = None
+    for device in virtual_m.config.hardware.device:
+        if isinstance(device, vim.vm.device.VirtualEthernetCard):
+            network_adapter = device
+            break
+    # Remove the current network adapter first
+    if network_adapter:
+        remove_device_change = vim.vm.device.VirtualDeviceSpec()
+        remove_device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.remove
+        remove_device_change.device = network_adapter
+        
+        remove_config_spec = vim.vm.ConfigSpec()
+        remove_config_spec.deviceChange = [remove_device_change]
+        
+        # Remove the current adapter
+        remove_task = virtual_m.ReconfigVM_Task(remove_config_spec)
+        while remove_task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+            time.sleep(1)
+        
+        if remove_task.info.state == vim.TaskInfo.State.success:
+            print(f"Successfully removed existing network adapter")
+        else:
+            print(f"Failed to remove network adapter: {remove_task.info.error}")
+            return
+    
+    # Add a new E1000 network adapter
+    new_network_adapter = vim.vm.device.VirtualE1000()
+    new_network_adapter.key = -1  # Temporary key for new device
+    new_network_adapter.deviceInfo = vim.Description()
+    new_network_adapter.deviceInfo.label = "Network adapter 1"
+    new_network_adapter.deviceInfo.summary = "E1000 ethernet adapter"
+    
+    # Configure the network backing (connect to the same network as before)
+    backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
+    backing.deviceName = "ibn5-avi-dev-IntMgmt"  # Default network name
+    new_network_adapter.backing = backing
+    
+    # Configure connection settings
+    new_network_adapter.connectable = vim.vm.device.VirtualDevice.ConnectInfo()
+    new_network_adapter.connectable.startConnected = True
+    new_network_adapter.connectable.allowGuestControl = True
+    new_network_adapter.connectable.connected = True
+    
+    # Create device change spec for adding the new adapter
+    add_device_change = vim.vm.device.VirtualDeviceSpec()
+    add_device_change.operation = vim.vm.device.VirtualDeviceSpec.Operation.add
+    add_device_change.device = new_network_adapter
+    
+    add_config_spec = vim.vm.ConfigSpec()
+    add_config_spec.deviceChange = [add_device_change]
+    
+    # Add the new E1000 adapter
+    add_task = virtual_m.ReconfigVM_Task(add_config_spec)
+    while add_task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+        time.sleep(1)
+    
+    if add_task.info.state == vim.TaskInfo.State.success:
+        print(f"Successfully added new E1000 network adapter to ibn5-avi-dev-IntMgmt network")
+    else:
+        print(f"Failed to add E1000 network adapter to ibn5-avi-dev-IntMgmt network: {add_task.info.error}")
+        return
+    #power on vm
+    task = virtual_m.PowerOn()
+    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+        time.sleep(1)
+    print(f"Power is on. {task.info.state}")
 
 def change_to_default_password(c_ip):
     uri_base = 'https://' + c_ip + '/'
@@ -1794,7 +1890,8 @@ def generate_controller_from_ova():
         source_ova_path = builds[build_index-1][3]
         print(f"Source Ova Path = {source_ova_path}")
         ctlr_name = "ctlr_%s-%s"%(builds[build_index-1][1],builds[build_index-1][2])
-
+    global CONTROLLER_NAME
+    CONTROLLER_NAME = ctlr_name
     mgmt_leader_ip = ""
     mgmt_ips = []
     while True:
