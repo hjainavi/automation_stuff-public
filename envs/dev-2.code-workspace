@@ -6,10 +6,100 @@
 	],
 	"settings": {
 		"python.envFile": "/home/aviuser/workspace/envs/dev-2-env",
+		"git.ignoreLimitWarning": true,
+		"editor.stickyScroll.enabled": true,
+		"editor.stickyTabStops": true,
+		"git.allowForcePush": true,
 		"go.gopath": "/home/aviuser/workspace/dev-2/go",
-        "git.ignoreLimitWarning": true,
-        "editor.stickyScroll.enabled": true,
-        "editor.stickyTabStops": true,
-        "git.allowForcePush": true
+		"editor.fontSize": 14,
+        "go.buildFlags": [
+                "-tags=standalone,integration,skip_failed"
+        ]
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "100.65.11.176",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.176"
+			},
+			{
+				"name": "100.65.11.177",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.177"
+			},
+			{
+				"name": "100.65.11.178",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.178"
+			},
+			{
+				"name": "100.65.11.179",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.179"
+			},
+			{
+				"name": "100.65.11.180",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.180"
+			},
+			{
+				"name": "100.65.11.181",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.181"
+			},
+			{
+				"name": "100.65.11.182",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.182"
+			},
+			{
+				"name": "100.65.11.183",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.183"
+			},
+			{
+				"name": "100.65.11.184",
+				"type": "go",
+				"request": "attach",
+				"mode": "remote",
+				"remotePath": "${workspaceFolder}",
+				"port": 2345,
+				"host": "100.65.11.184"
+			}
+		]
 	}
 }
