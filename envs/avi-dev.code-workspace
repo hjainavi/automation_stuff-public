@@ -14,5 +14,9 @@
 		"terminal.integrated.env.linux": {
 			
 		},
+		"editor.fontSize": 14,
+        "go.buildFlags": [
+                "-tags=standalone,integration,skip_failed"
+        ]
 	}
 }
