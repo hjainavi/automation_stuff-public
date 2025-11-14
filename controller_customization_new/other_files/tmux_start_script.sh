@@ -37,7 +37,7 @@ fi
 
 if [ -f "/var/log/nginx/portal.access.log" ]; then
     tmux new-window -t $TMUX_SESSION_NAME -n 'nginx'
-    tmux send-keys -t $TMUX_SESSION_NAME:7 'tail -f /var/log/nginx/portal.access.log' Enter
+    tmux send-keys -t $TMUX_SESSION_NAME:7 'tail -f --retry /var/log/nginx/portal.access.log' Enter
 fi
 
 tmux new-window -t $TMUX_SESSION_NAME 
