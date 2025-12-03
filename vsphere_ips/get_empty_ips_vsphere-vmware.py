@@ -1663,7 +1663,10 @@ def configure_raw_controller(si,mgmt_ip):
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     put_to_cloud(mgmt_ip)
-    setup_tmux(mgmt_ip)
+    try:
+        setup_tmux(mgmt_ip)
+    except Exception as e:
+        print("----------------------",str(e))
     setup_cloud_se_wo_put_to_cloud(mgmt_ip)
     setup_vs(mgmt_ip)
 
