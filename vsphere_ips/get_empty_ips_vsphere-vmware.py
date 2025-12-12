@@ -1735,17 +1735,20 @@ def fetch_ip_from_vm(si, vm_name):
         raise Exception(f"No IPv4 management IP address found for VM {vm_name}")
 
     print(f"Fetching management IP from VM {vm_name}")
-    mgmt_ip = fetch_mgmt_ip(vm_obj)
-    if mgmt_ip is None:
-        print(f"ERROR: Failed to retrieve management IP from VM {vm_name}")
+    try:
+        mgmt_ip = fetch_mgmt_ip(vm_obj)
+    except Exception as e:
+        print(f"ERROR: Failed to retrieve management IP from VM {vm_name} after all retries")
         print("The VM may not have been fully initialized or network configuration is incomplete.")
         print("Changing network adapter and retrying...")
         change_network_adapter(vm_obj)
-        mgmt_ip = fetch_mgmt_ip(vm_obj)
-        if mgmt_ip is None:
-            print(f"ERROR: Failed to retrieve management IP from VM {vm_name}")
+        try:
+            mgmt_ip = fetch_mgmt_ip(vm_obj)
+        except Exception as e2:
+            print(f"ERROR: Failed to retrieve management IP from VM {vm_name} after changing network adapter")
             print("The VM may not have been fully initialized or network configuration is incomplete.")
             sys.exit(1)
+    
     return mgmt_ip
 
 def configure_raw_controller(si,mgmt_ip,vm_name = "",dhcp=False):
