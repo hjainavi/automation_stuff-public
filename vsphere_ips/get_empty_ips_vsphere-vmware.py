@@ -73,6 +73,8 @@ DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
 DEFAULT_PASSWORD = "avi123"
 SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DHCP = False
+SE_DHCP = False
+CTLR_MGMT_NETWORK = ""
 
 # Global State Variables (consider refactoring these to a class)
 GLOBAL_LOGIN_HEADERS = {}
@@ -267,6 +269,7 @@ def show_help():
     print("  poweron 'name'                            - Power on specific VM")
     print("  reimage_ctlr                              - Reimage controller")
     print("  latest_builds                             - Show latest builds")
+    print("  configure_raw_controller_dhcp             - Configure raw DHCP controller")
     print("  generate_controller_from_ova              - Generate controller from OVA")
     print("  configure_raw_controller                  - Configure raw controller")
     print("  configure_raw_controller_wo_tmux          - Configure controller without tmux")
@@ -1294,7 +1297,25 @@ def put_to_cloud(c_ip):
     print("setting up vmware write access cloud")
     wait_until_cloud_put(c_ip,uri_base)
 
+def fetch_network_based_on_ip(c_ip):
+    for network in VCENTER_MANAGEMENT_MAP:
+        subnet_str = VCENTER_MANAGEMENT_MAP[network]["subnet"]
+        try:
+            # Create an IP address object
+            ip_addr = ipaddress.ip_address(c_ip)
+            # Create a network object (handles the CIDR notation)
+            subnet_net = ipaddress.ip_network(subnet_str)
+            # Use the 'in' operator for membership testing
+            if ip_addr in subnet_net:
+                return VCENTER_MANAGEMENT_MAP[network]["name"]
+        except ValueError as e:
+            raise
+    print(f"ERROR: IP {c_ip} not found in any network")
+    sys.exit(1)
+        
+
 def setup_cloud_se_wo_put_to_cloud(c_ip,version=""):
+    global CTLR_MGMT_NETWORK
     uri_base = 'https://' + c_ip + '/'
     data = {}
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
@@ -1304,7 +1325,9 @@ def setup_cloud_se_wo_put_to_cloud(c_ip,version=""):
             break
     default_cloud_uuid = data['uuid']
     wait_until_cloud_ready(c_ip, GLOBAL_LOGIN_COOKIES[c_ip], GLOBAL_LOGIN_HEADERS[c_ip], default_cloud_uuid, timeout=850)
-    management_network = "/api/vimgrnwruntime/?name=%s"%(VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"])
+    if not CTLR_MGMT_NETWORK:
+        CTLR_MGMT_NETWORK = fetch_network_based_on_ip(c_ip)
+    management_network = "/api/vimgrnwruntime/?name=%s"%(CTLR_MGMT_NETWORK)
     r = requests.get(uri_base+'api/cloud',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()['results'][0]
     data["vcenter_configuration"]["management_network"] = management_network
@@ -1659,7 +1682,89 @@ def configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips):
         except Exception as e:
             print("----------------------",str(e))
 
-def configure_raw_controller(si,mgmt_ip):
+def fetch_ip_from_vm(si, vm_name):
+    vm_name = vm_name if vm_name else CONTROLLER_NAME
+    datacenter_name = VCENTER_DATACENTER_NAME
+    folder_name = VCENTER_FOLDER_NAME
+    search_text = f"{datacenter_name}/vm/{folder_name}"
+    search_folder = si.RetrieveContent().searchIndex.FindByInventoryPath(search_text)
+    if not search_folder:
+        print(f"folder {folder_name} not found")
+        print(f"search text = {search_text}")
+        sys.exit(1)
+    vm_obj = None
+
+    @retry(ValueError,tries=100,delay=5)
+    def fetch_vm_obj():
+        vm_obj = None
+        
+        for virtual_m in search_folder.childEntity:
+            if vim.Folder == type(virtual_m):
+                continue
+            if virtual_m.name == vm_name:
+                vm_obj = virtual_m
+                return vm_obj
+        if not vm_obj:
+            raise ValueError(f"VM {vm_name} not found in folder {folder_name}")
+    
+    print(f"Checking for VM {vm_name} in folder {folder_name}")
+    vm_obj = fetch_vm_obj()
+    if not vm_obj:
+        print(f"VM {vm_name} not found in folder {folder_name}")
+        sys.exit(1)
+    print(f"VM {vm_name} found in folder {folder_name}")
+
+    mgmt_ip = None
+    @retry(Exception,tries=30,delay=10)
+    def fetch_mgmt_ip(vm_obj):
+        
+        if vm_obj.guest and vm_obj.guest.net:
+            for ip_net in vm_obj.guest.net:
+                if not ip_net.ipAddress:
+                    continue
+                for ip_addr in ip_net.ipAddress:
+                    if ip_addr and ":" not in ip_addr:
+                        return ip_addr
+        # No IPv4 IP found - raise exception to trigger retry
+        raise Exception(f"No IPv4 management IP address found for VM {vm_name}")
+
+    print(f"Fetching management IP from VM {vm_name}")
+    mgmt_ip = fetch_mgmt_ip(vm_obj)
+    if mgmt_ip is None:
+        print(f"ERROR: Failed to retrieve management IP from VM {vm_name}")
+        print("The VM may not have been fully initialized or network configuration is incomplete.")
+        print("Changing network adapter and retrying...")
+        change_network_adapter(vm_obj)
+        mgmt_ip = fetch_mgmt_ip(vm_obj)
+        if mgmt_ip is None:
+            print(f"ERROR: Failed to retrieve management IP from VM {vm_name}")
+            print("The VM may not have been fully initialized or network configuration is incomplete.")
+            sys.exit(1)
+    return mgmt_ip
+
+def configure_raw_controller(si,mgmt_ip,vm_name = "",dhcp=False):
+    if dhcp:
+        mgmt_ip = fetch_ip_from_vm(si, vm_name)
+        if mgmt_ip is None:
+            print(f"ERROR: Failed to retrieve management IP from VM {CONTROLLER_NAME}")
+            print("The VM may not have been fully initialized or network configuration is incomplete.")
+            sys.exit(1)
+    se_ips_to_use_for_ctlr(si,mgmt_ip)
+    set_welcome_password_and_set_systemconfiguration(mgmt_ip)
+    put_to_cloud(mgmt_ip)
+    try:
+        setup_tmux(mgmt_ip)
+    except Exception as e:
+        print("----------------------",str(e))
+    setup_cloud_se_wo_put_to_cloud(mgmt_ip)
+    setup_vs(mgmt_ip)
+
+def configure_raw_controller_dhcp(si,vm_name):
+    mgmt_ip = fetch_ip_from_vm(si, vm_name)
+    if mgmt_ip is None:
+        print(f"ERROR: Failed to retrieve management IP from VM {vm_name}")
+        print("The VM may not have been fully initialized or network configuration is incomplete.")
+        sys.exit(1)
     se_ips_to_use_for_ctlr(si,mgmt_ip)
     set_welcome_password_and_set_systemconfiguration(mgmt_ip)
     put_to_cloud(mgmt_ip)
@@ -1823,9 +1928,14 @@ def list_all_builds_in_mnt_builds(version):
     return all_builds
 
 
-def se_ips_to_use_for_ctlr(si,c_ip):
+def se_ips_to_use_for_ctlr(si,c_ip=""):
     global SE_IPS_TO_USE_FOR_CURRENT_CTLR
-    if SE_IPS_TO_USE_FOR_CURRENT_CTLR:
+    global SE_DHCP
+    if SE_IPS_TO_USE_FOR_CURRENT_CTLR or SE_DHCP:
+        return
+    dhcp = input("Do you want to use DHCP for SE management IP [Y/N]? [N]: ")
+    if dhcp.lower() == "y":
+        SE_DHCP = True
         return
     se_ip = ""
     if ".32." in c_ip:
@@ -1833,19 +1943,17 @@ def se_ips_to_use_for_ctlr(si,c_ip):
     if ".11." in c_ip:
         se_ip = c_ip.replace(".11.",".12.")
     while True:
+        
         free_ips_1 = get_index_format_ips_excluding_dev_ip(si,True,SE_IPS)
         print("SE IPs Configuration")
         print ("Free SE IP's : %s"%(list(free_ips_1.values())))
         default_ip = se_ip
-        mgmt_ips = input("Management IP ? [Enter Comma Separated IP] [Default: %s][or DHCP]: "%(default_ip))
+        mgmt_ips = input("Management IP ? [Enter Comma Separated IP] [Default: %s]: "%(default_ip))
         if not mgmt_ips:
             if not se_ip: continue
             mgmt_ips = [default_ip]
         else:
             mgmt_ips = mgmt_ips.split(",")
-        if len(mgmt_ips) == 1 and mgmt_ips[0].upper() == "DHCP":
-            SE_IPS_TO_USE_FOR_CURRENT_CTLR = []
-            return
         for ip in mgmt_ips:
             mgmt_ip = ip.strip()
             if mgmt_ip:
@@ -1865,6 +1973,7 @@ def deploy_ova(cmd):
             print("======================== Retrying Ova deploy ============================")
 
 def generate_controller_from_ova():
+    global DHCP
     vm_type = "controller"
     si = connect()
     custom_version = input("Custom Build [Y/N]? [N]: ")
@@ -1898,6 +2007,10 @@ def generate_controller_from_ova():
     mgmt_leader_ip = ""
     mgmt_ips = []
     while True:
+        dhcp = input("Do you want to use DHCP for Controller management IP [Y/N]? [N]: ")
+        if dhcp.lower() == "y":
+            DHCP = True
+            break
         mgmt_ips = get_free_controller_ips(si)
         if len(mgmt_ips)==3:
             print("Creating a 3 node cluster")
@@ -1926,7 +2039,12 @@ def generate_controller_from_ova():
             folder_obj = get_folder_obj(si, datacenter,folder_name)
             if folder_obj:
                 break
-    management_network = input(f"Management Network ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['name']}][ or {VCENTER_MANAGEMENT_MAP['Management']['name']} ]:") or VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"]
+    management_network_input = input(f"Management Network ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['name']}][ or (1) {VCENTER_MANAGEMENT_MAP['Management']['name']} ]:")
+    management_network = VCENTER_MANAGEMENT_MAP["Internal_Management"]["name"] if not management_network_input else management_network_input
+    if management_network_input == "1":
+        management_network = VCENTER_MANAGEMENT_MAP["Management"]["name"]
+    global CTLR_MGMT_NETWORK
+    CTLR_MGMT_NETWORK = management_network
 
     if not DHCP:
         mask = input(f"Network Mask ? [Default: {VCENTER_MANAGEMENT_MAP['Internal_Management']['mask']}] :") or VCENTER_MANAGEMENT_MAP["Internal_Management"]["mask"]
@@ -1954,18 +2072,38 @@ def generate_controller_from_ova():
     count = 0
     verify = ""
     if vm_type == 'controller':
-        for ip in mgmt_ips:
-            if ip == mgmt_leader_ip:
-                vm_name_str = vm_name
-            else:
-                count += 1
-                vm_name_str = str(vm_name)+"-"+str(count)
-            if not DHCP:
+        if not DHCP:
+            for ip in mgmt_ips:
+                if ip == mgmt_leader_ip:
+                    vm_name_str = vm_name
+                else:
+                    count += 1
+                    vm_name_str = str(vm_name)+"-"+str(count)
                 prop = '--prop:avi.mgmt-ip.CONTROLLER=' + ip + \
                 ' --prop:avi.default-gw.CONTROLLER=' + gw_ip + ' '
                 prop = prop + ' --prop:avi.mgmt-mask.CONTROLLER=' + str(mask) + ' '
-            prop = prop + ' --prop:avi.sysadmin-public-key.CONTROLLER="' + get_own_sysadmin_key() + '" '
-            prop += '--name="' + vm_name_str + '" '
+                prop = prop + ' --prop:avi.sysadmin-public-key.CONTROLLER="' + get_own_sysadmin_key() + '" '
+                prop += '--name="' + vm_name_str + '" '
+                if power_on.lower() == 'y':
+                    prop += '--powerOn '
+                prop += '"--vmFolder='+folder_name+'" ' 
+                cmd = 'ovftool --noSSLVerify --X:logLevel=warning --X:logToConsole "--datastore=' + datastore + \
+                    '" --net:Management="' + management_network + \
+                    '" ' + prop + source_ova_path + ' ' + vi 
+                print ('\n',cmd,'\n')
+                verify = input("Verify the command and agree to proceed [Y/N] ? [Y] :") or 'Y'
+                if verify.lower() == 'y':
+                    if ip == mgmt_leader_ip:
+                        cmds[ip] = cmd
+                    else:
+                        cmds[ip] = cmd
+                else:
+                    print ("Exiting ...")
+                    exit(0)
+
+        else:
+            prop = ' --prop:avi.sysadmin-public-key.CONTROLLER="' + get_own_sysadmin_key() + '" '
+            prop += '--name="' + vm_name + '" '
             if power_on.lower() == 'y':
                 prop += '--powerOn '
             prop += '"--vmFolder='+folder_name+'" ' 
@@ -1975,29 +2113,31 @@ def generate_controller_from_ova():
             print ('\n',cmd,'\n')
             verify = input("Verify the command and agree to proceed [Y/N] ? [Y] :") or 'Y'
             if verify.lower() == 'y':
-                if ip == mgmt_leader_ip:
-                    cmds[ip] = cmd
-                else:
-                    cmds[ip] = cmd
+                cmds["DHCP"] = cmd
             else:
                 print ("Exiting ...")
                 exit(0)
 
+
         print ("\nDeploying OVA")
         jobs = []
-        for ip in mgmt_ips:
-            p = multiprocessing.Process(target=deploy_ova, args=(cmds[ip],))
-            jobs.append(p)
-            p.start()
+        if not DHCP:
+            for ip in mgmt_ips:
+                p = multiprocessing.Process(target=deploy_ova, args=(cmds[ip],))
+                jobs.append(p)
+                p.start()
 
-        for proc in jobs:
-            proc.join()
-        if set_password_and_sys_config.upper() == "Y":
-            if len(mgmt_ips)>1:
-                configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
-            elif len(mgmt_ips) == 1:
-                configure_raw_controller(si, mgmt_leader_ip)
-        
+            for proc in jobs:
+                proc.join()
+            if set_password_and_sys_config.upper() == "Y":
+                if len(mgmt_ips)>1:
+                    configure_raw_controller_cluster(si, mgmt_leader_ip, mgmt_ips)
+                elif len(mgmt_ips) == 1:
+                    configure_raw_controller(si, mgmt_leader_ip)
+        else:
+            deploy_ova(cmds["DHCP"])   
+            if set_password_and_sys_config.upper() == "Y":
+                configure_raw_controller(si, mgmt_leader_ip, dhcp=True) 
 
     print("================== DONE ==============")
 
@@ -2133,7 +2273,16 @@ def handle_configure_controller(command):
             configure_raw_controller_wo_tmux(si, mgmt_ip)
         elif command == 'configure_password_only':
             configure_password_only(mgmt_ip)
-    
+
+def handle_configure_raw_controller_dhcp():
+    """Handle configure raw controller DHCP command."""
+    si = connect()
+    vm_name = input("Enter the VM name: ")
+    if not vm_name:
+        print("VM name is required")
+        sys.exit(1)
+    vm_name = vm_name.strip()
+    configure_raw_controller_dhcp(si, vm_name)
 
 def main():
     """Main execution function to handle command-line arguments and dispatch commands."""
@@ -2214,7 +2363,9 @@ def handle_single_argument_commands():
         
     elif command in ['configure_raw_controller', 'configure_raw_controller_wo_tmux', 'configure_password_only']:
         handle_configure_controller(command)
-        
+    elif command == 'configure_raw_controller_dhcp':
+        handle_configure_raw_controller_dhcp()
+
     else:
         print(f"Unknown command: {command}")
         show_help()
