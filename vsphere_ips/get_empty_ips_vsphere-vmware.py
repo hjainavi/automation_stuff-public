@@ -840,7 +840,7 @@ def find_vm_by_name(si,vm_name):
             return virtual_m
     return None
 
-def change_network_adapter(virtual_m):
+def change_network_adapter(virtual_m, network_identifier=None):
     #power off vm
     task = virtual_m.PowerOff()
     while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
@@ -883,7 +883,8 @@ def change_network_adapter(virtual_m):
     
     # Configure the network backing (connect to the same network as before)
     backing = vim.vm.device.VirtualEthernetCard.NetworkBackingInfo()
-    backing.deviceName = "ibn5-avi-dev-IntMgmt"  # Default network name
+    new_network_name = "ibn5-avi-dev-IntMgmt"  if not network_identifier else network_identifier
+    backing.deviceName = new_network_name
     new_network_adapter.backing = backing
     
     # Configure connection settings
@@ -906,9 +907,9 @@ def change_network_adapter(virtual_m):
         time.sleep(1)
     
     if add_task.info.state == vim.TaskInfo.State.success:
-        print(f"Successfully added new E1000 network adapter to ibn5-avi-dev-IntMgmt network")
+        print(f"Successfully added new E1000 network adapter to {new_network_name} network")
     else:
-        print(f"Failed to add E1000 network adapter to ibn5-avi-dev-IntMgmt network: {add_task.info.error}")
+        print(f"Failed to add E1000 network adapter to {new_network_name} network: {add_task.info.error}")
         return
     #power on vm
     task = virtual_m.PowerOn()
@@ -1741,7 +1742,7 @@ def fetch_ip_from_vm(si, vm_name):
         print(f"ERROR: Failed to retrieve management IP from VM {vm_name} after all retries")
         print("The VM may not have been fully initialized or network configuration is incomplete.")
         print("Changing network adapter and retrying...")
-        change_network_adapter(vm_obj)
+        change_network_adapter(vm_obj,network_identifier="ibn-cm1w2-nsx1-avi-mgmt")
         try:
             mgmt_ip = fetch_mgmt_ip(vm_obj)
         except Exception as e2:
