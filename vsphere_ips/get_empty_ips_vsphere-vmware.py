@@ -585,6 +585,8 @@ def get_vms_ips_network(with_se_ips=False, free_ips=False, with_mgmt_reserved_ip
             final_print_vals.append((FREE_IP, NIL_PRINT_VAL, val_ip, NIL_PRINT_VAL))
 
     final_print_vals.append(("","","",""))
+    gap_index = len(final_print_vals)
+    final_print_vals.append(("","","",""))
 
     for folder_name,value in vms_table.items():
         if not value['ip_network']:
@@ -592,7 +594,11 @@ def get_vms_ips_network(with_se_ips=False, free_ips=False, with_mgmt_reserved_ip
             continue
         for ip_network_val in value['ip_network']:
             if ip_network_val[0] not in all_reserved_ips:
-                final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
+                print(folder_name, ip_network_val)
+                if ("se" in folder_name[1] or "ctlr" in folder_name[1]) and "10.80" in ip_network_val[0]:
+                    final_print_vals.insert(gap_index, (folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
+                else:
+                    final_print_vals.append((folder_name[1], value['state'], ip_network_val[0], ip_network_val[1]))
     final_print_vals = remove_se_non_reserved_ips(final_print_vals)
     if not free_ips:
         final_print_vals = remove_free_ips(final_print_vals)
