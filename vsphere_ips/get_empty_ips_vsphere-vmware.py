@@ -1907,6 +1907,22 @@ def is_version_eng(version,build_dir):
         return True
     return False
 
+def get_build_details_from_build_dir(dir,in_dir):
+    version_file = os.path.join(dir,in_dir,'VERSION')
+    ova_file = os.path.join(dir,in_dir,"controller.ova")
+    if not os.path.isfile(ova_file):
+        ova_file = ""
+    if os.path.isfile(version_file):
+        with open(version_file,"r") as f:
+            file_data = f.read()
+        pattern = re.compile(r'^build.*(\d{4,5})$', re.MULTILINE)
+        build_regex = re.findall(pattern,file_data)
+        buildno = build_regex[0] if build_regex else ""
+        modified_time = os.path.getmtime(version_file)
+        time_ago = str(timedelta(seconds=time.time()-modified_time)) + " ago"
+        return buildno, time_ago, ova_file
+    return None, None, None
+
 def list_all_builds_in_mnt_builds(version):
     "[[index version buildno file date],...]"
     all_builds = []
@@ -1915,22 +1931,14 @@ def list_all_builds_in_mnt_builds(version):
         print("Not a valid dir %s"%(dir))
         return {}
     for in_dir in os.listdir(dir):
-        ova_file = ""
-        buildno = ""
-        time_ago = ""
         if "last" in in_dir:
-            version_file = os.path.join(dir,in_dir,'VERSION')
-            ova_file = os.path.join(dir,in_dir,"controller.ova")
-            if not os.path.isfile(ova_file):
-                ova_file = ""
-            if os.path.isfile(version_file):
-                with open(version_file,"r") as f:
-                    file_data = f.read()
-                pattern = re.compile(r'^build.*(\d{4,5})$', re.MULTILINE)
-                build_regex = re.findall(pattern,file_data)
-                buildno = build_regex[0] if build_regex else ""
-                modified_time = os.path.getmtime(version_file)
-                time_ago = str(timedelta(seconds=time.time()-modified_time)) + " ago"
+            buildno, time_ago, ova_file = get_build_details_from_build_dir(dir,in_dir)
+            if buildno:
+                all_builds.append([0 ,version, int(buildno), ova_file, time_ago])
+    if not all_builds:
+        for in_dir in os.listdir(dir):
+            buildno, time_ago, ova_file = get_build_details_from_build_dir(dir,in_dir)
+            if buildno:
                 all_builds.append([0 ,version, int(buildno), ova_file, time_ago])
     all_builds.sort(key=lambda x: x[2])
     for i in range(len(all_builds)):
