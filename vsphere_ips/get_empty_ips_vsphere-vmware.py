@@ -51,6 +51,7 @@ except ImportError:
 import fabric
 import jinja2
 from retry import retry
+from packaging.version import Version
 
 # Disable SSL warnings
 urllib3.disable_warnings()
@@ -70,7 +71,7 @@ FREE_IP = "--Free IP--"
 
 # Default Configuration Values
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
-DEFAULT_PASSWORD = "avi123"
+DEFAULT_PASSWORD = "Avi123"
 SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DHCP = False
 SE_DHCP = False
@@ -917,8 +918,11 @@ def change_network_adapter(virtual_m, network_identifier=None):
     print(f"Power is on. {task.info.state}")
 
 def change_to_default_password(c_ip):
+    if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
+        print("password is already set to Avi123")
+        return
     uri_base = 'https://' + c_ip + '/'
-    print("changing password to avi123")
+    print("changing password to Avi123")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
     data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD[c_ip]})
@@ -927,7 +931,7 @@ def change_to_default_password(c_ip):
     resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200,201]:
         raise Exception(resp.text)
-    print("changing password to avi123 -- done")
+    print("changing password to Avi123 -- done")
     
 
 def login_and_set_global_variables(c_ip,password_arg=None):
@@ -935,6 +939,7 @@ def login_and_set_global_variables(c_ip,password_arg=None):
     global GLOBAL_LOGIN_HEADERS
     global GLOBAL_LOGIN_COOKIES
     global GLOBAL_CURRENT_PASSWORD
+    
     if GLOBAL_LOGIN_HEADERS.get(c_ip,False) and GLOBAL_LOGIN_COOKIES.get(c_ip,False):
         #resp = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS, cookies=GLOBAL_LOGIN_COOKIES)
         #if resp.status_code == 401:
@@ -942,7 +947,7 @@ def login_and_set_global_variables(c_ip,password_arg=None):
         return
     uri_base = 'https://' + c_ip + '/'
     headers = get_headers()
-    password_list = [password_arg,"avi123","avi123$%","admin"] if password_arg else ["avi123","avi123$%","admin"]
+    password_list = [password_arg,"Avi123#$%","avi123","avi123$%","admin","Avi123"] if password_arg else ["Avi123#$%","avi123","avi123$%","admin","Avi123"]
     for password in password_list:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
@@ -979,7 +984,6 @@ def set_password_only_and_set_systemconfiguration(c_ip,current_password=DEFAULT_
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
-    data['portal_configuration']['password_strength_check'] = False
     data['portal_configuration']['allow_basic_authentication'] = True
     data['dns_configuration']['server_list'] = [{'addr':val , 'type':'V4'} for val in VCENTER_DNS_SERVERS]
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
@@ -1015,7 +1019,12 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
-    data['portal_configuration']['password_strength_check'] = False
+    version = GLOBAL_LOGIN_HEADERS[c_ip].get('X-Avi-Version',None)
+    if version:
+        version = Version(version)
+        if version < Version('32.1.1'):
+            print("password strength check is not supported in this version")
+            data['portal_configuration']['password_strength_check'] = False
     data['portal_configuration']['allow_basic_authentication'] = True
     data['dns_configuration']['server_list'] = [{'addr':val , 'type':'V4'} for val in VCENTER_DNS_SERVERS]
     data['ntp_configuration']['ntp_servers'] = [{'server': {'addr': VCENTER_NTP, 'type': "DNS"}}]
@@ -1046,7 +1055,7 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
-    data['backup_passphrase']='avi123'
+    data['backup_passphrase']='Avi1234_#$'
     
     time.sleep(1) 
     r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
