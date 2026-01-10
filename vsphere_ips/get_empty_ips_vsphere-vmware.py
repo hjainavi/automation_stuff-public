@@ -941,9 +941,8 @@ def change_to_default_password(c_ip, uri_base):
             r = requests.put(uri_base+'api/useraccountprofile/%s'%(data['uuid']), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
             if r.status_code not in [200,201]:
                 raise Exception(r.text)
-            return data
     uri_base = 'https://' + c_ip + '/'
-    print("changing password to Avi123")
+    print("changing password to avi12345")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
     data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD[c_ip]})
@@ -952,7 +951,7 @@ def change_to_default_password(c_ip, uri_base):
     resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200,201]:
         raise Exception(resp.text)
-    print("changing password to Avi123 -- done")
+    print("changing password to avi12345 -- done")
     
 
 def login_and_set_global_variables(c_ip,password_arg=None):
@@ -1076,7 +1075,7 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
     if r.status_code not in [200,201]:
         raise Exception(r.text)
     data = r.json()
-    data['backup_passphrase']='Avi1234_#$'
+    data['backup_passphrase']='Avi123456789#$%'
     
     time.sleep(1) 
     r = requests.put(uri_base+'api/backupconfiguration'+'/'+uuid, data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
