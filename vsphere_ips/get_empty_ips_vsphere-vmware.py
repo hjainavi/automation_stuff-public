@@ -71,7 +71,7 @@ FREE_IP = "--Free IP--"
 
 # Default Configuration Values
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
-DEFAULT_PASSWORD = "Avi123"
+DEFAULT_PASSWORD = "avi12345"
 SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DHCP = False
 SE_DHCP = False
@@ -917,10 +917,31 @@ def change_network_adapter(virtual_m, network_identifier=None):
         time.sleep(1)
     print(f"Power is on. {task.info.state}")
 
-def change_to_default_password(c_ip):
+def change_to_default_password(c_ip, uri_base):
     if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
         print("password is already set to Avi123")
         return
+    version = GLOBAL_LOGIN_HEADERS[c_ip].get('X-Avi-Version',None)
+    if version:
+        version = Version(version)
+        if version >= Version('32.1.1'):
+            data = {}
+            r = requests.get(uri_base+'api/useraccountprofile',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+            for val in r.json()['results']:
+                if val['name'] == 'Default-User-Account-Profile':
+                    data = val
+                    break
+            data['complexity_constraint']['min_length'] = 8
+            data['complexity_constraint']['min_lowercase'] = 1
+            data['complexity_constraint']['min_numeric'] = 1
+            data['complexity_constraint']['min_special'] = 0
+            data['complexity_constraint']['min_uppercase'] = 0
+            data['complexity_constraint']['password_history'] = 5
+            data['lockout_constraint']['lockout_max_auth_failures'] = 0
+            r = requests.put(uri_base+'api/useraccountprofile/%s'%(data['uuid']), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
+            if r.status_code not in [200,201]:
+                raise Exception(r.text)
+            return data
     uri_base = 'https://' + c_ip + '/'
     print("changing password to Avi123")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
@@ -947,7 +968,7 @@ def login_and_set_global_variables(c_ip,password_arg=None):
         return
     uri_base = 'https://' + c_ip + '/'
     headers = get_headers()
-    password_list = [password_arg,"Avi123#$%","avi123","avi123$%","admin","Avi123"] if password_arg else ["Avi123#$%","avi123","avi123$%","admin","Avi123"]
+    password_list = [password_arg,"avi12345","Avi123456789#$%","avi123","avi123$%","admin","Avi123"] if password_arg else ["avi12345","Avi123456789#$%","avi123","avi123$%","admin","Avi123"]
     for password in password_list:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
@@ -1001,7 +1022,7 @@ def set_password_only_and_set_systemconfiguration(c_ip,current_password=DEFAULT_
         print("license tier ENTERPRISE failed")
     print("change systemconfiguration settings -- done")
 
-    change_to_default_password(c_ip)
+    change_to_default_password(c_ip, uri_base)
     reset_login(c_ip)
     login_and_set_global_variables(c_ip)
     print("setting complete")
@@ -1074,7 +1095,7 @@ def set_welcome_password_and_set_systemconfiguration(c_ip,current_password=DEFAU
         raise Exception(r.text)
     print("setting backup default passphrase -- done")
 
-    change_to_default_password(c_ip)
+    change_to_default_password(c_ip, uri_base)
     reset_login(c_ip)
     login_and_set_global_variables(c_ip)
     print("setting complete")
