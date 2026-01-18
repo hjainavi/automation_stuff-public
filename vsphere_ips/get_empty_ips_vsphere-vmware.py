@@ -2415,7 +2415,7 @@ def print_execution_time():
     print(execution_summary)
 
 
-@click.group(invoke_without_command=True, context_settings=dict(max_content_width=120))
+@click.group(invoke_without_command=True, context_settings=dict(max_content_width=200, terminal_width=200))
 @click.pass_context
 def cli(ctx):
     """VMware vSphere IP Management and Controller Automation Tool.
