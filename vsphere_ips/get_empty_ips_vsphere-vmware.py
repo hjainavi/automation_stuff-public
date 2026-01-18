@@ -48,6 +48,12 @@ except ImportError:
     print("do -->> pip3 install tabulate")
     sys.exit(1)
 
+try:
+    import click
+except ImportError:
+    print("do -->> pip3 install click")
+    sys.exit(1)
+
 import fabric
 import jinja2
 from retry import retry
@@ -284,11 +290,6 @@ def show_help():
     print("  change_password_for_FT                    - Change password to VMwareAvilb123!")
     print("  change_password_to_default                - Change password to avi12345")
 
-
-# Check for help request
-if 'help' in sys.argv:
-    show_help()
-    sys.exit(0)
 
 # Track execution time
 START_TIME = time.time()
@@ -673,79 +674,79 @@ def poweroff_and_delete_vm(ips, delete=False, si=None):
 # MAIN EXECUTION LOGIC
 # =============================================================================
 
-def handle_delete_poweroff_commands():
-    """Handle delete and poweroff commands with IP arguments."""
+def handle_delete_poweroff_commands(ip_list, delete=True):
+    """Handle delete and poweroff commands with IP arguments.
+    
+    Args:
+        ip_list: List of IP addresses to operate on
+        delete: If True, delete VMs; if False, only power off
+    """
     try:
-        if len(sys.argv) >= 3 and sys.argv[1] in ('delete', 'poweroff'):
-            if sys.argv[2]:
-                operation = 'delete' if sys.argv[1] == 'delete' else 'poweroff'
-                ip_list = sys.argv[2:]
-                logger.info(f"Executing {operation} operation on IPs: {ip_list}")
+        if not ip_list:
+            raise ValueError("No IP addresses provided")
+        operation = 'delete' if delete else 'poweroff'
+        logger.info(f"Executing {operation} operation on IPs: {ip_list}")
+        
+        poweroff_and_delete_vm(list(ip_list), delete)
                 
-                if sys.argv[1] == 'delete':
-                    poweroff_and_delete_vm(ip_list, True)
-                else:
-                    poweroff_and_delete_vm(ip_list, False)
-                    
-                logger.info(f"{operation.capitalize()} operation completed successfully")
-            else:
-                raise ValueError("No IP addresses provided")
-        else:
-            raise ValueError("Invalid command format for delete/poweroff")
+        logger.info(f"{operation.capitalize()} operation completed successfully")
     except Exception as e:
         logger.error(f"Error in delete/poweroff command: {e}")
         raise
 
 
-def handle_delete_by_name():
-    """Handle delete by VM name command."""
-    if len(sys.argv) >= 3 and sys.argv[1] == 'delete_name':
-        si = connect()
-        vm_names = [item.strip() for item in sys.argv[2:]]
-        print(vm_names)
-        datacenter_name = VCENTER_DATACENTER_NAME
-        for dc in si.content.rootFolder.childEntity:
-            if dc.name == datacenter_name:
-                datacenter = dc
-        folder_name = VCENTER_FOLDER_NAME
-        search_path = f"/{datacenter.name}/vm/{folder_name}"
-        folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
-        if not folder_obj:
-            print(f"Folder not found at path: {search_path}")
-            sys.exit(1)
-        for virtual_m in folder_obj.childEntity:
-            for vm_name in vm_names:
-                if virtual_m.name != vm_name:
+def handle_delete_by_name(vm_names):
+    """Handle delete by VM name command.
+    
+    Args:
+        vm_names: List of VM names to delete
+    """
+    si = connect()
+    vm_names = [item.strip() for item in vm_names]
+    print(vm_names)
+    datacenter_name = VCENTER_DATACENTER_NAME
+    for dc in si.content.rootFolder.childEntity:
+        if dc.name == datacenter_name:
+            datacenter = dc
+    folder_name = VCENTER_FOLDER_NAME
+    search_path = f"/{datacenter.name}/vm/{folder_name}"
+    folder_obj = si.content.searchIndex.FindByInventoryPath(search_path)
+    if not folder_obj:
+        print(f"Folder not found at path: {search_path}")
+        sys.exit(1)
+    for virtual_m in folder_obj.childEntity:
+        for vm_name in vm_names:
+            if virtual_m.name != vm_name:
+                continue
+            action_confirm = input(f"Are you sure you want to delete '{vm_name}'? [Y/N] \n")
+            if action_confirm.lower() == "n":
+                continue
+            if "harsh" in vm_name and "dev" in vm_name:
+                dev_vm_confirm = ""
+                while dev_vm_confirm not in ['confirm', 'deny']:
+                    dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{vm_name}'? [confirm/deny] \n").lower()
+                if dev_vm_confirm == 'deny':
                     continue
-                action_confirm = input(f"Are you sure you want to delete '{vm_name}'? [Y/N] \n")
-                if action_confirm.lower() == "n":
-                    continue
-                if "harsh" in vm_name and "dev" in vm_name:
-                    dev_vm_confirm = ""
-                    while dev_vm_confirm not in ['confirm', 'deny']:
-                        dev_vm_confirm = input(f"Are you sure you want to delete dev vm '{vm_name}'? [confirm/deny] \n").lower()
-                    if dev_vm_confirm == 'deny':
-                        continue
-                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
-                    print(f"Deleting {virtual_m.name}")
-                    task = virtual_m.Destroy()
+            if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOff:
+                print(f"Deleting {virtual_m.name}")
+                task = virtual_m.Destroy()
+                while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print(f"VM is deleted. {task.info.state}")
+            elif len(virtual_m.guest.net) == 0:
+                if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
+                    print(f"Powering off {virtual_m.name}")
+                    task = virtual_m.PowerOff()
                     while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
                         time.sleep(1)
-                    print(f"VM is deleted. {task.info.state}")
-                elif len(virtual_m.guest.net) == 0:
-                    if virtual_m.runtime.powerState == vim.VirtualMachinePowerState.poweredOn:
-                        print(f"Powering off {virtual_m.name}")
-                        task = virtual_m.PowerOff()
-                        while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
-                            time.sleep(1)
-                        print(f"Power is off. {task.info.state}")
-                    print(f"Deleting {virtual_m.name}")
-                    task = virtual_m.Destroy()
-                    while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
-                        time.sleep(1)
-                    print(f"VM is deleted. {task.info.state}")
-                else:
-                    print("Delete the VM using IP")
+                    print(f"Power is off. {task.info.state}")
+                print(f"Deleting {virtual_m.name}")
+                task = virtual_m.Destroy()
+                while task.info.state not in [vim.TaskInfo.State.success, vim.TaskInfo.State.error]:
+                    time.sleep(1)
+                print(f"VM is deleted. {task.info.state}")
+            else:
+                print("Delete the VM using IP")
 
 
 # Old command handlers removed - now handled by main() function
@@ -1685,7 +1686,7 @@ def check_if_ip_is_valid_and_free(si,ip,only_check=False,print_not_free=False):
                     time.sleep(1)
                 print ("power is off.",task.info.state)
     
-            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and sys.argv[1]=='delete':
+            if vm.runtime.powerState == vim.VirtualMachinePowerState.poweredOff and delete_vm:
                 print ("deleteing ",vm.name," ",ip)
                 task = vm.Destroy()
                 while task.info.state not in [vim.TaskInfo.State.success,vim.TaskInfo.State.error]:
@@ -2238,10 +2239,13 @@ def generate_controller_from_ova():
 
 
 # All command handling moved to main() function
-def handle_rename_vm():
-    """Handle VM rename command."""
-    ip = sys.argv[2]
-    newname = sys.argv[3]
+def handle_rename_vm(ip, newname):
+    """Handle VM rename command.
+    
+    Args:
+        ip: IP address of the VM to rename
+        newname: New name for the VM
+    """
     si = connect()
     search = si.RetrieveContent().searchIndex
     vms = list(set(search.FindAllByIp(ip=ip, vmSearch=True)))
@@ -2257,9 +2261,12 @@ def handle_rename_vm():
         print(f"Renaming done. {task.info.state}")
 
 
-def handle_poweron_vm():
-    """Handle power on VM command."""
-    vm_name = sys.argv[2] if len(sys.argv) == 3 else ''
+def handle_poweron_vm(vm_name=''):
+    """Handle power on VM command.
+    
+    Args:
+        vm_name: Optional VM name to power on (empty string for all)
+    """
     si = connect()
     datacenter_name = VCENTER_DATACENTER_NAME
     for dc in si.content.rootFolder.childEntity:
@@ -2394,119 +2401,243 @@ def handle_change_password_to_default():
         change_password_to_avi_default(mgmt_ip)
 
 
-def main():
-    """Main execution function to handle command-line arguments and dispatch commands."""
-    try:
-        logger.info("Starting vSphere automation script")
-        logger.info(f"Command line arguments: {sys.argv}")
-        
-        # Handle command-line arguments
-        if len(sys.argv) == 1:
-            # Default: Show VMs with SE IPs and management reserved IPs
-            logger.info("Executing default command: showing VM information")
-            final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
-            print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
-            
-        elif len(sys.argv) == 2:
-            logger.info(f"Executing single argument command: {sys.argv[1]}")
-            handle_single_argument_commands()
-            
-        elif len(sys.argv) >= 3:
-            logger.info(f"Executing multi-argument command: {sys.argv[1]} with {len(sys.argv)-2} arguments")
-            handle_multi_argument_commands()
-            
-        logger.info("Script execution completed successfully")
-            
-    except Exception as e:
-        if "KeyboardInterrupt" in str(type(e)):
-            logger.warning("Operation cancelled by user")
-            print("\nOperation cancelled by user")
-        else:
-            logger.error(f"Error: {e}", exc_info=True)
-            print(f"Error: {e}")
-        sys.exit(1)
-    finally:
-        # Print execution time
-        end_time = time.time()
-        elapsed_time = str(timedelta(seconds=end_time - START_TIME))
-        current_time = datetime.datetime.now()
-        execution_summary = f"Time Elapsed {elapsed_time}, Current Time = {current_time}"
-        logger.info(execution_summary)
-        print(execution_summary)
+# =============================================================================
+# CLICK CLI COMMANDS
+# =============================================================================
+
+def print_execution_time():
+    """Print execution time summary."""
+    end_time = time.time()
+    elapsed_time = str(timedelta(seconds=end_time - START_TIME))
+    current_time = datetime.datetime.now()
+    execution_summary = f"Time Elapsed {elapsed_time}, Current Time = {current_time}"
+    logger.info(execution_summary)
+    print(execution_summary)
 
 
-def handle_single_argument_commands():
-    """Handle commands with single arguments."""
-    command = sys.argv[1]
+@click.group(invoke_without_command=True, context_settings=dict(max_content_width=120))
+@click.pass_context
+def cli(ctx):
+    """VMware vSphere IP Management and Controller Automation Tool.
     
-    if command == 'with_se_ips':
+    Run without any command to show VMs with SE IPs and management reserved IPs.
+    Use --help with any command for more information.
+    """
+    logger.info("Starting vSphere automation script")
+    # Store whether we ran the default command for the result callback
+    ctx.ensure_object(dict)
+    ctx.obj['ran_default'] = False
+    
+    if ctx.invoked_subcommand is None:
+        # Default behavior: show VMs
+        logger.info("Executing default command: showing VM information")
+        ctx.obj['ran_default'] = True
         final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
         print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
-        
-    elif command in ['free_ip', 'free_ips']:
-        final_print_vals = get_vms_ips_network(with_se_ips=True, free_ips=True, with_mgmt_reserved_ips=True)
-        print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
-        
-    elif command == 'delete_ctlr_se':
-        handle_delete_ctlr_se()
-        
-    elif command == 'latest_builds':
-        handle_latest_builds()
-        
-    elif command == 'configure_vs':
-        handle_configure_vs()
-        
-    elif command == 'configure_cloud_vs_se':
-        handle_configure_cloud_vs_se()
-        
-    elif command == 'setup_tmux':
-        handle_setup_tmux()
-        
-    elif command == 'setup_tmux_install_only':
-        handle_setup_tmux_install_only()
-        
-    elif command == 'flush_db_configure_raw_controller_wo_tmux':
-        handle_flush_db_configure()
-        
-    elif command == 'generate_controller_from_ova':
-        generate_controller_from_ova()
-        
-    elif command in ['configure_raw_controller', 'configure_raw_controller_wo_tmux', 'configure_password_only']:
-        handle_configure_controller(command)
-    elif command == 'configure_raw_controller_dhcp':
-        handle_configure_raw_controller_dhcp()
-    elif command == 'change_password_for_FT':
-        handle_change_password_for_ft()
-    elif command == 'change_password_to_default':
-        handle_change_password_to_default()
-
-    else:
-        print(f"Unknown command: {command}")
-        show_help()
-        sys.exit(1)
 
 
-def handle_multi_argument_commands():
-    """Handle commands with multiple arguments."""
-    command = sys.argv[1]
+@cli.result_callback()
+@click.pass_context
+def process_result(ctx, result, **kwargs):
+    """Called after any command completes to print execution time."""
+    print_execution_time()
+
+
+# --- Simple commands (no arguments) ---
+
+@cli.command('with_se_ips')
+def cmd_with_se_ips():
+    """Show VMs with SE IPs and management reserved IPs."""
+    logger.info("Executing with_se_ips command")
+    final_print_vals = get_vms_ips_network(with_se_ips=True, with_mgmt_reserved_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+
+@cli.command('free_ips')
+def cmd_free_ips():
+    """Show available free IPs."""
+    logger.info("Executing free_ips command")
+    final_print_vals = get_vms_ips_network(with_se_ips=True, free_ips=True, with_mgmt_reserved_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+
+# Alias for free_ips
+@cli.command('free_ip')
+def cmd_free_ip():
+    """Show available free IPs (alias for free_ips)."""
+    logger.info("Executing free_ip command")
+    final_print_vals = get_vms_ips_network(with_se_ips=True, free_ips=True, with_mgmt_reserved_ips=True)
+    print(tabulate(final_print_vals, headers="firstrow", tablefmt="psql"))
+
+
+@cli.command('delete_ctlr_se')
+def cmd_delete_ctlr_se():
+    """Delete controller and SE VMs."""
+    logger.info("Executing delete_ctlr_se command")
+    handle_delete_ctlr_se()
+
+
+@cli.command('latest_builds')
+def cmd_latest_builds():
+    """Show latest builds available."""
+    logger.info("Executing latest_builds command")
+    handle_latest_builds()
+
+
+@cli.command('configure_vs')
+def cmd_configure_vs():
+    """Configure virtual service."""
+    logger.info("Executing configure_vs command")
+    handle_configure_vs()
+
+
+@cli.command('configure_cloud_vs_se')
+def cmd_configure_cloud_vs_se():
+    """Configure cloud, VS, and SE."""
+    logger.info("Executing configure_cloud_vs_se command")
+    handle_configure_cloud_vs_se()
+
+
+@cli.command('setup_tmux')
+def cmd_setup_tmux():
+    """Setup tmux on controller."""
+    logger.info("Executing setup_tmux command")
+    handle_setup_tmux()
+
+
+@cli.command('setup_tmux_install_only')
+def cmd_setup_tmux_install_only():
+    """Setup tmux install only (no configuration)."""
+    logger.info("Executing setup_tmux_install_only command")
+    handle_setup_tmux_install_only()
+
+
+@cli.command('flush_db_configure_raw_controller_wo_tmux')
+def cmd_flush_db_configure():
+    """Flush DB and configure controller without tmux."""
+    logger.info("Executing flush_db_configure_raw_controller_wo_tmux command")
+    handle_flush_db_configure()
+
+
+@cli.command('generate_controller_from_ova')
+def cmd_generate_controller_from_ova():
+    """Generate controller from OVA file."""
+    logger.info("Executing generate_controller_from_ova command")
+    generate_controller_from_ova()
+
+
+@cli.command('configure_raw_controller')
+def cmd_configure_raw_controller():
+    """Configure raw controller with full setup."""
+    logger.info("Executing configure_raw_controller command")
+    handle_configure_controller('configure_raw_controller')
+
+
+@cli.command('configure_raw_controller_wo_tmux')
+def cmd_configure_raw_controller_wo_tmux():
+    """Configure raw controller without tmux."""
+    logger.info("Executing configure_raw_controller_wo_tmux command")
+    handle_configure_controller('configure_raw_controller_wo_tmux')
+
+
+@cli.command('configure_password_only')
+def cmd_configure_password_only():
+    """Configure password only on controller."""
+    logger.info("Executing configure_password_only command")
+    handle_configure_controller('configure_password_only')
+
+
+@cli.command('configure_raw_controller_dhcp')
+def cmd_configure_raw_controller_dhcp():
+    """Configure raw controller with DHCP."""
+    logger.info("Executing configure_raw_controller_dhcp command")
+    handle_configure_raw_controller_dhcp()
+
+
+@cli.command('change_password_for_FT')
+def cmd_change_password_for_ft():
+    """Change password to VMwareAvilb123! for FT."""
+    logger.info("Executing change_password_for_FT command")
+    handle_change_password_for_ft()
+
+
+@cli.command('change_password_to_default')
+def cmd_change_password_to_default():
+    """Change password to avi12345 (default)."""
+    logger.info("Executing change_password_to_default command")
+    handle_change_password_to_default()
+
+
+@cli.command('reimage_ctlr')
+def cmd_reimage_ctlr():
+    """Reimage controller."""
+    logger.info("Executing reimage_ctlr command")
+    # Placeholder - implement if function exists
+    print("Reimage controller command - not yet implemented")
+
+
+# --- Commands with arguments ---
+
+@cli.command('delete')
+@click.argument('ips', nargs=-1, required=True)
+def cmd_delete(ips):
+    """Delete VMs by IP address.
     
-    if command in ('delete', 'poweroff'):
-        handle_delete_poweroff_commands()
-    elif command == 'delete_name':
-        handle_delete_by_name()
-    elif command == 'rename' and len(sys.argv) == 4:
-        handle_rename_vm()
-    elif command == 'poweron':
-        handle_poweron_vm()
-    else:
-        print(f"Unknown command or incorrect arguments: {command}")
-        show_help()
-        sys.exit(1)
+    IPS: One or more IP addresses of VMs to delete.
+    """
+    logger.info(f"Executing delete command with IPs: {ips}")
+    handle_delete_poweroff_commands(ips, delete=True)
 
 
-# Execute main function if script is run directly
+@cli.command('poweroff')
+@click.argument('ips', nargs=-1, required=True)
+def cmd_poweroff(ips):
+    """Power off VMs by IP address.
+    
+    IPS: One or more IP addresses of VMs to power off.
+    """
+    logger.info(f"Executing poweroff command with IPs: {ips}")
+    handle_delete_poweroff_commands(ips, delete=False)
+
+
+@cli.command('delete_name')
+@click.argument('names', nargs=-1, required=True)
+def cmd_delete_name(names):
+    """Delete VMs by name.
+    
+    NAMES: One or more VM names to delete.
+    """
+    logger.info(f"Executing delete_name command with names: {names}")
+    handle_delete_by_name(names)
+
+
+@cli.command('rename')
+@click.argument('ip')
+@click.argument('newname')
+def cmd_rename(ip, newname):
+    """Rename a VM.
+    
+    IP: IP address of the VM to rename.
+    NEWNAME: New name for the VM.
+    """
+    logger.info(f"Executing rename command: {ip} -> {newname}")
+    handle_rename_vm(ip, newname)
+
+
+@cli.command('poweron')
+@click.argument('name', required=False, default='')
+def cmd_poweron(name):
+    """Power on VMs.
+    
+    NAME: Optional VM name to power on. If not provided, powers on all VMs.
+    """
+    logger.info(f"Executing poweron command with name: {name or 'all'}")
+    handle_poweron_vm(name)
+
+
+# Execute CLI if script is run directly
 if __name__ == "__main__":
-    main()
+    cli()
    
 
 # https://gist.github.com/goodjob1114/9ededff0de32c1119cf7
