@@ -2415,7 +2415,29 @@ def print_execution_time():
     print(execution_summary)
 
 
-@click.group(invoke_without_command=True, context_settings=dict(max_content_width=200, terminal_width=200))
+class WideHelpGroup(click.Group):
+    """Custom Group class that provides wider command column in help output."""
+    
+    def format_commands(self, ctx, formatter):
+        """Write all the commands with increased column width for long command names."""
+        commands = []
+        for subcommand in self.list_commands(ctx):
+            cmd = self.get_command(ctx, subcommand)
+            if cmd is None:
+                continue
+            help_text = cmd.get_short_help_str(limit=150)
+            commands.append((subcommand, help_text))
+
+        if commands:
+            # Calculate max command width with minimum of 45 chars for long command names
+            max_cmd_len = max(len(cmd[0]) for cmd in commands)
+            limit = max(max_cmd_len + 2, 45)
+
+            with formatter.section('Commands'):
+                formatter.write_dl(commands, col_max=limit)
+
+
+@click.group(cls=WideHelpGroup, invoke_without_command=True, context_settings=dict(max_content_width=300, terminal_width=300))
 @click.pass_context
 def cli(ctx):
     """VMware vSphere IP Management and Controller Automation Tool.
