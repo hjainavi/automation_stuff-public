@@ -2418,6 +2418,42 @@ def print_execution_time():
 class WideHelpGroup(click.Group):
     """Custom Group class that provides wider command column in help output."""
     
+    # Define preferred command order for help display (matches show_help() order)
+    COMMAND_ORDER = [
+        'with_se_ips',
+        'free_ip',
+        'free_ips',
+        'delete_ctlr_se',
+        'delete',
+        'delete_name',
+        'poweroff',
+        'rename',
+        'poweron',
+        'reimage_ctlr',
+        'latest_builds',
+        'generate_controller_from_ova',
+        'configure_raw_controller_dhcp',
+        'configure_raw_controller',
+        'configure_raw_controller_wo_tmux',
+        'configure_password_only',
+        'configure_cloud_vs_se',
+        'configure_vs',
+        'flush_db_configure_raw_controller_wo_tmux',
+        'setup_tmux',
+        'setup_tmux_install_only',
+        'change_password_for_FT',
+        'change_password_to_default',
+    ]
+    
+    def list_commands(self, ctx):
+        """Return commands in custom order."""
+        commands = list(self.commands.keys())
+        # Sort by custom order, unknown commands go at the end alphabetically
+        return sorted(commands, key=lambda x: (
+            self.COMMAND_ORDER.index(x) if x in self.COMMAND_ORDER else len(self.COMMAND_ORDER),
+            x  # Secondary sort alphabetically for commands not in COMMAND_ORDER
+        ))
+    
     def format_commands(self, ctx, formatter):
         """Write all the commands with increased column width for long command names."""
         commands = []
