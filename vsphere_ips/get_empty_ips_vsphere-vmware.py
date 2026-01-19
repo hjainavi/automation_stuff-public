@@ -923,7 +923,7 @@ def change_network_adapter(virtual_m, network_identifier=None):
 
 def change_to_default_password(c_ip, uri_base):
     if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
-        print("password is already set to Avi123")
+        print("password is already set to avi12345")
         return
     version = GLOBAL_LOGIN_HEADERS[c_ip].get('X-Avi-Version',None)
     if version:
@@ -940,7 +940,7 @@ def change_to_default_password(c_ip, uri_base):
             data['complexity_constraint']['min_numeric'] = 1
             data['complexity_constraint']['min_special'] = 0
             data['complexity_constraint']['min_uppercase'] = 0
-            data['complexity_constraint']['password_history'] = 5
+            data['complexity_constraint']['password_history'] = 1
             data['lockout_constraint']['lockout_max_auth_failures'] = 0
             r = requests.put(uri_base+'api/useraccountprofile/%s'%(data['uuid']), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
             if r.status_code not in [200,201]:
