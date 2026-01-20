@@ -482,10 +482,10 @@ start aviportal
 sudo su postgres
 shell
 shell ;admin;avi123
-shell --help
-shell --user admin --password avi123
-shell --user admin --password avi12
-shell --user admin --password avi123
+
+
+
+
 tmux attach
 mux attach
 tail -f /var/log/upstart/maintenanceportal.log 
@@ -571,6 +571,7 @@ ranger
 ranger
 shell
 shell --user admin --password avi123
+shell --user admin --password VMwareAvilb123!
 avishell
 vim /opt/avi/python/lib/avi/config_migration/export_import.py
 ./avipdbportal.sh start
@@ -823,10 +824,10 @@ git status
 git diff
 stop maintenanceportal 
 stop aviportal
-shell --help
+help
 vim /etc/snmp/snmpd.conf
 vim /etc/snmp/snmpd.conf.template 
-shell --user admin --password avi123
+
 git diff
 vim /var/log/upstart/maintenanceportal.log 
 df -h
@@ -835,13 +836,13 @@ git stash save import_default_refs
 stop maintenanceportal 
 stop aviportal
 stop aviportal;stop maintenanceportal 
-shell --user admin --password avi123
+
 tmux attach
 vim /var/log/upstart/upgrade-coordinator.log 
 ranger
 tmux kill-window -t 5
 ranger
-shell --user admin --password avi123
+
 abcde
 tmux attach
 abcde
@@ -942,7 +943,7 @@ ls
 cd archive
 ls
 ls -al
-shell --user admin --password avi123
+
 vim snmp_migrate.py 
 cd /opt/avi/scripts/
 ls
@@ -986,7 +987,7 @@ avishellpdb
 /opt/avi/python/bin/portal/manage.py shell
 tmux attach
 abcde
-shell --user admin --password avi123
+
 /opt/avi/python/bin/portal/manage.py export_configuration --file /tmp/avi_config.json
 /opt/avi/python/bin/portal/manage.py export_configuration --object-type backup --file /tmp/avi_backup.json
 snmpwalk -v2c -c public 10.140.16.180 sysObjectID
@@ -1006,7 +1007,7 @@ ls
 tmux attach
 bcde
 ranger
-shell --user admin --password avi123
+
 ls
 vim avipdbportal.sh 
 tmux attach
