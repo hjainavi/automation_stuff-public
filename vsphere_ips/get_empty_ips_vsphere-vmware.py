@@ -77,8 +77,10 @@ FREE_IP = "--Free IP--"
 
 # Default Configuration Values
 DEFAULT_SETUP_PASSWORD = "58NFaGDJm(PJH0G"
-DEFAULT_PASSWORD = "avi12345"
-FT_PASSWORD = "VMwareAvilb123!"
+DEFAULT_PASSWORD = "avi123"
+DEFAULT_PASSWORD_32_1_1 = "VMwareAvilb123!"
+FT_PASSWORD_32_1_1 = "VMwareAvilb123!"
+FT_PASSWORD = "avi123"
 SYSADMIN_KEYPATH = "/home/aviuser/.ssh/id_rsa.pub"
 DHCP = False
 SE_DHCP = False
@@ -262,34 +264,6 @@ VCENTER_SERVER_SUBNET = current_config["VCENTER_SERVER_SUBNET"]
 # =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
-
-def show_help():
-    """Display available command line options."""
-    print("Available options:")
-    print("  with_se_ips                               - Show VMs with SE IPs")
-    print("  free_ip                                   - Show free IPs")
-    print("  delete_ctlr_se                            - Delete controller and SE VMs")
-    print("  delete 'ip'                               - Delete VM by IP")
-    print("  delete_name 'name'                        - Delete VM by name")
-    print("  poweroff 'ip'                             - Power off VM by IP")
-    print("  rename 'ip' 'newname'                     - Rename VM")
-    print("  poweron                                   - Power on all VMs")
-    print("  poweron 'name'                            - Power on specific VM")
-    print("  reimage_ctlr                              - Reimage controller")
-    print("  latest_builds                             - Show latest builds")
-    print("  configure_raw_controller_dhcp             - Configure raw DHCP controller")
-    print("  generate_controller_from_ova              - Generate controller from OVA")
-    print("  configure_raw_controller                  - Configure raw controller")
-    print("  configure_raw_controller_wo_tmux          - Configure controller without tmux")
-    print("  configure_password_only                   - Configure password only")
-    print("  configure_cloud_vs_se                     - Configure cloud, VS, and SE")
-    print("  configure_vs                              - Configure virtual service")
-    print("  flush_db_configure_raw_controller_wo_tmux - Flush DB and configure")
-    print("  setup_tmux                                - Setup tmux")
-    print("  setup_tmux_install_only                   - Setup tmux install only")
-    print("  change_password_for_FT                    - Change password to VMwareAvilb123!")
-    print("  change_password_to_default                - Change password to avi12345")
-
 
 # Track execution time
 START_TIME = time.time()
@@ -922,13 +896,15 @@ def change_network_adapter(virtual_m, network_identifier=None):
     print(f"Power is on. {task.info.state}")
 
 def change_to_default_password(c_ip, uri_base):
-    if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
-        print("password is already set to avi12345")
-        return
+    change_password = ""
     version = GLOBAL_LOGIN_HEADERS[c_ip].get('X-Avi-Version',None)
     if version:
         version = Version(version)
         if version >= Version('32.1.1'):
+            change_password = DEFAULT_PASSWORD_32_1_1
+            if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD_32_1_1:
+                print("password is already set to VMwareAvilb123!")
+                return
             data = {}
             r = requests.get(uri_base+'api/useraccountprofile',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
             for val in r.json()['results']:
@@ -945,62 +921,90 @@ def change_to_default_password(c_ip, uri_base):
             r = requests.put(uri_base+'api/useraccountprofile/%s'%(data['uuid']), data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
             if r.status_code not in [200,201]:
                 raise Exception(r.text)
+        else:
+            change_password = DEFAULT_PASSWORD
+            if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
+                print("password is already set to avi123")
+                return
     uri_base = 'https://' + c_ip + '/'
-    print("changing password to avi12345")
+    print(f"changing password to {change_password}")
     r = requests.get(uri_base+'api/useraccount',verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
-    data.update({'username':'admin','password':DEFAULT_PASSWORD ,'old_password':GLOBAL_CURRENT_PASSWORD[c_ip]})
+    data.update({'username':'admin','password':change_password ,'old_password':GLOBAL_CURRENT_PASSWORD[c_ip]})
     time.sleep(1) 
     #auth = HTTPBasicAuth('admin', GLOBAL_CURRENT_PASSWORD[c_ip])
     resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data) ,verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200,201]:
         raise Exception(resp.text)
-    print("changing password to avi12345 -- done")
+    print(f"changing password to {change_password} -- done")
     
 
 def change_password_for_ft(c_ip):
     """Change controller password to VMwareAvilb123! for FT testing."""
     login_and_set_global_variables(c_ip)
+    # Check version to determine which password to use
+    version = GLOBAL_LOGIN_HEADERS[c_ip].get('X-Avi-Version', None)
+    if version:
+        version = Version(version)
+        if version >= Version('32.1.1'):
+            target_password = FT_PASSWORD_32_1_1
+        else:
+            target_password = FT_PASSWORD
+    else:
+        target_password = FT_PASSWORD  # Default to FT_PASSWORD if version not available
     
-    if GLOBAL_CURRENT_PASSWORD[c_ip] == FT_PASSWORD:
-        print(f"Password is already set to {FT_PASSWORD}")
+    if GLOBAL_CURRENT_PASSWORD[c_ip] == target_password:
+        print(f"Password is already set to {target_password}")
         return
     
     uri_base = 'https://' + c_ip + '/'
     
-    print(f"Changing password to: {FT_PASSWORD}")
+    print(f"Changing password to: {target_password} since version is {version}")
     r = requests.get(uri_base+'api/useraccount', verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     data = r.json()
-    data.update({'username': 'admin', 'password': FT_PASSWORD, 'old_password': GLOBAL_CURRENT_PASSWORD[c_ip]})
+    data.update({'username': 'admin', 'password': target_password, 'old_password': GLOBAL_CURRENT_PASSWORD[c_ip]})
     time.sleep(1)
     resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
     if resp.status_code not in [200, 201]:
         raise Exception(resp.text)
-    print(f"Changing password to {FT_PASSWORD} -- done")
+    print(f"Changing password to {target_password} -- done for version {version}")
     reset_login(c_ip)
 
-
-def change_password_to_avi_default(c_ip):
-    """Change controller password back to avi12345."""
-    login_and_set_global_variables(c_ip)
-    
-    if GLOBAL_CURRENT_PASSWORD[c_ip] == DEFAULT_PASSWORD:
-        print(f"Password is already set to {DEFAULT_PASSWORD}")
-        return
-    
+def _try_login_for_controller(c_ip):
+    """Try to login to a controller with various passwords. Returns (c_ip, password)."""
     uri_base = 'https://' + c_ip + '/'
-    
-    print(f"Changing password to: {DEFAULT_PASSWORD}")
-    r = requests.get(uri_base+'api/useraccount', verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-    data = r.json()
-    data.update({'username': 'admin', 'password': DEFAULT_PASSWORD, 'old_password': GLOBAL_CURRENT_PASSWORD[c_ip]})
-    time.sleep(1)
-    resp = requests.put(uri_base+'api/useraccount', data=json.dumps(data), verify=False, headers=GLOBAL_LOGIN_HEADERS[c_ip], cookies=GLOBAL_LOGIN_COOKIES[c_ip])
-    if resp.status_code not in [200, 201]:
-        raise Exception(resp.text)
-    print(f"Changing password to {DEFAULT_PASSWORD} -- done")
-    reset_login(c_ip)
+    headers = get_headers()
+    password_list = ["avi123", "VMwareAvilb123!","admin","avi12345", "avi123$%", "Avi123", "Avi123456789#$%"]
+    for password in password_list:
+        data = {'username': 'admin', 'password': password}
+        try:
+            login = requests.post(uri_base + 'login', data=json.dumps(data), headers=headers, verify=False, timeout=30)
+            if login.status_code in [200, 201]:
+                return (c_ip, password)
+        except requests.exceptions.RequestException as e:
+            print(f"Error connecting to {c_ip}: {e}")
+            continue
+    return (c_ip, "not able to login using various passwords")
 
+
+def get_current_password_for_all_controllers(si):
+    vals = get_index_format_ips_excluding_dev_ip(si, free=False)
+    controller_ips = list(vals.values())
+    
+    # Run login attempts for all controllers in parallel
+    store_password = {}
+    with ThreadPoolExecutor(max_workers=min(10, len(controller_ips))) as executor:
+        results = executor.map(_try_login_for_controller, controller_ips)
+        for c_ip, password in results:
+            store_password[c_ip] = password
+    
+    # Print the results in a tabulated format
+    table_data = []
+    for c_ip, password in store_password.items():
+        table_data.append([c_ip, password])
+    
+    headers = ["Controller IP", "Password"]
+    print(tabulate(table_data, headers=headers, tablefmt="psql"))
 
 def login_and_set_global_variables(c_ip,password_arg=None):
 
@@ -1015,7 +1019,7 @@ def login_and_set_global_variables(c_ip,password_arg=None):
         return
     uri_base = 'https://' + c_ip + '/'
     headers = get_headers()
-    password_list = [password_arg,"avi12345","VMwareAvilb123!","Avi123456789#$%","avi123","avi123$%","admin","Avi123"] if password_arg else ["avi12345","VMwareAvilb123!","Avi123456789#$%","avi123","avi123$%","admin","Avi123"]
+    password_list = [password_arg,"avi123","VMwareAvilb123!","Avi123456789#$%","avi12345","avi123$%","admin","Avi123"] if password_arg else ["avi123","VMwareAvilb123!","Avi123456789#$%","avi12345","avi123$%","admin","Avi123"]
     for password in password_list:
         data = {'username':'admin', 'password':password}
         login = requests.post(uri_base+'login', data=json.dumps(data), headers=headers, verify=False)
@@ -2392,15 +2396,10 @@ def handle_change_password_for_ft():
     for mgmt_ip in mgmt_ips:
         change_password_for_ft(mgmt_ip)
 
-
-def handle_change_password_to_default():
-    """Handler for change_password_to_default command."""
+def handle_show_password_for_all_controllers():
+    """Handler for show_password_for_all_controllers command."""
     si = connect()
-    mgmt_ips = get_used_controller_ips(si)
-    for mgmt_ip in mgmt_ips:
-        change_password_to_avi_default(mgmt_ip)
-
-
+    get_current_password_for_all_controllers(si)
 # =============================================================================
 # CLICK CLI COMMANDS
 # =============================================================================
@@ -2442,7 +2441,7 @@ class WideHelpGroup(click.Group):
         'setup_tmux',
         'setup_tmux_install_only',
         'change_password_for_FT',
-        'change_password_to_default',
+        'show_password_for_all_controllers',
     ]
     
     def list_commands(self, ctx):
@@ -2614,16 +2613,15 @@ def cmd_configure_raw_controller_dhcp():
 
 @cli.command('change_password_for_FT')
 def cmd_change_password_for_ft():
-    """Change password to VMwareAvilb123! for FT."""
+    """Change password to VMwareAvilb123!/avi123 for FT."""
     logger.info("Executing change_password_for_FT command")
     handle_change_password_for_ft()
 
-
-@cli.command('change_password_to_default')
-def cmd_change_password_to_default():
-    """Change password to avi12345 (default)."""
-    logger.info("Executing change_password_to_default command")
-    handle_change_password_to_default()
+@cli.command('show_password_for_all_controllers')
+def cmd_show_password_for_all_controllers():
+    """Show password for all controllers."""
+    logger.info("Executing show_password_for_all_controllers command")
+    handle_show_password_for_all_controllers()
 
 
 @cli.command('reimage_ctlr')
