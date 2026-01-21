@@ -9,16 +9,12 @@ set -x
 trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 DEV_VM=false
-PHOTON_CTLR=false
 UBUNTU_CTLR=false
 
 if [ -d "/opt/avi/python" ] ; then
     if ! whoami | grep -q 'root'; then
         echo "User is not root"
         exit 1
-    fi
-    if lsb_release -d | grep -q 'Photon'; then
-        PHOTON_CTLR=true
     fi
     if lsb_release -d | grep -q 'Ubuntu'; then
         UBUNTU_CTLR=true
@@ -30,19 +26,7 @@ fi
 
 #release=$(lsb_release -a 2>&1)
 #if [[ $release == *"focal"* ]]
-if $PHOTON_CTLR ; then
-    tdnf -y -q install tmux git
-    pip -q install ranger-fm flake8 ipdb
-    cp ./other_files/aria2c /usr/bin/
-    chmod o+x /usr/bin/aria2c
-    cp ./other_files/mosh-server /usr/bin/
-    chmod o+x /usr/bin/mosh-server
-    ./other_files/tmux_start_script.sh
-    iptables -A INPUT -p udp -m multiport --dports 60000:60100 -j ACCEPT
-    iptables -A INPUT -p tcp --dport 2345 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-    iptables-save > /etc/systemd/scripts/ip4save
-
-elif $UBUNTU_CTLR ; then
+if $UBUNTU_CTLR ; then
     echo "==================git config and bashrc done"
     export DEBIAN_FRONTEND=noninteractive
 

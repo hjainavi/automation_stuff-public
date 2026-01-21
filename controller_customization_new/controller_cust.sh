@@ -10,16 +10,12 @@ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 
 DEV_VM=false
-PHOTON_CTLR=false
 UBUNTU_CTLR=false
 
 if [ -d "/opt/avi/python" ] ; then
     if ! whoami | grep -q 'root'; then
         echo "User is not root"
         exit 1
-    fi
-    if lsb_release -d | grep -q 'Photon'; then
-        PHOTON_CTLR=true
     fi
     if lsb_release -d | grep -q 'Ubuntu'; then
         UBUNTU_CTLR=true
@@ -29,16 +25,7 @@ else
 fi
 
 
-if $PHOTON_CTLR ; then
-    echo "Photon controller vm"
-
-    if ! grep -wq "avishell" ~/.bashrc ; then
-        cat  /home/admin/.bashrc >> ~/.bashrc
-        cat  ./other_files/append_rc >> ~/.bashrc
-        cat  ./other_bashrc_cust >> ~/.bashrc
-        cat  ./other_files/ctlr_hist.txt >> ~/.bash_history
-    fi
-elif $UBUNTU_CTLR ; then
+if $UBUNTU_CTLR ; then
     echo "Ubuntu controller vm"
     if ! grep -wq "avishell" ~/.bashrc ; then
         cat  ./other_files/append_rc >> ~/.bashrc

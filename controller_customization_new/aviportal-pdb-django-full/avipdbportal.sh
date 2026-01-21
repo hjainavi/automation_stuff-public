@@ -7,29 +7,10 @@
 # args "stop" will gracefully kill the uwsgi process
 # args "kill" will instantly kill the process
 current_script_path=$(dirname "$0")
-PHOTON_CTLR=false
-UBUNTU_CTLR=false
-if lsb_release -d | grep -q 'Photon'; then
-    PHOTON_CTLR=true
-    echo "Photon Ctlr"
-fi
-if lsb_release -d | grep -q 'Ubuntu'; then
-    UBUNTU_CTLR=true
-    echo "Ubuntu Ctlr"
-fi
 
-
-if $PHOTON_CTLR ; then
-    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.10/dist-packages:/usr/local/lib/python3.10/site-packages:$PWD/avipdb
-fi
-if $UBUNTU_CTLR; then
-    export PYTHONPATH=/opt/avi/python/lib:/opt/avi/python/bin/portal:/usr/local/lib/python3.8/dist-packages:/usr/local/lib/python3.8/site-packages:$PWD/avipdb
-fi
+export PYTHONPATH=$PYTHONPATH:$PWD/avipdb
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION_VERSION=2
-if $PHOTON_CTLR ; then
-    export XTABLES_LIBDIR=/usr/lib/iptables
-fi
 
 ipdb_str=$(pip3 --disable-pip-version-check list | grep ipdb)
 if [[ $ipdb_str = *ipdb* ]]; then
@@ -54,12 +35,7 @@ if [ "$1" = "start" ];then
     else
         export AVI_PDB_FLAG="none"
     fi
-    if $PHOTON_CTLR ; then
-        exec uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal --plugin /usr/lib/uwsgi/python_plugin.so
-    fi
-    if $UBUNTU_CTLR ; then
-        exec uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
-    fi
+    exec uwsgi --stats 127.0.0.1:5048 --stats-http --honour-stdin --ini ./pdb-portal.ini:portal
 
     #./test.py
 elif [ "$1" = "change" ];then
