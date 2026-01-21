@@ -41,6 +41,11 @@ if $UBUNTU_CTLR ; then
     fi
 
     echo "==================apt-get done"
+
+    echo " installing cursor cli agent "
+    curl -fsSL https://download.cursor.com/install.sh | bash
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+    echo "==================cursor cli agent done"
     ./other_files/tmux_start_script.sh
 fi
     
