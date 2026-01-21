@@ -202,7 +202,12 @@ def setup_logging(log_level=logging.INFO):
         log_level: Logging level (default: INFO)
     """
     # Create logs directory if it doesn't exist
-    logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    # Get home directory location
+    logs_dir = os.path.join(os.path.expanduser("~"), "vsphereips_logs")
+    
+    # Ensure logs directory exists at home location
+    if not os.path.exists(logs_dir):
+        print(f"Creating logs directory at: {logs_dir}")
     os.makedirs(logs_dir, exist_ok=True)
     
     # Configure logging

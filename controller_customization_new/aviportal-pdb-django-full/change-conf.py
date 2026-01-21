@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys,os
 change = "None"
-change_path_only = "False"
+change_path_only = False
 if len(sys.argv)>1:
     if sys.argv[1]=='change':
         change="True"
     if sys.argv[1]=='changeback':
         change="False"
     if sys.argv[1]=='change_path_only':
-        change_path_only="True"
+        change_path_only=True
 else:
     sys.exit(1)
 data=[]
@@ -40,7 +40,7 @@ else:
 
 # adding pythonpath of avipdb in aviportal.sh -- when running via init script     
 lines = []
-current_path = os.path.dirname(sys.argv[0])
+current_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 print("change_conf ",current_path)
 with open('/opt/avi/python/bin/aviportal.sh','r') as f:
     for line in f.readlines():
@@ -58,7 +58,7 @@ with open('/opt/avi/python/bin/aviportal.sh','w') as f:
 
 # adding pythonpath of avipdb in manage.py shell pythonpath   
 lines = []
-current_path = os.path.dirname(sys.argv[0])
+current_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 print("change_conf ",current_path)
 bin_portal_index = False
 avipdb_present = False
